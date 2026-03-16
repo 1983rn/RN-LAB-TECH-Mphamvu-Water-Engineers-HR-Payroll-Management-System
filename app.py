@@ -1,7 +1,12 @@
+import sys
+import os
+
+# Ensure the project directory is in Python's module search path (needed for gunicorn)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import os
 from functools import wraps
 
 from database import init_db
