@@ -9,7 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
 
-from database import init_db
+from db_utils import init_db
 from models import db, User, Employee, Payroll, Attendance, Client, Quotation, Contract, Invoice, DeliveryNote, Transaction, SupportRequest
 from config import Config
 
