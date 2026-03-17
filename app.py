@@ -14,7 +14,7 @@ from models import db, User, Employee, Payroll, Attendance, Client, Quotation, C
 from config import Config
 
 # Import blueprints
-from employees.employee_routes import employee_bp
+from documents.employees.employee_routes import employee_bp
 from payroll.payroll_routes import payroll_bp
 from attendance.attendance_routes import attendance_bp
 from quotations.quotation_routes import quotations_bp
