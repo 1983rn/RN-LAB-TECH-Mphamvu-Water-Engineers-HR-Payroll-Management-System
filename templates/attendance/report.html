@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Reports - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-chart-line me-2"></i>Attendance Reports</h2>
+            <a href="{{ url_for('attendance.attendance_list') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Attendance
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+    <div class="card-header bg-secondary text-white">
+        <h6 class="mb-0">Filter Attendance Records</h6>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="employee_id" class="form-label">Employee</label>
+                <select class="form-select" id="employee_id" name="employee_id">
+                    <option value="">All Employees</option>
+                    {% for employee in employees %}
+                    <option value="{{ employee.employee_id }}" {{ 'selected' if selected_employee == employee.employee_id|string }}>
+                        {{ employee.first_name }} {{ employee.last_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <a href="{{ url_for('attendance.attendance_report') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Attendance Records</h5>
+    </div>
+    <div class="card-body">
+        {% if attendance_records %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendance_records %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('employees.view_employee', employee_id=attendance.employee_id) }}" class="text-decoration-none">
+                                {{ attendance.employee.first_name }} {{ attendance.employee.last_name }}
+                            </a>
+                        </td>
+                        <td>{{ attendance.date.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <span class="badge bg-{{ 
+                                'success' if attendance.status == 'Present' 
+                                else 'warning' if attendance.status == 'Late' 
+                                else 'info' if attendance.status == 'Half Day' 
+                                else 'danger' 
+                            }}">
+                                {{ attendance.status }}
+                            </span>
+                        </td>
+                        <td>{{ attendance.check_in.strftime('%H:%M') if attendance.check_in else 'N/A' }}</td>
+                        <td>{{ attendance.check_out.strftime('%H:%M') if attendance.check_out else 'N/A' }}</td>
+                        <td>{{ attendance.notes or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Attendance Summary -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h6>Attendance Summary</h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <div class="text-success" style="font-size: 1.5rem; font-weight: bold;">
+                                    {{ attendance_records | selectattr('status', 'equalto', 'Present') | list | length }}
+                                </div>
+                                <div class="text-muted">Present Days</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <div class="text-danger" style="font-size: 1.5rem; font-weight: bold;">
+                                    {{ attendance_records | selectattr('status', 'equalto', 'Absent') | list | length }}
+                                </div>
+                                <div class="text-muted">Absent Days</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <div class="text-warning" style="font-size: 1.5rem; font-weight: bold;">
+                                    {{ attendance_records | selectattr('status', 'equalto', 'Late') | list | length }}
+                                </div>
+                                <div class="text-muted">Late Days</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <div class="text-info" style="font-size: 1.5rem; font-weight: bold;">
+                                    {{ attendance_records | selectattr('status', 'equalto', 'Half Day') | list | length }}
+                                </div>
+                                <div class="text-muted">Half Days</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No attendance records found</h5>
+            <p class="text-muted">Try adjusting the filters or mark attendance for employees.</p>
+            <a href="{{ url_for('attendance.attendance_list') }}" class="btn btn-primary">
+                <i class="fas fa-calendar-check me-2"></i>Mark Attendance
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Payslip - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-file-invoice me-2"></i>Payslip</h2>
+            <div>
+                <a href="{{ url_for('payroll.download_payslip_pdf', payroll_id=payroll.payroll_id) }}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Download PDF
+                </a>
+                <a href="{{ url_for('payroll.payroll_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Payroll
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Payslip Details</h5>
+    </div>
+    <div class="card-body">
+        <!-- Company Header -->
+        <div class="text-center mb-4">
+            <h3>MPHAMVU WATER ENGINEERS</h3>
+            <p class="text-muted">Always Water</p>
+            <p class="small">P.O BOX 561 Lilongwe | +265 998 039 554, +265 999 678 417 | mphamvuwaterengineers@gmail.com</p>
+        </div>
+        
+        <!-- Payslip Information -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6>Employee Information</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Name:</strong></td>
+                        <td>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employment Number:</strong></td>
+                        <td>{{ payroll.employee.employment_number }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department:</strong></td>
+                        <td>{{ payroll.employee.department }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Position:</strong></td>
+                        <td>{{ payroll.employee.position }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Payslip Information</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Payroll Month:</strong></td>
+                        <td>{{ payroll.payroll_month }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reference:</strong></td>
+                        <td>{{ payroll.reference_number }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date Generated:</strong></td>
+                        <td>{{ payroll.created_at.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if payroll.status == 'Processed' else 'warning' }}">
+                                {{ payroll.status }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Salary Breakdown -->
+        <div class="row">
+            <div class="col-md-12">
+                <h6>Salary Breakdown</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Description</th>
+                                <th class="text-end">Amount (MWK)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Basic Salary</strong></td>
+                                <td class="text-end">{{ "{:,.2f}".format(payroll.basic_salary) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Allowances</strong></td>
+                                <td class="text-end">{{ "{:,.2f}".format(payroll.allowances) }}</td>
+                            </tr>
+                            <tr class="table-light">
+                                <td><strong>Gross Salary</strong></td>
+                                <td class="text-end"><strong>{{ "{:,.2f}".format(payroll.basic_salary + payroll.allowances) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PAYEE Tax</strong></td>
+                                <td class="text-end text-danger">-{{ "{:,.2f}".format(payroll.payee_tax) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Loan Repayments</td>
+                                <td class="text-end text-danger">-{{ "{:,.2f}".format(payroll.loan_deduction) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Absenteeism Penalty</td>
+                                <td class="text-end text-danger">-{{ "{:,.2f}".format(payroll.absentee_deduction) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Other Deductions</td>
+                                <td class="text-end">-{{ "{:,.2f}".format(payroll.deductions) }}</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>NET SALARY</strong></td>
+                                <td class="text-end"><strong>{{ "{:,.2f}".format(payroll.net_salary) }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-4">
+            <p class="small text-muted">This is a computer-generated payslip and does not require a signature.</p>
+            <p class="small text-muted">Generated on: {{ payroll.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

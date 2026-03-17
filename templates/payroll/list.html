@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Management - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-money-check me-2"></i>Payroll Management</h2>
+            <div class="d-flex align-items-center gap-2">
+                <div class="input-group" style="width: 300px;">
+                    <input type="month" class="form-control" id="report_month">
+                    <button class="btn btn-outline-success" onclick="downloadReport()" title="Download Payroll Report">
+                        <i class="fas fa-file-pdf me-1"></i>Report
+                    </button>
+                </div>
+                <a href="{{ url_for('payroll.loan_management') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-hand-holding-usd me-2"></i>Loan Management
+                </a>
+                <a href="{{ url_for('payroll.process_payroll') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Process Payroll
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Payroll Records</h5>
+    </div>
+    <div class="card-body">
+        {% if payroll_records %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Employment Number</th>
+                        <th>Month</th>
+                        <th>Gross Salary</th>
+                        <th>PAYEE</th>
+                        <th>Loans</th>
+                        <th>Absenteeism</th>
+                        <th>Other Ded.</th>
+                        <th>Net Salary</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payroll in payroll_records %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('employees.view_employee', employee_id=payroll.employee_id) }}" class="text-decoration-none">
+                                {{ payroll.employee.first_name }} {{ payroll.employee.last_name }}
+                            </a>
+                        </td>
+                        <td>{{ payroll.employee.employment_number }}</td>
+                        <td>{{ payroll.payroll_month }}</td>
+                        <td>MK {{ "{:,.2f}".format(payroll.basic_salary + payroll.allowances) }}</td>
+                        <td class="text-danger">MK {{ "{:,.2f}".format(payroll.payee_tax) }}</td>
+                        <td class="text-danger">MK {{ "{:,.2f}".format(payroll.loan_deduction) }}</td>
+                        <td class="text-danger">MK {{ "{:,.2f}".format(payroll.absentee_deduction) }}</td>
+                        <td class="text-danger">MK {{ "{:,.2f}".format(payroll.deductions) }}</td>
+                        <td><strong>MK {{ "{:,.2f}".format(payroll.net_salary) }}</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if payroll.status == 'Processed' else 'warning' }}">
+                                {{ payroll.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('payroll.view_payslip', payroll_id=payroll.payroll_id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('payroll.download_payslip_pdf', payroll_id=payroll.payroll_id) }}" class="btn btn-outline-success">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-money-check fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No payroll records found</h5>
+            <p class="text-muted">Start by processing payroll for your employees.</p>
+            <a href="{{ url_for('payroll.process_payroll') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Process First Payroll
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function downloadReport() {
+    const month = document.getElementById('report_month').value;
+    if (!month) {
+        alert('Please select a payroll month first');
+        return;
+    }
+    window.location.href = '/payroll/report/' + month;
+}
+</script>
+{% endblock %}

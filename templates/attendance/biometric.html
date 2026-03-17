@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Biometric Kiosk - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row pt-4 justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-lg">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0"><i class="fas fa-camera-retro me-2"></i>Biometric Attendance Kiosk</h4>
+            </div>
+            <div class="card-body p-4 text-center">
+                
+                <p class="text-muted mb-4" id="kioskInstructions">Please enter your Employment Number and face the camera for verification.</p>
+                
+                <!-- Camera Viewfinder -->
+                <div class="mb-4 d-flex justify-content-center">
+                    <div class="camera-container" style="width: 100%; max-width: 480px; aspect-ratio: 4/3; background: #222; border-radius: 12px; overflow: hidden; position: relative; border: 4px solid #f8f9fa; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        <video id="cameraPreview" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        
+                        <!-- Face Alignment Guide -->
+                        <div class="face-guide" style="position: absolute; top: 15%; left: 25%; width: 50%; height: 60%; border: 3px dashed rgba(255, 255, 255, 0.5); border-radius: 50%; pointer-events: none; box-sizing: border-box;">
+                            <div style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; white-space: nowrap;">
+                                Position Face Here
+                            </div>
+                        </div>
+
+                        <canvas id="photoCanvas" style="display: none;"></canvas>
+                        <div id="cameraLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center;">
+                            <i class="fas fa-spinner fa-spin fa-3x mb-2"></i>
+                            <p class="mb-0">Initializing Camera...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="retrySection" style="display: none;" class="mb-4">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Tips:</strong> Ensure good lighting and remove any hats or glasses.
+                    </div>
+                    <button type="button" class="btn btn-outline-primary" onclick="initCamera()">
+                        <i class="fas fa-redo me-2"></i> Restart Camera
+                    </button>
+                </div>
+
+                <form id="biometricForm" method="POST" action="{{ url_for('attendance.biometric_checkin') }}">
+                    <div class="form-floating mb-4" style="max-width: 320px; margin: 0 auto;">
+                        <input type="text" class="form-control text-center fw-bold fs-5" id="empNumber" name="employment_number" placeholder="MWE/2026/0001" required>
+                        <label for="empNumber">Employment No (e.g. MWE/2026/0001)</label>
+                    </div>
+                    
+                    <input type="hidden" name="photo_base64" id="photoData">
+                    <input type="hidden" name="action" id="actionType" value="checkin">
+                    
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button type="button" class="btn btn-success btn-lg px-4" onclick="captureAndSubmit('checkin')">
+                            <i class="fas fa-sign-in-alt me-2"></i>Check IN
+                        </button>
+                        <button type="button" class="btn btn-warning btn-lg px-4 text-dark" onclick="captureAndSubmit('checkout')">
+                            <i class="fas fa-sign-out-alt me-2"></i>Check OUT
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('attendance.dashboard') }}" class="text-muted text-decoration-none">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('cameraPreview');
+    const canvas = document.getElementById('photoCanvas');
+    const loading = document.getElementById('cameraLoading');
+    let stream = null;
+
+    async function initCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        loading.style.display = 'block';
+        loading.innerHTML = '<i class="fas fa-spinner fa-spin fa-3x mb-2"></i><p class="mb-0">Initializing Camera...</p>';
+        document.getElementById('retrySection').style.display = 'none';
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'user', 
+                    width: { ideal: 1280 }, 
+                    height: { ideal: 720 } 
+                } 
+            });
+            video.srcObject = stream;
+            
+            video.onloadedmetadata = () => {
+                loading.style.display = 'none';
+            };
+        } catch (err) {
+            console.error("Camera access denied or unavailable", err);
+            loading.innerHTML = '<i class="fas fa-exclamation-triangle text-danger fa-2x mb-2"></i><br>Camera Error';
+            document.getElementById('retrySection').style.display = 'block';
+        }
+    }
+
+    function captureAndSubmit(action) {
+        const empNum = document.getElementById('empNumber').value;
+        if (!empNum) {
+            alert('Please enter your Employment Number first.');
+            document.getElementById('empNumber').focus();
+            return;
+        }
+
+        if (!stream) {
+            alert('Camera not ready or not permitted.');
+            return;
+        }
+
+        // Snap
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to Base64
+        const photoData = canvas.toDataURL('image/jpeg', 0.85); // 85% quality
+        
+        // Populate inputs
+        document.getElementById('photoData').value = photoData;
+        document.getElementById('actionType').value = action;
+        
+        // Stop camera
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        
+        // Show loading state
+        document.body.style.cursor = 'wait';
+        
+        // Submit
+        document.getElementById('biometricForm').submit();
+    }
+
+    // Initialize camera on page load
+    window.onload = initCamera;
+</script>
+{% endblock %}

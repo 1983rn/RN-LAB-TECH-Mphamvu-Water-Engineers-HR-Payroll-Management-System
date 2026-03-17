@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Attendance Camera - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Live Video Feed -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0"><i class="fas fa-video me-2"></i>AI Attendance Camera</h5>
+                    <span class="badge bg-danger pulse-animation">LIVE SESSION</span>
+                </div>
+                <div class="card-body p-0 bg-dark text-center position-relative" style="min-height: 480px;">
+                    <img src="{{ url_for('attendance.video_feed') }}" width="100%" class="img-fluid" alt="Live Feed">
+                    
+                    <!-- Overlay Overlay -->
+                    <div class="position-absolute bottom-0 start-0 w-100 p-3 bg-gradient-dark text-white text-start">
+                        <small class="opacity-75"><i class="fas fa-info-circle me-1"></i> Employees recognized will be automatically marked present.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Instruction & Status -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-id-badge me-2"></i>Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="bg-light p-2 rounded me-3">
+                            <i class="fas fa-user-friends text-primary fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Multi-Face Recognition</h6>
+                            <p class="small text-muted mb-0">The system detects multiple people entering together.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="bg-light p-2 rounded me-3">
+                            <i class="fas fa-eye text-info fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Anti-Spoofing Verification</h6>
+                            <p class="small text-muted mb-0">Please blink naturally when shown on camera to verify your identity.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="bg-light p-2 rounded me-3">
+                            <i class="fas fa-bolt text-warning fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Auto-Marking</h6>
+                            <p class="small text-muted mb-0">Attendance is recorded automatically after identity verification.</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="text-center py-2">
+                        <p class="mb-1 text-muted small">System Status</p>
+                        <h4 class="text-success"><i class="fas fa-check-circle me-1"></i> ACTIVE</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="activityLog">
+                        <!-- Activity will be shown if they refresh or we add Polling -->
+                        <div class="list-group-item text-center py-4">
+                            <p class="text-muted small mb-0">Verification in progress...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white text-center">
+                    <a href="{{ url_for('attendance.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-chart-line me-1"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pulse-animation {
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    .bg-gradient-dark {
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPHAMVU WATER ENGINEERS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="welcome-body">
+
+<div class="welcome-page">
+    <h1 class="home-header">MPHAMVU WATER ENGINEERS</h1>
+    <div class="login-card">
+        <div class="login-image">
+            <img src="{{ url_for('static', filename='images/home_bg_new.png') }}" alt="MPHAMVU WATER ENGINEERS">
+        </div>
+        <h2 class="welcome-title">
+            WELCOME TO MPHAMVU WATER ENGINEERS
+        </h2>
+        <p class="welcome-subtitle">
+            "Always Water"
+        </p>
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery Notes - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-truck me-2"></i>Delivery Notes</h2>
+            <a href="{{ url_for('finance.list_invoices') }}" class="btn btn-primary">
+                <i class="fas fa-file-invoice-dollar me-2"></i>Invoices
+            </a>
+        </div>
+    </div>
+</div>
+
+{% include 'finance/approved_quotations.html' %}
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Delivery Note List</h5>
+    </div>
+    <div class="card-body">
+        {% if delivery_notes %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Delivery Note</th>
+                        <th>Invoice</th>
+                        <th>Client</th>
+                        <th>Delivery Date</th>
+                        <th>Equipment Delivered</th>
+                        <th>Delivered By</th>
+                        <th>Received By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for delivery_note in delivery_notes %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">{{ delivery_note.reference_number }}</span>
+                        </td>
+                        <td>{{ delivery_note.invoice.invoice_number }}</td>
+                        <td>{{ delivery_note.invoice.contract.quotation.client.client_name }}</td>
+                        <td>{{ delivery_note.delivery_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ delivery_note.equipment_delivered[:50] }}{% if delivery_note.equipment_delivered|length > 50 %}...{% endif %}</td>
+                        <td>{{ delivery_note.delivered_by }}</td>
+                        <td>{{ delivery_note.received_by or 'N/A' }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('finance.download_delivery_note_pdf', delivery_id=delivery_note.delivery_id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No delivery notes found</h5>
+            <p class="text-muted">Delivery notes will be created when equipment is delivered to clients.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

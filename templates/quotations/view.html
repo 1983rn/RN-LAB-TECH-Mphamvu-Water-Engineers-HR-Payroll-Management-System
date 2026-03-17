@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Quotation Details - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-file-invoice me-2"></i>Quotation Details</h2>
+            <div>
+                <a href="{{ url_for('quotations.download_quotation_pdf', quotation_id=quotation.quotation_id) }}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Download PDF
+                </a>
+                {% if quotation.status == 'Pending' %}
+                <button class="btn btn-warning" onclick="approveQuotation('{{ quotation.quotation_id }}')">
+                    <i class="fas fa-check me-2"></i>Approve
+                </button>
+                {% endif %}
+                <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Quotation Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Quotation Number:</strong>
+                        <span class="badge bg-secondary">{{ quotation.reference_number }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        <span class="badge bg-{{ 
+                            'success' if quotation.status == 'Approved' 
+                            else 'warning' if quotation.status == 'Pending' 
+                            else 'secondary' 
+                        }}">
+                            {{ quotation.status }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Created Date:</strong> {{ quotation.created_at.strftime('%d/%m/%Y') }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Valid Until:</strong> {{ (quotation.created_at.replace(tzinfo=None) + timedelta(days=quotation.validity_days)).strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Project Location:</strong><br>
+                    {{ quotation.project_location }}
+                </div>
+                
+                {% if quotation.borehole_depth %}
+                <div class="mb-3">
+                    <strong>Estimated Borehole Depth:</strong> {{ quotation.borehole_depth }} meters
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Cost Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Project Type</th>
+                                <th>Unit</th>
+                                <th>Quantity</th>
+                                <th>Unit Rate (MWK)</th>
+                                <th>Total (MWK)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if quotation.quotation_items %}
+                                {% for item in quotation.quotation_items %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ item.project_type }}</td>
+                                    <td>{{ item.unit or 'N/A' }}</td>
+                                    <td>{{ "{:,.2f}".format(item.quantity) if item.quantity != item.quantity|int else item.quantity|int }}</td>
+                                    <td>{{ "{:,.2f}".format(item.unit_rate) }}</td>
+                                    <td>{{ "{:,.2f}".format(item.total) }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td>1</td>
+                                    <td>Equipment</td>
+                                    <td>N/A</td>
+                                    <td>1</td>
+                                    <td>{{ "{:,.2f}".format(quotation.equipment_cost) }}</td>
+                                    <td>{{ "{:,.2f}".format(quotation.equipment_cost) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Labour</td>
+                                    <td>N/A</td>
+                                    <td>1</td>
+                                    <td>{{ "{:,.2f}".format(quotation.labour_cost) }}</td>
+                                    <td>{{ "{:,.2f}".format(quotation.labour_cost) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Transport</td>
+                                    <td>N/A</td>
+                                    <td>1</td>
+                                    <td>{{ "{:,.2f}".format(quotation.transport_cost) }}</td>
+                                    <td>{{ "{:,.2f}".format(quotation.transport_cost) }}</td>
+                                </tr>
+                            {% endif %}
+                            <tr class="table-primary">
+                                <td colspan="5"><strong>Grand Total</strong></td>
+                                <td><strong>MK {{ "{:,.2f}".format(quotation.total_amount) }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Client Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Name:</strong></td>
+                        <td>{{ quotation.client.client_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phone:</strong></td>
+                        <td>{{ quotation.client.phone }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>{{ quotation.client.email or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Address:</strong></td>
+                        <td>{{ quotation.client.address }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Project Type:</strong></td>
+                        <td>{{ quotation.client.project_type }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">Bank Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Account Name:</strong></td>
+                        <td>Mphamvu Water Engineers</td>
+                    </tr>
+                    <tr>
+                        <td><strong>National Bank:</strong></td>
+                        <td>1006978898</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Standard Bank:</strong></td>
+                        <td>9100005388640</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Branch:</strong></td>
+                        <td>Capital City</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Quotation Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Approve Quotation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('quotations.approve_quotation', quotation_id=quotation.quotation_id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Start Date *</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date *</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Approve Quotation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveQuotation(quotationId) {
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').value = today;
+    
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
+    document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    
+    new bootstrap.Modal(document.getElementById('approveModal')).show();
+}
+</script>
+{% endblock %}
