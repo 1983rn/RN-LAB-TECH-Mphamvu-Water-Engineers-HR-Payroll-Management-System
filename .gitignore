@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.flaskenv
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+system.db
+system.db-journal
+
+# Ignore generic data and media that should not be in the repo
+uploads/
+app.db
+
+# Large models (handled by Git LFS or excluded)
+*.dat
+
+# OS specific ignore files
+.DS_Store
+Thumbs.db

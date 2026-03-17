@@ -1,0 +1,1 @@
+C:\Python314\python.exe: can't open file 'C:\\Users\\NANJATI CDSS\\Downloads\\Programs\\HR Payroll Management System\\test_id_card.py': [Errno 2] No such file or directory

@@ -1,0 +1,81 @@
+# HOW TO RUN THE APPLICATION
+
+## SIMPLE METHOD (Try This First!)
+
+1. Double-click: **START.bat**
+2. Wait for "Running on http://0.0.0.0:5001"
+3. Open browser: http://localhost:5001
+
+---
+
+## IF YOU SEE ERRORS ABOUT MISSING PACKAGES
+
+### Step 1: Install Dependencies
+1. Make sure you have internet connection
+2. Double-click: **INSTALL_DEPENDENCIES.bat**
+3. Wait for installation to complete (may take 5-10 minutes)
+
+### Step 2: Run Application
+1. Double-click: **START.bat**
+2. Open browser: http://localhost:5001
+
+---
+
+## LOGIN CREDENTIALS
+
+**Username:** Mphamvuwaterengineers
+
+**Password:** .org.ulandaduwe/2026/**?
+
+---
+
+## TROUBLESHOOTING
+
+### Problem: "No module named 'flask'"
+**Solution:** Run INSTALL_DEPENDENCIES.bat with internet connection
+
+### Problem: "Port 5001 is already in use"
+**Solution:** 
+- Close any other programs using port 5001
+- Or restart your computer
+
+### Problem: "Connection error" during installation
+**Solution:**
+- Check your internet connection
+- Try again later
+- Or use mobile hotspot
+
+### Problem: Application starts but browser shows error
+**Solution:**
+- Wait 10 seconds after starting
+- Try: http://127.0.0.1:5001
+- Clear browser cache
+- Try different browser (Chrome, Firefox, Edge)
+
+---
+
+## WHAT THE FILES DO
+
+- **START.bat** - Quick start (use this!)
+- **RUN_APPLICATION.bat** - Start with more info
+- **INSTALL_DEPENDENCIES.bat** - Install required packages
+- **app.py** - Main application (don't edit)
+
+---
+
+## STOPPING THE APPLICATION
+
+Press **Ctrl + C** in the command window
+
+Or close the command window
+
+---
+
+## SUPPORT
+
+Email: mphamvuwaterengineers@gmail.com
+Phone: +265 998 039 554
+
+---
+
+**MPHAMVU WATER ENGINEERS - Always Water**
