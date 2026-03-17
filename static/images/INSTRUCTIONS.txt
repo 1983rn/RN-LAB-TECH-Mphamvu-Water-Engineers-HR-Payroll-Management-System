@@ -1,0 +1,32 @@
+HOW TO ADD YOUR COMPANY HEADER IMAGE TO PDF DOCUMENTS
+
+================================================================
+
+STEP 1: Prepare Your Image
+- Format: PNG or JPG
+- Recommended size: 504x108 pixels (7 inches wide x 1.5 inches high)
+- Content: Your company header with logo, name, and contact information
+
+STEP 2: Save the Image
+- Save your image as: company_header.png
+- Place it in this folder: static/images/
+
+STEP 3: Test the Integration
+- Generate any PDF document (payslip, quotation, invoice, delivery note)
+- Your company header image will appear at the top of the PDF
+
+STEP 4: If Image Doesn't Appear
+- Check that the image is named exactly "company_header.png"
+- Ensure the image file size is not 0 bytes
+- The system will show a text-based header if the image is not found
+
+CURRENT STATUS:
+✓ System is running without errors
+✓ PDF generation is working
+✓ Text-based header is showing as fallback
+✓ Ready for your company header image
+
+EXAMPLE IMAGE LOCATION:
+static/images/company_header.png
+
+The system will automatically detect and use your image when it's placed in the correct location.
