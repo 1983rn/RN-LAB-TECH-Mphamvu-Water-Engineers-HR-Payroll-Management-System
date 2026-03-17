@@ -24,8 +24,8 @@ system.db-journal
 uploads/
 app.db
 
-# Large models (handled by Git LFS or excluded)
-*.dat
+# Large models (handled by Git LFS)
+# *.dat is tracked by Git LFS, not ignored
 
 # OS specific ignore files
 .DS_Store
