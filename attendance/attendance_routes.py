@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from models import db, Employee, Attendance
 from datetime import datetime, date, timedelta
 from functools import wraps
-import sqlite3
 
 attendance_bp = Blueprint('attendance', __name__, url_prefix='/attendance')
 
@@ -202,8 +201,12 @@ def biometric_checkin():
         return redirect(url_for('attendance.biometric_checkin'))
         
     # Verify the face utilizing OpenCV cascade fallback
-    from utils.biometric_utils import verify_face_in_base64_image, verify_face_match
-    is_valid_face, evidence_path = verify_face_in_base64_image(photo_base64)
+    try:
+        from utils.biometric_utils import verify_face_in_base64_image, verify_face_match
+        is_valid_face, evidence_path = verify_face_in_base64_image(photo_base64)
+    except Exception as e:
+        flash(f'Biometric system unavailable: {str(e)}', 'error')
+        return redirect(url_for('attendance.biometric_checkin'))
     
     if not is_valid_face:
         error_msg = (
@@ -247,59 +250,54 @@ def biometric_checkin():
 
 # --- Multi-Employee AI Recognition Routes ---
 
-from utils.biometric_utils import MultiFaceRecognizer
-import cv2
-from flask import Response
-import time
+_recognizer = None
 
-# Initialize global recognizer
-recognizer = MultiFaceRecognizer()
+def _get_recognizer():
+    global _recognizer
+    if _recognizer is None:
+        from utils.biometric_utils import MultiFaceRecognizer
+        _recognizer = MultiFaceRecognizer()
+    return _recognizer
 
 @attendance_bp.route('/live_kiosk')
-@login_required 
+@login_required
 def live_kiosk():
-    # Refresh known faces from DB on each page load/start
-    recognizer.load_known_faces()
+    try:
+        _get_recognizer().load_known_faces()
+    except Exception:
+        pass
     return render_template('attendance/live_kiosk.html')
 
 def gen_frames():
+    try:
+        import cv2
+        import time
+        recognizer = _get_recognizer()
+    except Exception:
+        return
+
     camera = cv2.VideoCapture(0)
     if not camera.isOpened():
-        print("Could not open camera")
         return
 
     while True:
         success, frame = camera.read()
         if not success:
             break
-        
-        # Process frame with Multi-Face Recognizer
         processed_frame, detected_employees = recognizer.process_frame(frame)
-        
-        # Mark attendance for detected employees
-        from models import Employee
         for emp_data in detected_employees:
             emp_id = emp_data['id']
-            
-            # Check if already marked in this session or cooldown
             now_ts = time.time()
             if emp_id not in recognizer.last_marked or (now_ts - recognizer.last_marked[emp_id]) > recognizer.cooldown_seconds:
                 employee = Employee.query.get(emp_id)
-                if employee:
-                    if process_checkin(employee):
-                        recognizer.last_marked[emp_id] = now_ts
-                        print(f"AUTOMATIC ATTENDANCE: {emp_data['name']} marked.")
-        
-        # Encode as JPEG
+                if employee and process_checkin(employee):
+                    recognizer.last_marked[emp_id] = now_ts
         ret, buffer = cv2.imencode('.jpg', processed_frame)
-        frame_bytes = buffer.tobytes()
-        
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-
+        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
     camera.release()
 
 @attendance_bp.route('/video_feed')
 @login_required
 def video_feed():
+    from flask import Response
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
