@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Process Payroll - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-calculator me-2"></i>Process Payroll</h2>
+            <a href="{{ url_for('payroll.payroll_list') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Payroll
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Process Monthly Payroll</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <label for="employee_id" class="form-label">Employee: [Select Employee] *</label>
+                    <select class="form-select" id="employee_id" name="employee_id" required>
+                        <option value="">Choose Employee</option>
+                        {% for employee in employees %}
+                        <option value="{{ employee.employee_id }}">
+                            {{ employee.first_name }} {{ employee.last_name }} - {{ employee.employment_number }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="payroll_month" class="form-label">Payroll Month *</label>
+                    <input type="month" class="form-control" id="payroll_month" name="payroll_month" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="basic_salary" class="form-label">Basic Salary (MWK) *</label>
+                    <input type="number" class="form-control currency-input" id="basic_salary" name="basic_salary" min="0" step="0.01" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="allowances" class="form-label">Allowances (MWK)</label>
+                    <input type="number" class="form-control currency-input" id="allowances" name="allowances" min="0" step="0.01" value="0">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label for="gross_salary" class="form-label">Gross Salary (MWK):</label>
+                    <input type="number" class="form-control currency-input h3 py-2" id="gross_salary" min="0" step="0.01" readonly style="background-color: #f8f9fa; font-weight: bold; border: none; text-align: center;">
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <h5 class="text-center text-muted mb-4">-----------------------------------------<br>DEDUCTIONS<br>-----------------------------------------</h5>
+
+            <div class="row justify-content-center">
+                <div class="col-md-5 mb-3">
+                    <label for="taxes" class="form-label">PAYEE TAX (MWK):</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control currency-input text-danger fw-bold" id="taxes" name="taxes" min="0" step="0.01" value="0" readonly>
+                        <div class="input-group-text">
+                            <input class="form-check-input mt-0" type="checkbox" id="payee_override" name="payee_override" title="Manual Override">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5 mb-3">
+                    <label for="loan_deduction" class="form-label">Loan Deduction (MWK):</label>
+                    <input type="number" class="form-control currency-input text-danger fw-bold" id="loan_deduction" name="loan_deduction" min="0" step="0.01" value="0" readonly style="background-color: #f8f9fa;">
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-10 mb-3">
+                    <label for="absentee_deduction" class="form-label">Absenteeism Penalty (MWK)</label>
+                    <input type="number" class="form-control currency-input" id="absentee_deduction" name="absentee_deduction" min="0" step="0.01" value="0" readonly style="background-color: #f8f9fa;">
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <h5 class="text-center text-muted">-----------------------------------------<br>NET SALARY<br>-----------------------------------------</h5>
+
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-6 mb-3 text-center">
+                    <input type="number" class="form-control currency-input text-center h2 py-3" id="net_salary" min="0" step="0.01" readonly style="background-color: #e9ecef; font-weight: bold; color: #198754; border: 2px solid #198754;">
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                <a href="{{ url_for('payroll.payroll_list') }}" class="btn btn-secondary px-5 me-md-2">Cancel</a>
+                <button type="submit" class="btn btn-primary px-5">Process Payroll</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const employeeSelect = document.getElementById('employee_id');
+    const basicSalaryInput = document.getElementById('basic_salary');
+    const allowancesInput = document.getElementById('allowances');
+    const grossSalaryInput = document.getElementById('gross_salary');
+    
+    const taxesInput = document.getElementById('taxes');
+    const payeeOverride = document.getElementById('payee_override');
+    
+    const loanDeductionInput = document.getElementById('loan_deduction');
+    const absenteeDeductionInput = document.getElementById('absentee_deduction');
+    const netSalaryInput = document.getElementById('net_salary');
+    
+    function calculateSalaries() {
+        const basicSalary = parseFloat(basicSalaryInput.value) || 0;
+        const allowances = parseFloat(allowancesInput.value) || 0;
+        const grossSalary = basicSalary + allowances;
+        grossSalaryInput.value = grossSalary.toFixed(2);
+        
+        // PAYE Calculation: flat rate on entire gross based on bracket
+        let taxes = 0;
+        if (!payeeOverride.checked) {
+            if (grossSalary >= 150000 && grossSalary <= 170000) {
+                taxes = 0;
+            } else if (grossSalary >= 170001 && grossSalary <= 1570000) {
+                taxes = grossSalary * 0.30;
+            } else if (grossSalary >= 1570001 && grossSalary <= 10000000) {
+                taxes = grossSalary * 0.35;
+            } else {
+                taxes = 0;
+            }
+            taxesInput.value = taxes.toFixed(2);
+        } else {
+            taxes = parseFloat(taxesInput.value) || 0;
+        }
+        
+        const loanDeduction = parseFloat(loanDeductionInput.value) || 0;
+        const absenteeDeduction = parseFloat(absenteeDeductionInput.value) || 0;
+        
+        const netSalary = grossSalary - taxes - loanDeduction - absenteeDeduction;
+        netSalaryInput.value = netSalary.toFixed(2);
+    }
+    
+    function fetchDeductions() {
+        const employeeId = employeeSelect.value;
+        const month = document.getElementById('payroll_month').value;
+        const allowances = parseFloat(allowancesInput.value) || 0;
+        
+        if (employeeId && month) {
+            fetch(`/payroll/get_employee_deductions/${employeeId}/${month}?allowances=${allowances}`)
+                .then(response => response.json())
+                .then(data => {
+                    basicSalaryInput.value = data.basic_salary;
+                    loanDeductionInput.value = data.loan_deduction;
+                    absenteeDeductionInput.value = data.absentee_deduction;
+                    calculateSalaries();
+                })
+                .catch(err => console.error("Error fetching deductions:", err));
+        }
+    }
+    
+    employeeSelect.addEventListener('change', fetchDeductions);
+    document.getElementById('payroll_month').addEventListener('change', fetchDeductions);
+    allowancesInput.addEventListener('input', fetchDeductions);
+    basicSalaryInput.addEventListener('input', calculateSalaries);
+    taxesInput.addEventListener('input', calculateSalaries);
+    payeeOverride.addEventListener('change', function() {
+        taxesInput.readOnly = !this.checked;
+        if (!this.checked) calculateSalaries();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Add Transaction - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-plus me-2"></i>Add Financial Transaction</h2>
+            <a href="{{ url_for('transactions.transaction_list') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Transactions
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Transaction Details</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="client_id" class="form-label">Client *</label>
+                    <select class="form-select" id="client_id" name="client_id" required>
+                        <option value="">Select Client</option>
+                        {% for client in clients %}
+                        <option value="{{ client.client_id }}">{{ client.client_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="invoice_id" class="form-label">Invoice (Optional)</label>
+                    <select class="form-select" id="invoice_id" name="invoice_id">
+                        <option value="">Select Invoice</option>
+                        {% for invoice in invoices %}
+                        <option value="{{ invoice.invoice_id }}">
+                            {{ invoice.invoice_number }} - {{ invoice.contract.quotation.client.client_name }} (MK {{ "{:,.2f}".format(invoice.amount) }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="amount" class="form-label">Amount (MWK) *</label>
+                    <input type="number" class="form-control currency-input" id="amount" name="amount" min="0" step="0.01" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="payment_method" class="form-label">Payment Method *</label>
+                    <select class="form-select" id="payment_method" name="payment_method" required>
+                        <option value="">Select Payment Method</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Mobile Money">Mobile Money</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="payment_date" class="form-label">Payment Date *</label>
+                    <input type="date" class="form-control" id="payment_date" name="payment_date" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="transaction_reference" class="form-label">Transaction Reference</label>
+                    <input type="text" class="form-control" id="transaction_reference" name="transaction_reference" placeholder="Bank reference, receipt number, etc.">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="bank_account" class="form-label">Bank Account</label>
+                    <select class="form-select" id="bank_account" name="bank_account">
+                        <option value="">Select Bank Account</option>
+                        <option value="National Bank - 1006978898">National Bank - 1006978898</option>
+                        <option value="Standard Bank - 9100005388640">Standard Bank - 9100005388640</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Additional transaction details"></textarea>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('transactions.transaction_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Save Transaction
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default payment date to today
+    document.getElementById('payment_date').value = new Date().toISOString().split('T')[0];
+});
+</script>
+{% endblock %}

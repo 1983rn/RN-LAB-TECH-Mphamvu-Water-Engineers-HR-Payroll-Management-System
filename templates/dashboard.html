@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-dashboard me-2"></i>Dashboard</h2>
+            <div class="text-muted">
+                <i class="fas fa-user me-1"></i> Welcome, {{ session.username }}
+                <span class="badge bg-primary ms-2">{{ session.role }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Employees</h6>
+                        <h3 class="mb-0">{{ stats.total_employees }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Active Employees</h6>
+                        <h3 class="mb-0">{{ stats.active_employees }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Clients</h6>
+                        <h3 class="mb-0">{{ stats.total_clients }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-handshake fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Pending Quotations</h6>
+                        <h3 class="mb-0">{{ stats.pending_quotations }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-file-invoice fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Approved Contracts</h6>
+                        <h3 class="mb-0">{{ stats.approved_contracts }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-file-contract fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-secondary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Transactions</h6>
+                        <h3 class="mb-0">{{ stats.total_transactions }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exchange-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if session.role in ['Administrator', 'HR Manager'] %}
+    <div class="col-lg-6 mb-3">
+        <div class="card bg-dark text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title">Quick Actions</h6>
+                <div class="row">
+                    <div class="col-6 mb-2">
+                        <a href="{{ url_for('employees.add_employee') }}" class="btn btn-outline-light btn-sm w-100">
+                            <i class="fas fa-user-plus me-1"></i> Add Employee
+                        </a>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <a href="{{ url_for('payroll.process_payroll') }}" class="btn btn-outline-light btn-sm w-100">
+                            <i class="fas fa-calculator me-1"></i> Process Payroll
+                        </a>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <a href="{{ url_for('quotations.create_quotation') }}" class="btn btn-outline-light btn-sm w-100">
+                            <i class="fas fa-plus me-1"></i> Create Quotation
+                        </a>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <a href="{{ url_for('finance.list_invoices') }}" class="btn btn-outline-light btn-sm w-100">
+                            <i class="fas fa-file-invoice-dollar me-1"></i> View Invoices
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Activity Tabs -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center p-3">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Employees</h5>
+                <a href="{{ url_for('employees.list_employees') }}" class="btn btn-sm btn-light text-primary fw-bold">View All</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center p-3">
+                <h5 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Quotations</h5>
+                <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-sm btn-light text-info fw-bold">View All</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Company Details</h6>
+                        <p class="small text-muted">
+                            <strong>MPHAMVU WATER ENGINEERS</strong><br>
+                            P.O BOX 561 Lilongwe<br>
+                            +265 998 039 554, +265 999 678 417<br>
+                            mphamvuwaterengineers@gmail.com
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>System Features</h6>
+                        <p class="small text-muted">
+                            ✓ HR Management<br>
+                            ✓ Payroll Processing<br>
+                            ✓ Client Management<br>
+                            ✓ Quotation Generation<br>
+                            ✓ Financial Tracking
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Bank Details</h6>
+                        <p class="small text-muted">
+                            <strong>Account:</strong> Mphamvu Water Engineers<br>
+                            <strong>National Bank:</strong> 1006978898<br>
+                            <strong>Standard Bank:</strong> 9100005388640<br>
+                            <strong>Branch:</strong> Capital City
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

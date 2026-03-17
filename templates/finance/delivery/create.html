@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Create Delivery Note - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-truck me-2"></i>Create Delivery Note</h2>
+            <a href="{{ url_for('finance.list_delivery_notes') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Delivery Notes
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Delivery Note Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-info-circle me-2"></i>Invoice Information</h6>
+            <p class="mb-0">This delivery note is being created for invoice {{ invoice.invoice_number }}</p>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6>Client Details</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Name:</strong></td>
+                        <td>{{ invoice.contract.quotation.client.client_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Address:</strong></td>
+                        <td>{{ invoice.contract.quotation.client.address }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phone:</strong></td>
+                        <td>{{ invoice.contract.quotation.client.phone }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Invoice Details</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Invoice Number:</strong></td>
+                        <td>{{ invoice.invoice_number }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Invoice Date:</strong></td>
+                        <td>{{ invoice.invoice_date.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Invoice Amount:</strong></td>
+                        <td>MK {{ "{:,.2f}".format(invoice.amount) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="delivery_date" class="form-label">Delivery Date *</label>
+                    <input type="date" class="form-control" id="delivery_date" name="delivery_date" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="delivered_by" class="form-label">Delivered By *</label>
+                    <input type="text" class="form-control" id="delivered_by" name="delivered_by" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="equipment_delivered" class="form-label">Equipment Delivered *</label>
+                <textarea class="form-control" id="equipment_delivered" name="equipment_delivered" rows="4" required placeholder="List all equipment and materials delivered"></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="received_by" class="form-label">Received By</label>
+                <input type="text" class="form-control" id="received_by" name="received_by" placeholder="Name of person who received the delivery">
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes about the delivery"></textarea>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('finance.list_delivery_notes') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Create Delivery Note
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default delivery date to today
+    document.getElementById('delivery_date').value = new Date().toISOString().split('T')[0];
+});
+</script>
+{% endblock %}

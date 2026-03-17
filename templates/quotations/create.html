@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Create Quotation - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-plus me-2"></i>Create Quotation</h2>
+            <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Quotations
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Quotation Details</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="client_name" class="form-label">Client Name *</label>
+                    <input type="text" class="form-control" id="client_name" name="client_name" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Project Type *</label>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle w-100 text-start" type="button" id="projectTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="selectedProjectTypes">Select project types...</span>
+                        </button>
+                        <div class="dropdown-menu w-100 p-3" aria-labelledby="projectTypeDropdown" style="max-height: 300px; overflow-y: auto;">
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt1" value="Borehole Drilling">
+                                <label class="form-check-label" for="pt1">Borehole Drilling</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt2" value="Pump Installation">
+                                <label class="form-check-label" for="pt2">Pump Installation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt3" value="Water Reticulation">
+                                <label class="form-check-label" for="pt3">Water Reticulation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt4" value="Irrigation System">
+                                <label class="form-check-label" for="pt4">Irrigation System</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt5" value="Construction">
+                                <label class="form-check-label" for="pt5">Construction</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt6" value="Construction Materials">
+                                <label class="form-check-label" for="pt6">Construction Materials</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt7" value="Geophysical survey">
+                                <label class="form-check-label" for="pt7">Geophysical survey</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt8" value="Borehole drilling 125mm, 50m deep">
+                                <label class="form-check-label" for="pt8">Borehole drilling 125mm, 50m deep</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt9" value="Solar pumping system Installation 2hp with all accessories">
+                                <label class="form-check-label" for="pt9">Solar pumping system Installation 2hp with all accessories</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt10" value="Tank">
+                                <label class="form-check-label" for="pt10">Tank</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt11" value="Tank Stand with blocks">
+                                <label class="form-check-label" for="pt11">Tank Stand with blocks</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt12" value="HDPE 25mm Ls">
+                                <label class="form-check-label" for="pt12">HDPE 25mm Ls</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt13" value="Fittings">
+                                <label class="form-check-label" for="pt13">Fittings</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt14" value="Labour">
+                                <label class="form-check-label" for="pt14">Labour</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt15" value="Maintenance">
+                                <label class="form-check-label" for="pt15">Maintenance</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt16" value="Consultation">
+                                <label class="form-check-label" for="pt16">Consultation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt17" value="Transportation">
+                                <label class="form-check-label" for="pt17">Transportation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt18" value="Drilling from 0 to 35M Depth">
+                                <label class="form-check-label" for="pt18">Drilling from 0 to 35M Depth</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt19" value="Drilling from 35M-45M Depth">
+                                <label class="form-check-label" for="pt19">Drilling from 35M-45M Depth</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt20" value="Backfill Unsuccessful Borehole">
+                                <label class="form-check-label" for="pt20">Backfill Unsuccessful Borehole</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt21" value="Site Preparation">
+                                <label class="form-check-label" for="pt21">Site Preparation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt22" value="Lithological Logging">
+                                <label class="form-check-label" for="pt22">Lithological Logging</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt23" value="Supply 113MM Outside Diameter UPVC Plain Casing Class 10">
+                                <label class="form-check-label" for="pt23">Supply 113MM Outside Diameter UPVC Plain Casing Class 10</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt24" value="Supply 113MM Outside Diameter UPVC Slotted Casing Class 10">
+                                <label class="form-check-label" for="pt24">Supply 113MM Outside Diameter UPVC Slotted Casing Class 10</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt25" value="Installation 113MM UPVC Class 10 Casing">
+                                <label class="form-check-label" for="pt25">Installation 113MM UPVC Class 10 Casing</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt26" value="Supply & Installation of 113MM Class 10 End-Cap">
+                                <label class="form-check-label" for="pt26">Supply & Installation of 113MM Class 10 End-Cap</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt27" value="Supply & Installation of 63MM UPVC Class 16 Pipes">
+                                <label class="form-check-label" for="pt27">Supply & Installation of 63MM UPVC Class 16 Pipes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt28" value="Supply & Installation Well Washed Graded Filter Pack">
+                                <label class="form-check-label" for="pt28">Supply & Installation Well Washed Graded Filter Pack</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt29" value="Construction of Concrete Apron Including a Bucket Stand & 5M Length, Drainage Ditch and Casing of Afridev Pump Pedestal">
+                                <label class="form-check-label" for="pt29">Construction of Concrete Apron Including a Bucket Stand & 5M Length, Drainage Ditch and Casing of Afridev Pump Pedestal</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt30" value="Supply & Install Afridev Hand pump in Stainless Steel Rods Complete to 45M with All Accessories">
+                                <label class="form-check-label" for="pt30">Supply & Install Afridev Hand pump in Stainless Steel Rods Complete to 45M with All Accessories</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt31" value="Well Cleaning & Development">
+                                <label class="form-check-label" for="pt31">Well Cleaning & Development</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt32" value="Conduct Constant Pumping Test">
+                                <label class="form-check-label" for="pt32">Conduct Constant Pumping Test</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt33" value="Recovery Test">
+                                <label class="form-check-label" for="pt33">Recovery Test</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt34" value="Pump test Report">
+                                <label class="form-check-label" for="pt34">Pump test Report</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt35" value="Chemical and Bacteriological water quality analysis and report">
+                                <label class="form-check-label" for="pt35">Chemical and Bacteriological water quality analysis and report</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt36" value="Borehole drilling and handpump Installation">
+                                <label class="form-check-label" for="pt36">Borehole drilling and handpump Installation</label>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Click to select multiple project types</small>
+                </div>
+            </div>
+            
+            <!-- Dynamic Project Details Section -->
+            <div id="projectDetailsSection" style="display: none;">
+                <h5 class="mb-3">Project Details</h5>
+                <div id="projectDetailsContainer"></div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="client_phone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control phone-input" id="client_phone" name="client_phone" placeholder="Optional">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="client_email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="client_email" name="client_email" placeholder="Optional">
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="client_address" class="form-label">Client Address *</label>
+                <textarea class="form-control" id="client_address" name="client_address" rows="2" required></textarea>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="description" class="form-label">Quotation Description *</label>
+                    <textarea class="form-control" id="description" name="description" rows="2" required>We have pleasure in quoting our prices for borehole development as follows;</textarea>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="project_location" class="form-label">Project Location *</label>
+                <input type="text" class="form-control" id="project_location" name="project_location" required>
+            </div>
+            
+            <h5 class="mb-3">Total Amount</h5>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="total_amount" class="form-label">Total Amount (MWK)</label>
+                    <input type="number" class="form-control currency-input" id="total_amount" name="total_amount" min="0" step="0.01" readonly>
+                    <small class="text-muted">Total will be calculated automatically from project details</small>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Create Quotation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const totalAmountInput = document.getElementById('total_amount');
+    
+    function calculateTotal() {
+        let total = 0;
+        
+        // Calculate total from all quantity and unit rate fields
+        const quantityFields = document.querySelectorAll('.quantity-field');
+        quantityFields.forEach(quantityInput => {
+            const index = quantityInput.dataset.index;
+            const unitRateInput = document.querySelector(`.unit-rate-field[data-index="${index}"]`);
+            
+            if (quantityInput && unitRateInput) {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const unitRate = parseFloat(unitRateInput.value) || 0;
+                total += quantity * unitRate;
+            }
+        });
+        
+        totalAmountInput.value = total.toFixed(2);
+    }
+    
+    // Project type dropdown functionality
+    const projectTypeCheckboxes = document.querySelectorAll('.project-type-checkbox');
+    const selectedProjectTypesSpan = document.getElementById('selectedProjectTypes');
+    const projectDetailsSection = document.getElementById('projectDetailsSection');
+    const projectDetailsContainer = document.getElementById('projectDetailsContainer');
+    
+    function updateSelectedProjectTypes() {
+        const selectedTypes = [];
+        projectTypeCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selectedTypes.push(checkbox.value);
+            }
+        });
+        
+        if (selectedTypes.length === 0) {
+            selectedProjectTypesSpan.textContent = 'Select project types...';
+            projectDetailsSection.style.display = 'none';
+        } else if (selectedTypes.length === 1) {
+            selectedProjectTypesSpan.textContent = selectedTypes[0];
+        } else if (selectedTypes.length <= 3) {
+            selectedProjectTypesSpan.textContent = selectedTypes.join(', ');
+        } else {
+            selectedProjectTypesSpan.textContent = `${selectedTypes.length} project types selected`;
+        }
+        
+        // Update dynamic project details
+        updateProjectDetails(selectedTypes);
+    }
+    
+    function updateProjectDetails(selectedTypes) {
+        if (selectedTypes.length === 0) {
+            projectDetailsSection.style.display = 'none';
+            projectDetailsContainer.innerHTML = '';
+            calculateTotal(); // Reset total to 0
+            return;
+        }
+        
+        projectDetailsSection.style.display = 'block';
+        projectDetailsContainer.innerHTML = '';
+        
+        selectedTypes.forEach((projectType, index) => {
+            const projectCard = document.createElement('div');
+            projectCard.className = 'card mb-3';
+            
+            // Create the HTML content with actual index values
+            projectCard.innerHTML = `
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">${projectType}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Unit</label>
+                            <input type="text" class="form-control" name="project_unit_${index}" placeholder="e.g., meters, liters, pieces" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" class="form-control quantity-field" name="project_quantity_${index}" min="0" step="0.01" placeholder="0.00" data-index="${index}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Unit Rate (MWK)</label>
+                            <input type="number" class="form-control currency-input unit-rate-field" name="project_unit_rate_${index}" min="0" step="0.01" placeholder="0.00" data-index="${index}" required>
+                        </div>
+                    </div>
+                </div>
+            `;
+            projectDetailsContainer.appendChild(projectCard);
+            
+            // Add event listeners to new fields
+            const quantityInput = projectCard.querySelector('.quantity-field');
+            const unitRateInput = projectCard.querySelector('.unit-rate-field');
+            
+            if (quantityInput && unitRateInput) {
+                quantityInput.addEventListener('input', calculateTotal);
+                unitRateInput.addEventListener('input', calculateTotal);
+            }
+        });
+        
+        calculateTotal(); // Calculate initial total
+    }
+    
+    projectTypeCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedProjectTypes);
+    });
+    
+    // Prevent dropdown from closing when clicking on checkboxes
+    document.getElementById('projectTypeDropdown').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Keep dropdown open when clicking inside
+    document.querySelector('.dropdown-menu').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+});
+</script>
+{% endblock %}

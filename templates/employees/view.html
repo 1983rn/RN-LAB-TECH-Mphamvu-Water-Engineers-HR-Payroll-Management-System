@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Details - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-user me-2"></i>Employee Details</h2>
+            <div>
+                <a href="{{ url_for('employees.list_employees') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light border-0">
+            <div class="card-body p-3 d-flex justify-content-center flex-wrap gap-2">
+                {% if employee.status == 'Active' %}
+                    <form method="POST" action="{{ url_for('employees.interdict_employee', employee_id=employee.employee_id) }}" class="d-inline" onsubmit="return confirm('Place this employee on interdiction?');">
+                        <button type="submit" class="btn btn-warning text-dark fw-bold">
+                            <i class="fas fa-pause-circle me-1"></i> Interdict Employee
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('employees.dismiss_employee', employee_id=employee.employee_id) }}" class="d-inline" onsubmit="return confirm('Dismiss this employee?');">
+                        <button type="submit" class="btn btn-danger text-white fw-bold">
+                            <i class="fas fa-user-times me-1"></i> Dismiss Employee
+                        </button>
+                    </form>
+                {% endif %}
+                <form method="POST" action="{{ url_for('employees.delete_employee', employee_id=employee.employee_id) }}" class="d-inline" onsubmit="return confirm('Delete this employee completely? They will be moved to the disciplinary records and marked as deleted.');">
+                    <button type="submit" class="btn btn-dark text-white fw-bold">
+                        <i class="fas fa-trash me-1"></i> Delete Employee
+                    </button>
+                </form>
+                <a href="{{ url_for('employees.generate_id_card', employee_id=employee.employee_id) }}" class="btn btn-primary fw-bold" target="_blank">
+                    <i class="fas fa-id-badge me-1"></i> Download ID Card
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Personal Information</h5>
+            </div>
+            <div class="card-body">
+                {% if employee.photo_path %}
+                <div class="text-center mb-4">
+                    <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="Employee Photo" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%;">
+                </div>
+                {% else %}
+                <div class="text-center mb-4">
+                    <div class="bg-secondary text-white d-inline-flex align-items-center justify-content-center" style="width: 150px; height: 150px; border-radius: 50%; font-size: 3rem;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                {% endif %}
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Employment Number:</strong></td>
+                        <td>{{ employee.employment_number }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Name:</strong></td>
+                        <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department:</strong></td>
+                        <td>{{ employee.department }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Position:</strong></td>
+                        <td>{{ employee.position }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Salary:</strong></td>
+                        <td>MK {{ "{:,.2f}".format(employee.salary) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if employee.status == 'Active' else 'secondary' }}">
+                                {{ employee.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date Hired:</strong></td>
+                        <td>{{ employee.date_hired.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Phone:</strong></td>
+                        <td>{{ employee.phone or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>{{ employee.email or 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Recent Payroll History</h5>
+            </div>
+            <div class="card-body">
+                {% if payroll_history %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Basic Salary</th>
+                                <th>Allowances</th>
+                                <th>Deductions</th>
+                                <th>Taxes</th>
+                                <th>Net Salary</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payroll in payroll_history %}
+                            <tr>
+                                <td>{{ payroll.payroll_month }}</td>
+                                <td>MK {{ "{:,.2f}".format(payroll.basic_salary) }}</td>
+                                <td>MK {{ "{:,.2f}".format(payroll.allowances) }}</td>
+                                <td>MK {{ "{:,.2f}".format(payroll.deductions) }}</td>
+                                <td>MK {{ "{:,.2f}".format(payroll.taxes) }}</td>
+                                <td><strong>MK {{ "{:,.2f}".format(payroll.net_salary) }}</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if payroll.status == 'Processed' else 'warning' }}">
+                                        {{ payroll.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('payroll.download_payslip_pdf', payroll_id=payroll.payroll_id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i> PDF
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No payroll records found for this employee.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Loan Records</h5>
+            </div>
+            <div class="card-body">
+                {% if loans %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Loan Amount</th>
+                                <th>Total Payable</th>
+                                <th>Monthly Deduction</th>
+                                <th>Paid</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                            <tr>
+                                <td>MK {{ "{:,.2f}".format(loan.loan_amount) }}</td>
+                                <td>MK {{ "{:,.2f}".format(loan.loan_amount * 1.05) }}</td>
+                                <td><strong>MK {{ "{:,.2f}".format(loan.monthly_deduction) }}</strong></td>
+                                <td>MK {{ "{:,.2f}".format(loan.amount_paid) }}</td>
+                                <td>MK {{ "{:,.2f}".format(loan.balance) }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if loan.status == 'Paid' else 'primary' if loan.status == 'Active' else 'secondary' }}">
+                                        {{ loan.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No loan records found for this employee.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Recent Attendance</h5>
+            </div>
+            <div class="card-body">
+                {% if attendance_records %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in attendance_records %}
+                            <tr>
+                                <td>{{ attendance.date.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 
+                                        'success' if attendance.status == 'Present' 
+                                        else 'warning' if attendance.status == 'Late' 
+                                        else 'info' if attendance.status == 'Half Day' 
+                                        else 'danger' 
+                                    }}">
+                                        {{ attendance.status }}
+                                    </span>
+                                </td>
+                                <td>{{ attendance.check_in.strftime('%H:%M') if attendance.check_in else 'N/A' }}</td>
+                                <td>{{ attendance.check_out.strftime('%H:%M') if attendance.check_out else 'N/A' }}</td>
+                                <td>{{ attendance.notes or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No attendance records found for this employee.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

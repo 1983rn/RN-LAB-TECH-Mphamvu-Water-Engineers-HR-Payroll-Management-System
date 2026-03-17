@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Management - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-calendar-check me-2"></i>Attendance Management</h2>
+            <div>
+                <a href="{{ url_for('attendance.attendance_report') }}" class="btn btn-info">
+                    <i class="fas fa-chart-line me-2"></i>Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Mark Attendance - {{ today.strftime('%d/%m/%Y') }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('attendance.mark_attendance') }}">
+            <input type="hidden" name="date" value="{{ today.strftime('%Y-%m-%d') }}">
+            
+            {% if employees %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Employment Number</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('employees.view_employee', employee_id=employee.employee_id) }}" class="text-decoration-none">
+                                    {{ employee.first_name }} {{ employee.last_name }}
+                                </a>
+                            </td>
+                            <td>{{ employee.employment_number }}</td>
+                            <td>{{ employee.department }}</td>
+                            <td>
+                                <select class="form-select form-select-sm" name="attendance_{{ employee.employee_id }}">
+                                    <option value="Present">Present</option>
+                                    <option value="Absent">Absent</option>
+                                    <option value="Late">Late</option>
+                                    <option value="Half Day">Half Day</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="time" class="form-control form-control-sm" name="check_in_{{ employee.employee_id }}">
+                            </td>
+                            <td>
+                                <input type="time" class="form-control form-control-sm" name="check_out_{{ employee.employee_id }}">
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm" name="notes_{{ employee.employee_id }}" placeholder="Optional notes">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-3">
+                <div class="text-muted">
+                    <small><i class="fas fa-info-circle me-1"></i>Mark attendance for all employees at once</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Mark Attendance
+                </button>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No employees found</h5>
+                <p class="text-muted">Add employees first to mark attendance.</p>
+                <a href="{{ url_for('employees.add_employee') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add First Employee
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{% if today_attendance %}
+<div class="card mt-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Today's Attendance Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="text-success" style="font-size: 2rem; font-weight: bold;">
+                        {{ today_attendance | selectattr('status', 'equalto', 'Present') | list | length }}
+                    </div>
+                    <div class="text-muted">Present</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="text-danger" style="font-size: 2rem; font-weight: bold;">
+                        {{ today_attendance | selectattr('status', 'equalto', 'Absent') | list | length }}
+                    </div>
+                    <div class="text-muted">Absent</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="text-warning" style="font-size: 2rem; font-weight: bold;">
+                        {{ today_attendance | selectattr('status', 'equalto', 'Late') | list | length }}
+                    </div>
+                    <div class="text-muted">Late</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="text-info" style="font-size: 2rem; font-weight: bold;">
+                        {{ today_attendance | selectattr('status', 'equalto', 'Half Day') | list | length }}
+                    </div>
+                    <div class="text-muted">Half Day</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

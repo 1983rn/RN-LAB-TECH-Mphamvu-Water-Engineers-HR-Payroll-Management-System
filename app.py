@@ -23,7 +23,14 @@ from finance.transaction_routes import transaction_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///system.db'
+
+# Prioritize DATABASE_URL if available (for Render PostgreSQL), fallback to local SQLite
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///system.db')
+# SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -128,14 +135,9 @@ def dashboard():
         'total_transactions': Transaction.query.count()
     }
     
-    recent_employees = Employee.query.order_by(Employee.created_at.desc()).limit(5).all()
-    recent_quotations = Quotation.query.order_by(Quotation.created_at.desc()).limit(5).all()
-    
     return render_template('dashboard.html', 
                          role=role, 
-                         stats=stats, 
-                         recent_employees=recent_employees,
-                         recent_quotations=recent_quotations)
+                         stats=stats)
 
 @app.route('/verify/<document_number>')
 def verify_document(document_number):

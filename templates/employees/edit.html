@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-edit me-2"></i>Edit Employee</h2>
+            <a href="{{ url_for('employees.list_employees') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Employees
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Edit Employee Information</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="employment_number" class="form-label">Employment Number</label>
+                    <input type="text" class="form-control" id="employment_number" name="employment_number" value="{{ employee.employment_number }}" disabled>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="date_hired" class="form-label">Date Hired *</label>
+                    <input type="date" class="form-control" id="date_hired" name="date_hired" value="{{ employee.date_hired.strftime('%Y-%m-%d') }}" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="first_name" class="form-label">First Name *</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ employee.first_name }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="last_name" class="form-label">Last Name *</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ employee.last_name }}" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="department" class="form-label">Department *</label>
+                    <select class="form-select" id="department" name="department" required>
+                        <option value="">Select Department</option>
+                        <option value="Management" {{ 'selected' if employee.department == 'Management' }}>Management</option>
+                        <option value="Drilling" {{ 'selected' if employee.department == 'Drilling' }}>Drilling</option>
+                        <option value="Engineering" {{ 'selected' if employee.department == 'Engineering' }}>Engineering</option>
+                        <option value="Administration" {{ 'selected' if employee.department == 'Administration' }}>Administration</option>
+                        <option value="Finance" {{ 'selected' if employee.department == 'Finance' }}>Finance</option>
+                        <option value="HR" {{ 'selected' if employee.department == 'HR' }}>HR</option>
+                        <option value="Operations" {{ 'selected' if employee.department == 'Operations' }}>Operations</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="position" class="form-label">Position *</label>
+                    <input type="text" class="form-control" id="position" name="position" value="{{ employee.position }}" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="salary" class="form-label">Salary (MWK) *</label>
+                    <input type="number" class="form-control currency-input" id="salary" name="salary" value="{{ employee.salary }}" min="0" step="0.01" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="Active" {{ 'selected' if employee.status == 'Active' }}>Active</option>
+                        <option value="Inactive" {{ 'selected' if employee.status == 'Inactive' }}>Inactive</option>
+                        <option value="On Leave" {{ 'selected' if employee.status == 'On Leave' }}>On Leave</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control phone-input" id="phone" name="phone" value="{{ employee.phone or '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ employee.email or '' }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea class="form-control" id="address" name="address" rows="3">{{ employee.address or '' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Employee Photo</label>
+                    <div class="card p-3 bg-light border-primary shadow-sm">
+                        {% if employee.photo_path %}
+                        <div class="text-center mb-3">
+                            <span class="badge bg-secondary mb-1">Current Photo</span><br/>
+                            <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="Current Photo" class="img-thumbnail" style="max-height: 100px;">
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-center gap-3 mb-3">
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('photo').click()">
+                                <i class="fas fa-folder-open me-2"></i>📂 Upload Photo
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="openCamera()">
+                                <i class="fas fa-camera me-2"></i>📷 Take Photo
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden inputs for form submission -->
+                        <input type="file" id="photo" name="photo" accept="image/*" style="display:none;" onchange="previewUpload(event)">
+                        <input type="hidden" id="photo_base64" name="photo_base64">
+                        
+                        <!-- Camera Viewfinder -->
+                        <div id="camera-container" style="display:none;" class="mb-3 text-center">
+                            <video id="camera" class="img-thumbnail border-dark" style="width:100%; max-width:300px; background:#000;" autoplay playsinline></video>
+                            <div class="mt-2">
+                                <button type="button" id="captureBtn" class="btn btn-danger" onclick="capturePhoto()">
+                                    <i class="fas fa-circle me-2"></i>Capture Photo
+                                </button>
+                                <button type="button" class="btn btn-secondary ms-2" onclick="closeCamera()">Cancel</button>
+                            </div>
+                        </div>
+
+                        <!-- Preview Area for new replacements -->
+                        <div class="text-center mt-2">
+                            <p class="text-muted mb-1" id="preview-label" style="display:none;">New Photo Preview</p>
+                            <canvas id="canvas" style="display:none;"></canvas>
+                            <img id="photoPreview" class="img-thumbnail shadow-sm" style="max-height:200px; display:none; border: 2px solid #0d6efd;">
+                            <small id="photoHelp" class="d-block text-muted mt-2">
+                                <i class="fas fa-info-circle me-1"></i>Leave empty to keep current photo. Resized for ID cards.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('employees.list_employees') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" onclick="return confirmSave()">
+                    <i class="fas fa-save me-2"></i>Update Employee
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function confirmSave() {
+        return confirm("Are you sure you want to save this employee record?");
+    }
+
+    let videoStream = null;
+
+    function openCamera() {
+        const video = document.getElementById("camera");
+        const container = document.getElementById("camera-container");
+        const preview = document.getElementById("photoPreview");
+        
+        container.style.display = "block";
+        preview.style.display = "none";
+        
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => {
+                videoStream = stream;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                alert("Camera access denied or unavailable: " + err.message);
+                container.style.display = "none";
+            });
+    }
+
+    function closeCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+        document.getElementById("camera-container").style.display = "none";
+    }
+
+    function capturePhoto() {
+        const video = document.getElementById("camera");
+        const canvas = document.getElementById("canvas");
+        const preview = document.getElementById("photoPreview");
+        const base64Input = document.getElementById("photo_base64");
+        const fileInput = document.getElementById("photo");
+        
+        // Match canvas to video size
+        canvas.width = video.videoWidth || 300;
+        canvas.height = video.videoHeight || 300;
+        
+        // Draw frame
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to Base64
+        const imageData = canvas.toDataURL("image/jpeg", 0.9);
+        
+        // Show preview & save data
+        preview.src = imageData;
+        preview.style.display = "inline-block";
+        document.getElementById("preview-label").style.display = "block";
+        base64Input.value = imageData;
+        
+        // Clear conflicting file upload
+        fileInput.value = "";
+        
+        closeCamera();
+    }
+
+    function previewUpload(event) {
+        const fileInput = event.target;
+        const preview = document.getElementById("photoPreview");
+        const base64Input = document.getElementById("photo_base64");
+        
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = "inline-block";
+                document.getElementById("preview-label").style.display = "block";
+                base64Input.value = ""; // Clear conflicting camera data
+                closeCamera();
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    }
+</script>
+{% endblock %}
