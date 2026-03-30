@@ -179,6 +179,36 @@ body {
     color: #0077cc;
 }
 
+/* ── Submenu Styles ── */
+.nav-submenu {
+    list-style: none;
+    padding: 4px 0 4px 12px;
+    margin: 0;
+}
+
+.nav-submenu .nav-menu-item {
+    margin: 1px 0;
+}
+
+.nav-submenu .nav-menu-link {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+}
+
+.nav-submenu .nav-menu-link i {
+    font-size: 0.9rem;
+}
+
+/* Arrow rotation for expanded submenu */
+.nav-arrow {
+    font-size: 0.65rem;
+    transition: transform 0.3s ease;
+}
+
+.nav-menu-link[aria-expanded="true"] .nav-arrow {
+    transform: rotate(180deg);
+}
+
 /* ── Sidebar Footer ── */
 .sidebar-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -276,11 +306,15 @@ body {
 .sidebar.collapsed .nav-text,
 .sidebar.collapsed .nav-section-label,
 .sidebar.collapsed .user-info,
-.sidebar.collapsed .brand-sub {
+.sidebar.collapsed .brand-sub,
+.sidebar.collapsed .nav-arrow,
+.sidebar.collapsed .nav-submenu {
     opacity: 0;
     width: 0;
     overflow: hidden;
     pointer-events: none;
+    height: 0;
+    padding: 0;
 }
 
 .sidebar.collapsed .sidebar-header {

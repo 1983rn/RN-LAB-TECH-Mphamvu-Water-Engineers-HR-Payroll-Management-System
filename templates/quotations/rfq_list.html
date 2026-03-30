@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Help Center - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-headset me-2"></i>Help Center Dashboard</h2>
+            <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Quotations
+            </a>
+        </div>
+        <p class="text-muted">Manage incoming messages, automated RFQs, and client communications.</p>
+    </div>
+</div>
+
+<div class="card shadow border-0 rounded-3">
+    <div class="card-header bg-white border-bottom pt-4 pb-0">
+        <ul class="nav nav-tabs card-header-tabs" id="helpCenterTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold" id="rfqs-tab" data-bs-toggle="tab" data-bs-target="#rfqs" type="button" role="tab" aria-controls="rfqs" aria-selected="true" style="color: #495057;">
+                    <i class="fas fa-cog me-2"></i>Automated RFQs
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="facebook-tab" data-bs-toggle="tab" data-bs-target="#facebook" type="button" role="tab" aria-controls="facebook" aria-selected="false" style="color: #1877F2;">
+                    <i class="fab fa-facebook me-2"></i>Facebook <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65em;">Inbox</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button" role="tab" aria-controls="email" aria-selected="false" style="color: #EA4335;">
+                    <i class="fas fa-envelope me-2"></i>Email (Gmail) <span class="badge bg-danger rounded-pill ms-1" style="font-size: 0.65em;">Inbox</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="card-body bg-light p-4">
+        <div class="tab-content" id="helpCenterTabsContent">
+            
+            <!-- Automated RFQs Tab -->
+            <div class="tab-pane fade show active" id="rfqs" role="tabpanel" aria-labelledby="rfqs-tab">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                    {% if rfqs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 datatable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Source</th>
+                                    <th>Client</th>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Est. Total</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rfq in rfqs %}
+                                <tr>
+                                    <td>{{ rfq.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if rfq.source == 'facebook' %}
+                                        <span class="badge bg-primary text-white"><i class="fab fa-facebook me-1"></i> Facebook</span>
+                                        {% else %}
+                                        <span class="badge bg-danger text-white"><i class="fas fa-envelope me-1"></i> Email</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>{{ rfq.client }}</strong><br><small class="text-muted">{{ rfq.location }}</small></td>
+                                    <td>{{ rfq.item }}<br><small class="text-muted">{{ rfq.description[:30] }}...</small></td>
+                                    <td>{{ rfq.qty }} {{ rfq.unit }}</td>
+                                    <td class="fw-bold">MK {{ "{:,.2f}".format(rfq.total) if rfq.total else '0.00' }}</td>
+                                    <td>
+                                        {% if rfq.status == 'processed' %}
+                                        <span class="badge bg-success rounded-pill px-3 py-2 btn-sm">Processed</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 btn-sm">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rfq.status == 'pending' %}
+                                        <a href="{{ url_for('quotations.create_quotation', rfq_id=rfq.id) }}" class="btn btn-sm btn-success fw-bold p-2 shadow-sm rounded-3">
+                                            <i class="fas fa-file-invoice-dollar me-1"></i> Generate Quote
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-secondary p-2 rounded-3" disabled><i class="fas fa-check"></i> Resolved</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="d-inline-flex  align-items-center justify-content-center bg-light text-secondary rounded-circle mb-4" style="width: 100px; height: 100px;">
+                           <i class="fas fa-cog fa-3x"></i>
+                        </div>
+                        <h4 class="text-dark fw-bold mb-3">No Automated Requests Available</h4>
+                        <p class="text-muted">Requests formatted successfully by our parsers will appear here.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                </div>
+            </div>
+
+            <!-- Facebook Messages Tab -->
+            <div class="tab-pane fade" id="facebook" role="tabpanel" aria-labelledby="facebook-tab">
+                <div class="card border-0 shadow-sm text-center py-5">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <i class="fab fa-facebook" style="font-size: 6rem; color: #1877F2;"></i>
+                        </div>
+                        <h2 class="fw-bold mb-3 text-dark">Facebook Meta Business Suite</h2>
+                        <p class="text-secondary px-4 mb-4 mx-auto" style="max-width: 600px; font-size: 1.1rem;">
+                            Keep track of all client interactions. Direct messages from your <strong>Mphamvu Water Engineers</strong> Facebook page are managed directly in your secure Meta interface.
+                        </p>
+                        
+                        <a href="https://business.facebook.com/latest/inbox/all?asset_id=mphamvuwaterengineers" target="_blank" class="btn btn-lg btn-primary px-5 py-3 rounded-pill fw-bold shadow-sm" style="background-color: #1877F2; border: none; font-size: 1.1rem; transition: transform 0.2s ease;">
+                            <i class="fas fa-external-link-alt me-2"></i> Open Facebook Inbox 
+                        </a>
+                        
+                        <div class="row mt-5 pt-4 border-top">
+                           <div class="col-md-8 offset-md-2 text-center text-muted">
+                                <p class="small mb-1"><i class="fas fa-shield-alt me-1"></i> For your security and privacy, Meta explicitly blocks embedding this experience directly within Enterprise Dashboards.</p>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email (Gmail) Tab -->
+            <div class="tab-pane fade" id="email" role="tabpanel" aria-labelledby="email-tab">
+                <div class="card border-0 shadow-sm text-center py-5">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <i class="fas fa-envelope" style="font-size: 6rem; color: #EA4335;"></i>
+                        </div>
+                        <h2 class="fw-bold mb-3 text-dark">Gmail Secured Inbox</h2>
+                        <p class="text-secondary px-4 mb-4 mx-auto" style="max-width: 600px; font-size: 1.1rem;">
+                            View, organize, and reply to client inquiries sent to <strong>mphamvuwaterengineers@gmail.com</strong> securely through your official Google Mail portal.
+                        </p>
+                        
+                        <!-- Using mail.google.com direct inbox query link -->
+                        <!-- u/0 is generic but sometimes it needs the specific account string to work nicely with multi-account setups -->
+                        <a href="https://mail.google.com/mail/u/?authuser=mphamvuwaterengineers@gmail.com" target="_blank" class="btn btn-lg btn-danger px-5 py-3 rounded-pill fw-bold shadow-sm" style="background-color: #EA4335; border: none; font-size: 1.1rem; transition: transform 0.2s ease;">
+                            <i class="fas fa-external-link-alt me-2"></i> Open Gmail Inbox
+                        </a>
+                        
+                        <div class="row mt-5 pt-4 border-top">
+                           <div class="col-md-8 offset-md-2 text-center text-muted">
+                                <p class="small mb-1"><i class="fas fa-shield-alt me-1"></i> Because emails contain highly sensitive data, Google Mail cannot be embedded via traditional dashboards and will launch in a new secured tab.</p>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+/* Add hover effects for buttons */
+.btn-primary:hover, .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 1rem 1.5rem;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    background-color: #f8f9fa;
+    border-radius: .5rem .5rem 0 0;
+}
+
+.nav-tabs .nav-link.active {
+    color: #000 !important;
+    background-color: transparent;
+    border-color: transparent;
+    border-bottom: 3px solid #0d6efd;
+}
+
+#facebook-tab.active {
+    color: #1877F2 !important;
+    border-bottom-color: #1877F2;
+}
+
+#email-tab.active {
+    color: #EA4335 !important;
+    border-bottom-color: #EA4335;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if the URL has a hash, and activate the corresponding tab
+    if (window.location.hash) {
+        var tabId = window.location.hash;
+        var tabElement = document.querySelector('button[data-bs-target="' + tabId + '"]');
+        if (tabElement) {
+            var tab = new bootstrap.Tab(tabElement);
+            tab.show();
+        }
+    }
+    
+    // Update hash when a tab is shown
+    var tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabElements.forEach(function(el) {
+        el.addEventListener('shown.bs.tab', function(e) {
+            var target = e.target.getAttribute('data-bs-target');
+            if(history.pushState) {
+                history.pushState(null, null, target);
+            } else {
+                window.location.hash = target;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

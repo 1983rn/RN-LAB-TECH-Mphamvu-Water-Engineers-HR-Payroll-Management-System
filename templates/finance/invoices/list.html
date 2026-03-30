@@ -53,7 +53,6 @@
                                 MK {{ "{:,.2f}".format(invoice.amount - invoice.paid_amount) }}
                             </span>
                         </td>
-                        <td>
                             <span class="badge bg-{{ 
                                 'success' if invoice.status == 'Paid' 
                                 else 'warning' if invoice.status == 'Partially Paid' 
@@ -61,14 +60,24 @@
                             }}">
                                 {{ invoice.status }}
                             </span>
+                            {% if invoice.is_approved %}
+                                <span class="badge bg-info"><i class="fas fa-check-double"></i> Approved</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Pending Approval</span>
+                            {% endif %}
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('finance.download_invoice_pdf', invoice_id=invoice.invoice_id) }}" class="btn btn-outline-primary">
+                                <a href="{{ url_for('finance.download_invoice_pdf', invoice_id=invoice.invoice_id) }}" class="btn btn-outline-primary" title="Download PDF">
                                     <i class="fas fa-download"></i>
                                 </a>
+                                {% if not invoice.is_approved %}
+                                <button class="btn btn-outline-danger" onclick="openInvoiceApprovalModal('{{ invoice.invoice_id }}')" title="Approve Invoice">
+                                    <i class="fas fa-check-circle"></i> Approve
+                                </button>
+                                {% endif %}
                                 {% if invoice.status in ['Unpaid', 'Partially Paid'] %}
-                                <button class="btn btn-outline-success" onclick="recordPayment('{{ invoice.invoice_id }}', '{{ invoice.contract.quotation.client_id or invoice.quotation.client_id }}')">
+                                <button class="btn btn-outline-success" onclick="recordPayment('{{ invoice.invoice_id }}', '{{ invoice.contract.quotation.client_id or invoice.quotation.client_id }}')" title="Record Payment">
                                     <i class="fas fa-money-bill"></i>
                                 </button>
                                 {% endif %}
@@ -146,15 +155,30 @@
     </div>
 </div>
 
-<script>
-function recordPayment(invoiceId, clientId) {
-    document.getElementById('modalInvoiceId').value = invoiceId;
-    document.getElementById('modalClientId').value = clientId;
-    
-    // Set default date to today
-    document.getElementById('payment_date').value = new Date().toISOString().split('T')[0];
-    
-    new bootstrap.Modal(document.getElementById('paymentModal')).show();
-}
+<!-- Invoice Approval Modal -->
+<div class="modal fade" id="invoiceApprovalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-lock me-2"></i>INVOICE APPROVAL REQUIRED</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <i class="fas fa-shield-alt fa-3x text-danger mb-3"></i>
+                <p class="mb-4">Enter Authorization Password to approve this invoice for delivery.</p>
+                <input type="hidden" id="approvalInvoiceId">
+                <div class="mb-3">
+                    <input type="password" class="form-control text-center" id="approvalPassword" placeholder="[______________]">
+                </div>
+                <div id="approvalError" class="text-danger small mb-3" style="display: none;"></div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" onclick="submitInvoiceApproval()">Approve Invoice</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </script>
 {% endblock %}

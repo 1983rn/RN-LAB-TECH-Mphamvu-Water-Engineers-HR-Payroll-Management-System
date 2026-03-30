@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+
+{% block title %}Cash Book - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Cashbook Specific Styles */
+    .cashbook-header {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .balance-card {
+        background: linear-gradient(135deg, #00b09b, #96c93d);
+        color: white;
+        padding: 25px;
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+    .balance-card h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+    }
+
+    .summary-box {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        text-align: center;
+        height: 100%;
+        transition: transform 0.3s;
+    }
+
+    .income-card {
+        background: #0d6efd;
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .debit-card {
+        background: #dc3545;
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .ledger-table thead th {
+        background: #f8f9fa !important;
+        color: #333 !important;
+        border-bottom: 2px solid #dee2e6;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+
+    .status-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255,255,255,0.2);
+        margin-top: 10px;
+        position: relative;
+    }
+
+    .status-progress {
+        height: 100%;
+        border-radius: 3px;
+        background: white;
+    }
+
+    .category-tag {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: rgba(0,0,0,0.05);
+        color: #666;
+    }
+
+    .btn-add-inline {
+        padding: 2px 10px;
+        font-size: 0.8rem;
+        border-radius: 5px;
+    }
+    
+    .breakdown-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .breakdown-list::-webkit-scrollbar {
+        width: 4px;
+    }
+    .breakdown-list::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="cashbook-header">
+        <div>
+            <h4 class="mb-1 text-primary fw-bold"><i class="fas fa-book-open me-2"></i>Cash Book</h4>
+            <p class="text-muted mb-0 small">Mphamvu Water Engineers — Financial Records 2026</p>
+        </div>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm" style="width: 150px;">
+                <option>All Periods</option>
+                <option>This Month</option>
+                <option>Last Month</option>
+            </select>
+            <a href="{{ url_for('finance_dashboard.export_cashbook') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-export me-1"></i>Export</a>
+            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="fas fa-print me-1"></i>Print</button>
+        </div>
+    </div>
+
+    <!-- Main Balance Card -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="balance-card shadow">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <p class="text-uppercase small mb-1 opacity-75">Actual Remaining Balance</p>
+                        <h2>MWK {{ "{:,.2f}".format(balance) }}</h2>
+                        <p class="small mb-0 opacity-75">Opening Balance + Total Income - Total Debits</p>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span>Opening Balance</span>
+                            <span class="fw-bold">MWK {{ "{:,.2f}".format(opening_balance) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span>Total Income</span>
+                            <span class="fw-bold">+ MWK {{ "{:,.2f}".format(total_income) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span>Total Debits</span>
+                            <span class="fw-bold">- MWK {{ "{:,.2f}".format(total_debits) }}</span>
+                        </div>
+                        <hr class="my-2 opacity-50">
+                        <div class="d-flex justify-content-between">
+                            <span class="small">Balance</span>
+                            <span class="fw-bold">MWK {{ "{:,.2f}".format(balance) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <div class="status-progress" style="width: {{ (balance / (opening_balance + total_income) * 100) if (opening_balance + total_income) > 0 else 0 }}%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="summary-box mb-4 shadow-sm border">
+                <i class="fas fa-boxes fa-3x text-primary mb-3 opacity-25"></i>
+                <p class="text-muted small text-uppercase mb-2">Total Inventory Value</p>
+                <h3 class="fw-bold mb-1">MWK {{ "{:,.2f}".format(total_inventory) }}</h3>
+                <p class="text-success small mb-0"><i class="fas fa-warehouse me-1"></i>All Stock Assets</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income & Debit Breakdown -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="income-card shadow">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0 text-uppercase small font-weight-bold"><i class="fas fa-arrow-circle-up me-2"></i>Total Income</h6>
+                    <span class="badge bg-white text-primary">This Period</span>
+                </div>
+                <h3 class="fw-bold">MWK {{ "{:,.2f}".format(total_income) }}</h3>
+                <p class="small mb-3 opacity-75">{{ credits|length }} credit transactions</p>
+                
+                <div class="breakdown-list pe-2">
+                    {% for cat, amt in income_breakdown.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="opacity-90">{{ cat }}</span>
+                            <span class="fw-bold">MWK {{ "{:,.2f}".format(amt) }}</span>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.2);">
+                            <div class="progress-bar bg-white" style="width: {{ (amt / total_income * 100) if total_income > 0 else 0 }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="debit-card shadow">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0 text-uppercase small font-weight-bold"><i class="fas fa-arrow-circle-down me-2"></i>Total Debit</h6>
+                    <span class="badge bg-white text-danger">This Period</span>
+                </div>
+                <h3 class="fw-bold">MWK {{ "{:,.2f}".format(total_debits) }}</h3>
+                <p class="small mb-3 opacity-75">{{ debits|length }} debit transactions</p>
+                
+                <div class="breakdown-list pe-2">
+                    {% for cat, amt in expense_breakdown.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="opacity-90">{{ cat }}</span>
+                            <span class="fw-bold">MWK {{ "{:,.2f}".format(amt) }}</span>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.2);">
+                            <div class="progress-bar bg-white" style="width: {{ (amt / total_debits * 100) if total_debits > 0 else 0 }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ledger Tables -->
+    <div class="card shadow border-0 mb-5 overflow-hidden">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+            <h6 class="mb-0 fw-bold">Mphamvu Water Engineers — Cash Book Ledger</h6>
+            <div class="text-end">
+                <span class="small opacity-75">Opening Balance</span> &nbsp;
+                <span class="fw-bold">MWK {{ "{:,.2f}".format(opening_balance) }}</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <!-- Credits Side -->
+                <div class="col-md-6 border-end">
+                    <div class="bg-primary bg-opacity-10 p-3 d-flex justify-content-between align-items-center border-bottom">
+                        <span class="small fw-bold text-primary text-uppercase"><i class="fas fa-plus-circle me-1"></i> Credits (Income / Receipts)</span>
+                        <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addEntryModal" onclick="setEntryType('Credit')">+ Add Credit</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover ledger-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Date</th>
+                                    <th>Description</th>
+                                    <th>Dept.</th>
+                                    <th>Ref.</th>
+                                    <th class="text-end pe-3">Amount (MWK)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if opening_balance > 0 %}
+                                <tr class="bg-light bg-opacity-50">
+                                    <td class="ps-3 small text-muted">01 Jan 2026</td>
+                                    <td><span class="fw-bold text-dark">Opening Balance b/f</span></td>
+                                    <td class="small text-muted">OPEN-BAL</td>
+                                    <td class="text-end pe-3 fw-bold text-dark">MWK {{ "{:,.2f}".format(opening_balance) }}</td>
+                                </tr>
+                                {% endif %}
+                                {% for item in credits %}
+                                <tr>
+                                    <td class="ps-3 small text-muted">{{ item.date }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ item.description }}</div>
+                                        <span class="category-tag">{{ item.category }}</span>
+                                    </td>
+                                    <td class="small">{{ item.department or '---' }}</td>
+                                    <td class="small text-muted">{{ item.ref }}</td>
+                                    <td class="text-end pe-3 fw-bold text-primary">MWK {{ "{:,.2f}".format(item.amount) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No credit entries found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Debits Side -->
+                <div class="col-md-6">
+                    <div class="bg-danger bg-opacity-10 p-3 d-flex justify-content-between align-items-center border-bottom">
+                        <span class="small fw-bold text-danger text-uppercase"><i class="fas fa-minus-circle me-1"></i> Debits (Payments / Expenditure)</span>
+                        <button class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addEntryModal" onclick="setEntryType('Debit')">+ Add Debit</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover ledger-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Date</th>
+                                    <th>Description</th>
+                                    <th>Dept.</th>
+                                    <th>Ref.</th>
+                                    <th class="text-end pe-3">Amount (MWK)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in debits %}
+                                <tr>
+                                    <td class="ps-3 small text-muted">{{ item.date }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ item.description }}</div>
+                                        <span class="category-tag">{{ item.category }}</span>
+                                    </td>
+                                    <td class="small">{{ item.department or '---' }}</td>
+                                    <td class="small text-muted">{{ item.ref }}</td>
+                                    <td class="text-end pe-3 fw-bold text-danger">MWK {{ "{:,.2f}".format(item.amount) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No debit entries found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-dark text-white py-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-3 text-center border-end border-secondary">
+                    <p class="text-uppercase small mb-1 opacity-75">OPENING BALANCE</p>
+                    <h5 class="fw-bold mb-0">MWK {{ "{:,.2f}".format(opening_balance) }}</h5>
+                </div>
+                <div class="col-md-3 text-center border-end border-secondary">
+                    <p class="text-uppercase small mb-1 opacity-75">TOTAL CREDITS</p>
+                    <h5 class="fw-bold mb-0 text-info">+ MWK {{ "{:,.2f}".format(total_income) }}</h5>
+                </div>
+                <div class="col-md-3 text-center border-end border-secondary">
+                    <p class="text-uppercase small mb-1 opacity-75">TOTAL DEBITS</p>
+                    <h5 class="fw-bold mb-0 text-danger">- MWK {{ "{:,.2f}".format(total_debits) }}</h5>
+                </div>
+                <div class="col-md-3 text-center">
+                    <p class="text-uppercase small mb-1 opacity-75">CLOSING BALANCE</p>
+                    <h4 class="fw-bold mb-0 text-success">MWK {{ "{:,.2f}".format(balance) }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Entry Modal -->
+<div class="modal fade" id="addEntryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white" id="modalHeader">
+                <h5 class="modal-title fw-bold" id="modalTitle">Add Cash Book Entry</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('finance_dashboard.add_cashbook_entry') }}" method="POST">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="type" id="entryType" value="Credit">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase">Date</label>
+                            <input type="date" name="date" class="form-control" required value="{{ now.strftime('%Y-%m-%d') if now else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase">Amount (MWK)</label>
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase">Reference (Optional)</label>
+                            <input type="text" name="reference" class="form-control" placeholder="e.g. INV-2026-001">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase">Department</label>
+                            <input type="text" name="department" class="form-control" placeholder="e.g. Finance, Farm" list="deptOptions">
+                            <datalist id="deptOptions">
+                                <option value="Core Business">
+                                <option value="Farm Operations">
+                                <option value="Administration">
+                                <option value="Human Resources">
+                                <option value="Operations">
+                                <option value="Marketing">
+                            </datalist>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase">Category</label>
+                            <input type="text" name="category" class="form-control" placeholder="e.g. Maintenance, Utilities" list="categoryOptions">
+                            <datalist id="categoryOptions">
+                                <option value="Borehole Drilling">
+                                <option value="Pump Installation">
+                                <option value="Materials">
+                                <option value="Staff Costs">
+                                <option value="Utilities">
+                                <option value="Maintenance">
+                                <option value="Farm Operations">
+                                <option value="Transport">
+                            </datalist>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4" id="submitBtn">Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function setEntryType(type) {
+        document.getElementById('entryType').value = type;
+        document.getElementById('modalTitle').innerText = 'Add ' + type + ' Entry';
+        const header = document.getElementById('modalHeader');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (type === 'Debit') {
+            header.className = 'modal-header bg-danger text-white';
+            submitBtn.className = 'btn btn-danger px-4';
+        } else {
+            header.className = 'modal-header bg-primary text-white';
+            submitBtn.className = 'btn btn-primary px-4';
+        }
+    }
+</script>
+{% endblock %}

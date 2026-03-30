@@ -22,6 +22,18 @@ $(document).ready(function() {
     // Add fade-in animation to cards
     $('.card').addClass('fade-in');
     
+    // Restore and save sidebar scroll position
+    var sidebarNav = $('.sidebar-nav');
+    if (sidebarNav.length) {
+        var scrollPos = localStorage.getItem('sidebarScrollPosition');
+        if (scrollPos) {
+            sidebarNav.scrollTop(scrollPos);
+        }
+        sidebarNav.on('scroll', function() {
+            localStorage.setItem('sidebarScrollPosition', $(this).scrollTop());
+        });
+    }
+    
     // Form validation
     $('form').on('submit', function(e) {
         var form = $(this);

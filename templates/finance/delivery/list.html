@@ -14,7 +14,45 @@
     </div>
 </div>
 
-{% include 'finance/approved_quotations.html' %}
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-truck-loading me-2"></i>Approved Invoices (Pending Delivery)</h5>
+    </div>
+    <div class="card-body">
+        {% if pending_delivery_invoices %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Invoice No</th>
+                        <th>Client</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in pending_delivery_invoices %}
+                    <tr id="pending-row-{{ inv.invoice_id }}">
+                        <td><span class="badge bg-secondary">{{ inv.invoice_number }}</span></td>
+                        <td>{{ inv.quotation.client.client_name }}</td>
+                        <td><strong>MK {{ "{:,.2f}".format(inv.amount) }}</strong></td>
+                        <td>
+                            <button class="btn btn-info btn-sm" onclick="generateDeliveryNote('{{ inv.invoice_id }}')">
+                                <i class="fas fa-truck"></i> Generate Delivery Note
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-3">
+            <p class="text-muted mb-0">No approved invoices awaiting delivery notes.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
 
 <div class="card">
     <div class="card-header bg-primary text-white">
@@ -69,4 +107,25 @@
         {% endif %}
     </div>
 </div>
+<script>
+function generateDeliveryNote(invoiceId) {
+    if(!confirm('Generate Delivery Note for this invoice?')) return;
+    
+    fetch('/finance/delivery-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoice_id: invoiceId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert('Delivery Note generated successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => alert('An error occurred during generation.'));
+}
+</script>
 {% endblock %}

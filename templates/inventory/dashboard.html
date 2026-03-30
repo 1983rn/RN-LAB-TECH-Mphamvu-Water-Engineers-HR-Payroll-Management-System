@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Dashboard - MWE{% endblock %}
+
+{% block extra_css %}
+<style>
+    .inventory-dashboard {
+        font-family: 'Outfit', sans-serif;
+        background-color: #f8fbff;
+        padding: 20px;
+    }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+    .page-title h2 {
+        font-weight: 700;
+        color: #1a2533;
+        margin-bottom: 4px;
+    }
+    .page-title p {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+    .last-updated {
+        background: #eefdf4;
+        color: #28a745;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .last-updated::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #28a745;
+        border-radius: 50%;
+    }
+    /* Stat Cards */
+    .stat-cards-wrapper {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card-custom {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #ebedf2;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .stat-card-custom .stat-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #a0a5b1;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stat-card-custom .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1a2533;
+        margin: 8px 0;
+    }
+    .stat-card-custom .stat-sub {
+        font-size: 0.85rem;
+        color: #838a95;
+    }
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-left: auto;
+    }
+    .icon-blue { background: #eef6ff; color: #4384f5; }
+    .icon-purple { background: #fdf2ff; color: #d64ced; }
+    .icon-green { background: #effcf4; color: #23b761; }
+    .icon-yellow { background: #fffcf0; color: #f2ad3c; }
+
+    /* Category Cards */
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a2533;
+        margin-bottom: 20px;
+    }
+    .category-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .category-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #ebedf2;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+    }
+    .category-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px -3px rgba(0,0,0,0.05);
+        color: inherit;
+    }
+    .cat-icon-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    .cat-icon {
+        font-size: 1.5rem;
+    }
+    .cat-arrow {
+        color: #b1b5bd;
+        font-size: 0.9rem;
+    }
+    .cat-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #3b4250;
+        margin-bottom: 8px;
+    }
+    .cat-val {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1a2533;
+        margin-bottom: 15px;
+    }
+    .cat-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #838a95;
+        margin-bottom: 8px;
+    }
+    .cat-progress {
+        height: 6px;
+        background: #f1f3f7;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    .cat-progress-bar {
+        height: 100%;
+        border-radius: 3px;
+    }
+    .color-blue { color: #4384f5; }
+    .bg-blue { background-color: #4384f5; }
+    .color-purple { color: #8e44ad; }
+    .bg-purple { background-color: #8e44ad; }
+    .color-green { color: #23b761; }
+    .bg-green { background-color: #23b761; }
+    .color-yellow { color: #f2ad3c; }
+    .bg-yellow { background-color: #f2ad3c; }
+    
+    .charts-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+    .chart-box {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #ebedf2;
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="inventory-dashboard fade-in">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <h2>Inventory Dashboard</h2>
+            <p>Mphamvu Water Engineers &mdash; Asset Overview</p>
+        </div>
+        <div class="last-updated">
+            Last updated: {{ now().strftime('%d %b %Y') if now else 'Today' }}
+        </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-cards-wrapper">
+        <div class="stat-card-custom">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-title">TOTAL ASSET VALUE</div>
+                    <div class="stat-value">MWK {{ "{:,.0f}".format(total_value) }}</div>
+                </div>
+                <div class="stat-icon icon-blue"><i class="fas fa-dollar-sign"></i></div>
+            </div>
+            <div class="stat-sub">Across all categories</div>
+        </div>
+
+        <div class="stat-card-custom">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-title">TOTAL ITEMS</div>
+                    <div class="stat-value">{{ total_items }}</div>
+                </div>
+                <div class="stat-icon icon-purple"><i class="fas fa-box"></i></div>
+            </div>
+            <div class="stat-sub">Total physical units tracked</div>
+        </div>
+
+        <div class="stat-card-custom">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-title">CATEGORIES</div>
+                    <div class="stat-value">4</div>
+                </div>
+                <div class="stat-icon icon-green"><i class="fas fa-chart-bar"></i></div>
+            </div>
+            <div class="stat-sub">Department divisions</div>
+        </div>
+
+        <div class="stat-card-custom">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="stat-title">GOOD CONDITION</div>
+                    <div class="stat-value">{{ "{:.1f}".format(good_condition_pct) }}%</div>
+                </div>
+                <div class="stat-icon icon-yellow"><i class="fas fa-arrow-trend-up"></i></div>
+            </div>
+            <div class="stat-sub">New/Excellent/Good</div>
+        </div>
+    </div>
+
+    <!-- Category Cards -->
+    <h3 class="section-title">Asset Categories</h3>
+    <div class="category-cards">
+        {% set bore_val = categories.get('Borehole Drilling', {}).get('value', 0) %}
+        {% set bore_cnt = categories.get('Borehole Drilling', {}).get('count', 0) %}
+        {% set bore_pct = (bore_val / total_value * 100) if total_value > 0 else 0 %}
+        <a href="{{ url_for('inventory.category_view', category='Borehole Drilling') }}" class="category-card">
+            <div class="cat-icon-container">
+                <div class="cat-icon color-blue"><i class="fas fa-tools"></i></div>
+                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="cat-name">Borehole Drilling</div>
+            <div class="cat-val">MWK {{ "{:,.0f}".format(bore_val) }}</div>
+            <div class="cat-footer">
+                <span>{{ bore_cnt }} items</span>
+                <span class="color-blue fw-bold">{{ "{:.1f}".format(bore_pct) }}%</span>
+            </div>
+            <div class="cat-progress">
+                <div class="cat-progress-bar bg-blue" style="width: {{ bore_pct }}%"></div>
+            </div>
+        </a>
+
+        {% set off_val = categories.get('Office Equipment', {}).get('value', 0) %}
+        {% set off_cnt = categories.get('Office Equipment', {}).get('count', 0) %}
+        {% set off_pct = (off_val / total_value * 100) if total_value > 0 else 0 %}
+        <a href="{{ url_for('inventory.category_view', category='Office Equipment') }}" class="category-card">
+            <div class="cat-icon-container">
+                <div class="cat-icon color-purple"><i class="fas fa-desktop"></i></div>
+                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="cat-name">Office Equipment</div>
+            <div class="cat-val">MWK {{ "{:,.0f}".format(off_val) }}</div>
+            <div class="cat-footer">
+                <span>{{ off_cnt }} items</span>
+                <span class="color-purple fw-bold">{{ "{:.1f}".format(off_pct) }}%</span>
+            </div>
+            <div class="cat-progress">
+                <div class="cat-progress-bar bg-purple" style="width: {{ off_pct }}%"></div>
+            </div>
+        </a>
+
+        {% set ani_val = categories.get('Animal Farm', {}).get('value', 0) %}
+        {% set ani_cnt = categories.get('Animal Farm', {}).get('count', 0) %}
+        {% set ani_pct = (ani_val / total_value * 100) if total_value > 0 else 0 %}
+        <a href="{{ url_for('inventory.category_view', category='Animal Farm') }}" class="category-card">
+            <div class="cat-icon-container">
+                <div class="cat-icon color-green"><i class="fas fa-paw"></i></div>
+                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="cat-name">Animal Farm</div>
+            <div class="cat-val">MWK {{ "{:,.0f}".format(ani_val) }}</div>
+            <div class="cat-footer">
+                <span>{{ ani_cnt }} items</span>
+                <span class="color-green fw-bold">{{ "{:.1f}".format(ani_pct) }}%</span>
+            </div>
+            <div class="cat-progress">
+                <div class="cat-progress-bar bg-green" style="width: {{ ani_pct }}%"></div>
+            </div>
+        </a>
+
+        {% set crop_val = categories.get('Crop Farming', {}).get('value', 0) %}
+        {% set crop_cnt = categories.get('Crop Farming', {}).get('count', 0) %}
+        {% set crop_pct = (crop_val / total_value * 100) if total_value > 0 else 0 %}
+        <a href="{{ url_for('inventory.category_view', category='Crop Farming') }}" class="category-card">
+            <div class="cat-icon-container">
+                <div class="cat-icon color-yellow"><i class="fas fa-tractor"></i></div>
+                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="cat-name">Crop Farming</div>
+            <div class="cat-val">MWK {{ "{:,.0f}".format(crop_val) }}</div>
+            <div class="cat-footer">
+                <span>{{ crop_cnt }} items</span>
+                <span class="color-yellow fw-bold">{{ "{:.1f}".format(crop_pct) }}%</span>
+            </div>
+            <div class="cat-progress">
+                <div class="cat-progress-bar bg-yellow" style="width: {{ crop_pct }}%"></div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+        <div class="chart-box">
+            <h6 class="mb-4 fw-bold">Asset Value by Category</h6>
+            <canvas id="barChart" height="100"></canvas>
+        </div>
+        <div class="chart-box">
+            <h6 class="mb-4 fw-bold text-center">Value Distribution</h6>
+            <div class="d-flex justify-content-center">
+                <div style="width: 200px; height: 200px;">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const labels = ['Borehole Drilling', 'Office Equipment', 'Animal Farm', 'Crop Farming'];
+        const dataVals = [{{ bore_val }}, {{ off_val }}, {{ ani_val }}, {{ crop_val }}];
+        const colors = ['#4384f5', '#8e44ad', '#23b761', '#f2ad3c'];
+        
+        // Bar Chart
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Asset Value (MWK)',
+                    data: dataVals,
+                    backgroundColor: colors,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Doughnut Chart
+        const doughCtx = document.getElementById('doughnutChart').getContext('2d');
+        new Chart(doughCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataVals,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    cutout: '75%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

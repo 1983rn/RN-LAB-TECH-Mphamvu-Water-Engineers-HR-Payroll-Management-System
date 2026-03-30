@@ -20,6 +20,11 @@ from attendance.attendance_routes import attendance_bp
 from quotations.quotation_routes import quotations_bp
 from finance.invoice_routes import finance_bp
 from finance.transaction_routes import transaction_bp
+from quotations.rfq_routes import rfq_bp
+from clients.client_routes import clients_bp
+from inventory.inventory_routes import inventory_bp
+from farm.farm_routes import farm_bp
+from finance_dashboard.dashboard_routes import finance_dashboard_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -42,6 +47,11 @@ app.register_blueprint(attendance_bp)
 app.register_blueprint(quotations_bp)
 app.register_blueprint(finance_bp)
 app.register_blueprint(transaction_bp)
+app.register_blueprint(rfq_bp)
+app.register_blueprint(clients_bp)
+app.register_blueprint(inventory_bp)
+app.register_blueprint(farm_bp)
+app.register_blueprint(finance_dashboard_bp)
 
 def login_required(f):
     @wraps(f)
@@ -199,7 +209,12 @@ def submit_support_request():
 
 # Initialize database and default admin on import (works with gunicorn)
 with app.app_context():
+    db.create_all()
     init_db()
+    
+    # Start Email RFQ fetching background daemon
+    from utils.rfq_parser import start_background_task
+    start_background_task()
     
     default_admin = User.query.filter_by(username='Mphamvuwaterengineers').first()
     if not default_admin:

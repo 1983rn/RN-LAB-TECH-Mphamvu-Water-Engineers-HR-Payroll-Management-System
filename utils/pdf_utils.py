@@ -151,7 +151,7 @@ def add_company_header_to_story(story, layout_mode='normal'):
     for element in header_content:
         story.append(element)
     
-    spacer_height = 12 if layout_mode == 'normal' else (8 if layout_mode == 'compact' else 2)
+    spacer_height = 8 if layout_mode == 'normal' else (4 if layout_mode == 'compact' else 2)
     story.append(Spacer(1, spacer_height))
     return story
 
@@ -159,11 +159,11 @@ def add_signature_block(story, signer_name="Ulanda Duwe", signer_title="Managing
     """Add professional signature block"""
     styles = getSampleStyleSheet()
     
-    top_margin = 40 if layout_mode == 'normal' else (25 if layout_mode == 'compact' else 10)
+    top_margin = 20 if layout_mode == 'normal' else (15 if layout_mode == 'compact' else 8)
     story.append(Spacer(1, top_margin))
     
     story.append(Paragraph("Yours faithfully,", ParagraphStyle('SignOff', parent=styles['Normal'], fontSize=10 if layout_mode == 'dense' else 11, leading=12 if layout_mode == 'dense' else 14)))
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 2))
     
     signature_path = os.path.join('static', 'images', 'signature.png')
     if os.path.exists(signature_path):
@@ -197,39 +197,68 @@ def generate_qr_code(doc_type, doc_number, client_name, amount=None):
     return qr_path
 
 def add_stamp_and_qr(story, doc_number, qr_path, layout_mode='normal'):
-    """Add company stamp and QR code to PDF tightly side by side"""
+    """Legacy function, redirecting to the combined layout function"""
+    return story
+
+def add_signature_stamp_qr(story, doc_number, qr_path, layout_mode='normal', signer_name="Ulanda Duwe", signer_title="Managing Director"):
+    """Add professional signature block, stamp, and QR code in a single horizontal row"""
+    styles = getSampleStyleSheet()
     
-    # QR Code
+    top_margin = 20 if layout_mode == 'normal' else (15 if layout_mode == 'compact' else 8)
+    story.append(Spacer(1, top_margin))
+    
+    # --- Signature Block Flowables ---
+    sig_cell = []
+    sig_cell.append(Paragraph("Yours faithfully,", ParagraphStyle('SignOff', parent=styles['Normal'], fontSize=10 if layout_mode == 'dense' else 11, leading=12 if layout_mode == 'dense' else 14)))
+    sig_cell.append(Spacer(1, 2))
+    
+    signature_path = os.path.join('static', 'images', 'signature.png')
+    if os.path.exists(signature_path):
+        sig_img = Image(signature_path, width=0.8*inch, height=0.3*inch)
+        sig_img.hAlign = 'LEFT'
+        sig_cell.append(sig_img)
+    else:
+        sig_cell.append(Spacer(1, 30))
+    
+    sig_cell.append(Paragraph(f"<i>{signer_name}</i>", ParagraphStyle('SignerName', parent=styles['Normal'], fontSize=10 if layout_mode == 'dense' else 11, leading=12 if layout_mode == 'dense' else 14)))
+    sig_cell.append(Paragraph(f"({signer_title})", ParagraphStyle('SignerTitle', parent=styles['Normal'], fontSize=8.5 if layout_mode == 'dense' else 9.5, leading=10 if layout_mode == 'dense' else 13)))
+    
+    # --- QR Code ---
     if os.path.exists(qr_path):
         qr_size = 0.7*inch if layout_mode == 'dense' else (0.8*inch if layout_mode == 'compact' else 0.9*inch)
         qr_img = Image(qr_path, width=qr_size, height=qr_size)
         qr_cell = [
             qr_img,
-            Paragraph("<font size=7>Scan to Verify</font>", ParagraphStyle('QRLabel', parent=getSampleStyleSheet()['Normal'], alignment=1))
+            Paragraph("<font size=7>Scan to Verify</font>", ParagraphStyle('QRLabel', parent=styles['Normal'], alignment=1))
         ]
     else:
-        qr_cell = [Paragraph("<font size=7>QR Code</font>", getSampleStyleSheet()['Normal'])]
-    
-    # Company Stamp
+        qr_cell = [Paragraph("<font size=7>QR Code</font>", styles['Normal'])]
+        
+    # --- Company Stamp (Increased size as requested) ---
     stamp_path = os.path.join('static', 'images', 'company_stamp.png')
     if os.path.exists(stamp_path):
-        stamp_size = 0.95*inch if layout_mode == 'dense' else (1.2*inch if layout_mode == 'compact' else 1.4*inch)
+        # Increased size per user request
+        stamp_size = 1.1*inch if layout_mode == 'dense' else (1.3*inch if layout_mode == 'compact' else 1.5*inch)
         stamp_img = Image(stamp_path, width=stamp_size, height=stamp_size)
         stamp_cell = [stamp_img]
     else:
-        stamp_cell = [Paragraph("<font size=7>[COMPANY STAMP]</font>", getSampleStyleSheet()['Normal'])]
-    
-    # Place them in a single row layout with no massive space between them
-    stamp_qr_table = Table([[stamp_cell, '', qr_cell]], colWidths=[2.5*inch, 2.0*inch, 1.5*inch])
+        stamp_cell = [Paragraph("<font size=7>[COMPANY STAMP]</font>", styles['Normal'])]
+        
+    # --- Assemble the Table ---
+    # Widths apportioned: 2.2 inch for sig, 2.5 inch for stamp, 1.5 inch for QR
+    stamp_qr_table = Table([[sig_cell, stamp_cell, qr_cell]], colWidths=[2.2*inch, 2.5*inch, 1.5*inch])
     stamp_qr_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-        ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
-        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),      # Signature aligned left
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),    # Stamp centered
+        ('ALIGN', (2, 0), (2, 0), 'RIGHT'),     # QR Code right aligned
+        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'), # Align bottom to keep them grounded
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
     ]))
     
-    spacer_height = 8 if layout_mode == 'normal' else (5 if layout_mode == 'compact' else 2)
+    spacer_height = 4 if layout_mode == 'normal' else (3 if layout_mode == 'compact' else 2)
     story.append(Spacer(1, spacer_height))
     story.append(stamp_qr_table)
     return story
@@ -285,7 +314,7 @@ def add_pdf_footer(story, layout_mode='normal'):
     styles = getSampleStyleSheet()
     
     font_size = 8.5 if layout_mode == 'normal' else (8.2 if layout_mode == 'compact' else 8)
-    margin_top = 10 if layout_mode == 'normal' else (7 if layout_mode == 'compact' else 4)
+    margin_top = 4 if layout_mode == 'normal' else (3 if layout_mode == 'compact' else 2)
     
     footer_style = ParagraphStyle(
         'FooterStyle',

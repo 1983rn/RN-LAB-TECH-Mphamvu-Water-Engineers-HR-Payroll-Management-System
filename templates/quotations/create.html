@@ -23,7 +23,7 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="client_name" class="form-label">Client Name *</label>
-                    <input type="text" class="form-control" id="client_name" name="client_name" required>
+                    <input type="text" class="form-control" id="client_name" name="client_name" value="{{ rfq.client if rfq else '' }}" required>
                 </div>
             </div>
             
@@ -179,6 +179,110 @@
                                 <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt36" value="Borehole drilling and handpump Installation">
                                 <label class="form-check-label" for="pt36">Borehole drilling and handpump Installation</label>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt37" value="Solar Pumping System Installation">
+                                <label class="form-check-label" for="pt37">Solar Pumping System Installation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt38" value="Tank 5000L X2">
+                                <label class="form-check-label" for="pt38">Tank 5000L X2</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt39" value="Twin Tank Stand">
+                                <label class="form-check-label" for="pt39">Twin Tank Stand</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt40" value="Reticulation">
+                                <label class="form-check-label" for="pt40">Reticulation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt41" value="Borehole Drilling Only">
+                                <label class="form-check-label" for="pt41">Borehole Drilling Only</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt42" value="Tank 5000L and Stand">
+                                <label class="form-check-label" for="pt42">Tank 5000L and Stand</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt43" value="Solar pumping system Installation (solar pump, solar panels. Hdpe pipes, submersible cable, Fittings and accessories, plus installation)">
+                                <label class="form-check-label" for="pt43">Solar pumping system Installation (solar pump, solar panels. Hdpe pipes, submersible cable, Fittings and accessories, plus installation)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt44" value="Tank 2500L">
+                                <label class="form-check-label" for="pt44">Tank 2500L</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt45" value="Borehole drilling 140mm 50m">
+                                <label class="form-check-label" for="pt45">Borehole drilling 140mm 50m</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt46" value="Extra drilling per meter 140mm">
+                                <label class="form-check-label" for="pt46">Extra drilling per meter 140mm</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt47" value="Pump testing 8hours">
+                                <label class="form-check-label" for="pt47">Pump testing 8hours</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt48" value="3 to 5hp Solar pumping system Installation (Solar pump, solar panels, submersible cables, hdpe pipe, solar structure, fittings, and accessories)">
+                                <label class="form-check-label" for="pt48">3 to 5hp Solar pumping system Installation (Solar pump, solar panels, submersible cables, hdpe pipe, solar structure, fittings, and accessories)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt49" value="Tank 10,000L">
+                                <label class="form-check-label" for="pt49">Tank 10,000L</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt50" value="Twin Tank stand 10,000L capacity">
+                                <label class="form-check-label" for="pt50">Twin Tank stand 10,000L capacity</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt51" value="Solar pump samking 0.5hp and control unit">
+                                <label class="form-check-label" for="pt51">Solar pump samking 0.5hp and control unit</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt52" value="Solar panels 400+ watts">
+                                <label class="form-check-label" for="pt52">Solar panels 400+ watts</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt53" value="Submersible cable 100m">
+                                <label class="form-check-label" for="pt53">Submersible cable 100m</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt54" value="Hdpe pipe 25mm 100m">
+                                <label class="form-check-label" for="pt54">Hdpe pipe 25mm 100m</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt55" value="Rope">
+                                <label class="form-check-label" for="pt55">Rope</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt56" value="Baseplate">
+                                <label class="form-check-label" for="pt56">Baseplate</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt57" value="mx">
+                                <label class="form-check-label" for="pt57">mx</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt58" value="Cable ties">
+                                <label class="form-check-label" for="pt58">Cable ties</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt59" value="Fittings and accessories (FM bend, necessary elbows, coupilngs, Gatevalve, tank inlet and outlet)">
+                                <label class="form-check-label" for="pt59">Fittings and accessories (FM bend, necessary elbows, coupilngs, Gatevalve, tank inlet and outlet)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt60" value="Water point">
+                                <label class="form-check-label" for="pt60">Water point</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt61" value="Solar structure">
+                                <label class="form-check-label" for="pt61">Solar structure</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt62" value="Labour cost and transport">
+                                <label class="form-check-label" for="pt62">Labour cost and transport</label>
+                            </div>
                         </div>
                     </div>
                     <small class="text-muted">Click to select multiple project types</small>
@@ -210,13 +314,13 @@
             <div class="row">
                 <div class="col-md-12 mb-3">
                     <label for="description" class="form-label">Quotation Description *</label>
-                    <textarea class="form-control" id="description" name="description" rows="2" required>We have pleasure in quoting our prices for borehole development as follows;</textarea>
+                    <textarea class="form-control" id="description" name="description" rows="2" required>{{ rfq.description if rfq and rfq.description else 'We have pleasure in quoting our prices for borehole development as follows;' }}</textarea>
                 </div>
             </div>
             
             <div class="mb-3">
                 <label for="project_location" class="form-label">Project Location *</label>
-                <input type="text" class="form-control" id="project_location" name="project_location" required>
+                <input type="text" class="form-control" id="project_location" name="project_location" value="{{ rfq.location if rfq else '' }}" required>
             </div>
             
             <h5 class="mb-3">Total Amount</h5>
@@ -358,6 +462,43 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.dropdown-menu').addEventListener('click', function(e) {
         e.stopPropagation();
     });
+    
+    const hasRfq = "{{ 'true' if rfq else 'false' }}" === "true";
+    if (hasRfq) {
+    // Auto-fill RFQ project type and items
+    let matched = false;
+    const rfqItem = "{{ rfq.item|lower }}".trim();
+    if (rfqItem) {
+        document.querySelectorAll('.project-type-checkbox').forEach(cb => {
+            const val = cb.value.toLowerCase();
+            if (val.includes(rfqItem) || rfqItem.includes(val)) {
+                if (!cb.checked) {
+                    cb.checked = true;
+                    matched = true;
+                }
+            }
+        });
+        
+        if (matched) {
+            updateSelectedProjectTypes();
+            
+            // Wait slightly for DOM to render the new inputs
+            setTimeout(() => {
+                const unitInputs = document.querySelectorAll('input[name^="project_unit_"]');
+                if (unitInputs.length > 0) unitInputs[0].value = "{{ rfq.unit if rfq and rfq.unit else '' }}";
+                
+                const qtyInputs = document.querySelectorAll('input[name^="project_quantity_"]');
+                if (qtyInputs.length > 0) qtyInputs[0].value = "{{ rfq.qty if rfq and rfq.qty else '' }}";
+                
+                const rateInputs = document.querySelectorAll('input[name^="project_unit_rate_"]');
+                if (rateInputs.length > 0) rateInputs[0].value = "{{ rfq.unit_rate if rfq and rfq.unit_rate else '' }}";
+                
+                // Trigger calculation
+                if (qtyInputs.length > 0) qtyInputs[0].dispatchEvent(new Event('input'));
+            }, 100);
+        }
+    }
+    }
 });
 </script>
 {% endblock %}

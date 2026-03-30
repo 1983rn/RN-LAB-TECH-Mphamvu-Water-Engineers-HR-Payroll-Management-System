@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if activity else 'New' }} Farm Activity - MWE{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas {{ 'fa-edit' if activity else 'fa-plus-circle' }} me-2 text-success"></i>
+                    {{ 'Edit Farm Activity' if activity else 'New Farm Activity' }}
+                </h5>
+                <a href="{{ url_for('farm.view_activity', activity_id=activity.id) if activity else url_for('farm.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="activity_name" class="form-label fw-bold">Activity Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="activity_name" name="activity_name" value="{{ activity.activity_name if activity else '' }}" required placeholder="e.g. Maize Planting 2026">
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label fw-bold">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ activity.start_date.strftime('%Y-%m-%d') if activity and activity.start_date else '' }}">
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <label for="end_date" class="form-label fw-bold">End/Harvest Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ activity.end_date.strftime('%Y-%m-%d') if activity and activity.end_date else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label fw-bold">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="Planned" {% if activity and activity.status == 'Planned' %}selected{% endif %}>Planned</option>
+                            <option value="In Progress" {% if activity and activity.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Harvesting" {% if activity and activity.status == 'Harvesting' %}selected{% endif %}>Harvesting</option>
+                            <option value="Completed" {% if activity and activity.status == 'Completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-bold">Description / Notes</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="Describe the plot size, crop variety, or general operational plan...">{{ activity.description if activity else '' }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success py-2 text-uppercase fw-bold shadow-sm">
+                            <i class="fas {{ 'fa-save' if activity else 'fa-plus' }} me-2"></i> {{ 'Update Activity' if activity else 'Create Activity' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

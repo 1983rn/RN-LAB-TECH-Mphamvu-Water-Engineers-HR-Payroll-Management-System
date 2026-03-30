@@ -224,6 +224,43 @@ def delete_employee(employee_id):
         flash(f'Error deleting employee: {str(e)}', 'error')
         return redirect(url_for('employees.list_employees'))
 
+@employee_bp.route('/hard_delete/<int:employee_id>', methods=['POST'])
+@login_required
+@hr_required
+def hard_delete_employee(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    try:
+        from models import EmployeeLoan, Notification, DisciplinaryRecord, Payroll, Attendance
+        
+        # Delete related records
+        Payroll.query.filter_by(employee_id=employee_id).delete()
+        Attendance.query.filter_by(employee_id=employee_id).delete()
+        EmployeeLoan.query.filter_by(employee_id=employee_id).delete()
+        DisciplinaryRecord.query.filter_by(employee_id=employee_id).delete()
+        Notification.query.filter_by(employee_id=employee_id).delete()
+        
+        # Optionally remove photo if it exists
+        if employee.photo_path:
+            import os
+            photo_full_path = os.path.join(current_app.root_path, 'static', employee.photo_path)
+            if os.path.exists(photo_full_path):
+                try:
+                    os.remove(photo_full_path)
+                except Exception:
+                    pass
+                    
+        db.session.delete(employee)
+        db.session.commit()
+        
+        flash(f'Employee {employee.first_name} {employee.last_name} and all associated records have been permanently removed.', 'success')
+        return redirect(url_for('employees.disciplinary_list'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error permanently deleting employee: {str(e)}', 'error')
+        return redirect(url_for('employees.disciplinary_list'))
+
 @employee_bp.route('/dismiss/<int:employee_id>', methods=['POST'])
 @login_required
 @hr_required
@@ -341,7 +378,12 @@ def generate_id_card(employee_id):
         buffer = generate_dual_sided_id_card(employee)
         
         response = Response(buffer.getvalue(), mimetype='application/pdf')
-        response.headers['Content-Disposition'] = f'attachment; filename=ID_Card_{employee.employment_number}.pdf'
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_emp_no = employee.employment_number.replace('/', '_')
+        response.headers['Content-Disposition'] = f'attachment; filename=ID_Card_{safe_emp_no}_{timestamp}.pdf'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
         
         return response
     except Exception as e:
@@ -362,7 +404,11 @@ def generate_all_id_cards():
         buffer = generate_bulk_id_cards(employees)
         
         response = Response(buffer.getvalue(), mimetype='application/pdf')
-        response.headers['Content-Disposition'] = 'attachment; filename=ALL_EMPLOYEE_ID_CARDS.pdf'
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        response.headers['Content-Disposition'] = f'attachment; filename=ALL_EMPLOYEE_ID_CARDS_{timestamp}.pdf'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
         
         return response
     except Exception as e:

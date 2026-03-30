@@ -155,6 +155,9 @@ class Invoice(db.Model):
     amount = db.Column(db.Float, nullable=False)
     paid_amount = db.Column(db.Float, default=0)
     status = db.Column(db.String(20), default='Unpaid')
+    is_approved = db.Column(db.Boolean, default=False)
+    approved_by = db.Column(db.String(100))
+    approved_date = db.Column(db.DateTime)
     payment_terms = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -258,3 +261,119 @@ class DisciplinaryRecord(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     employee = db.relationship('Employee', backref='disciplinary_records')
+
+class RFQRequest(db.Model):
+    __tablename__ = 'rfq_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    client = db.Column(db.String(200))
+    location = db.Column(db.String(200))
+    item = db.Column(db.String(200))
+    description = db.Column(db.Text)
+    unit = db.Column(db.String(50))
+    qty = db.Column(db.Float)
+    unit_rate = db.Column(db.Float)
+    total = db.Column(db.Float)
+    source = db.Column(db.String(50))  # 'facebook' or 'email'
+    status = db.Column(db.String(20), default='pending') # 'pending' or 'processed'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ==========================================
+# ENTERPRISE MODULES
+# ==========================================
+
+class ClientCreditScore(db.Model):
+    __tablename__ = 'client_credit_scores'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.client_id'), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.String(50), nullable=False)
+    repayment_chance = db.Column(db.String(50), nullable=False)
+    interpretation = db.Column(db.Text, nullable=False)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    client = db.relationship('Client', backref=db.backref('credit_scores', lazy=True, cascade='all, delete-orphan'))
+
+class Inventory(db.Model):
+    __tablename__ = 'inventory'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    asset_name = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(100), nullable=False)
+    subcategory = db.Column(db.String(100))
+    quantity = db.Column(db.Integer, nullable=False, default=0)
+    unit_value = db.Column(db.Float, nullable=False, default=0.0)
+    total_value = db.Column(db.Float, nullable=False, default=0.0)
+    condition = db.Column(db.String(100), default='New/Excellent/Good')
+    location = db.Column(db.String(200))
+    description = db.Column(db.Text)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class FarmActivity(db.Model):
+    __tablename__ = 'farm_activities'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    activity_name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    status = db.Column(db.String(50), default='Planned')
+    profit = db.Column(db.Float, default=0.0)
+    
+    inputs = db.relationship('FarmInput', backref='activity_ref', lazy=True, cascade="all, delete-orphan")
+    outputs = db.relationship('FarmOutput', backref='activity_ref', lazy=True, cascade="all, delete-orphan")
+    expenses = db.relationship('FarmExpense', backref='activity_ref', lazy=True, cascade="all, delete-orphan")
+
+    def update_profit(self):
+        total_income = sum(output.total_value for output in self.outputs) if self.outputs else 0.0
+        total_expense = sum(expense.amount for expense in self.expenses) if self.expenses else 0.0
+        self.profit = total_income - total_expense
+
+class FarmInput(db.Model):
+    __tablename__ = 'farm_inputs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=False)
+    item_name = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(100))
+    quantity = db.Column(db.Float, default=0.0)
+    unit = db.Column(db.String(50))
+    cost = db.Column(db.Float, default=0.0)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+
+class FarmOutput(db.Model):
+    __tablename__ = 'farm_outputs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=False)
+    product_name = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Float, default=0.0)
+    unit = db.Column(db.String(50))
+    unit_price = db.Column(db.Float, default=0.0)
+    total_value = db.Column(db.Float, default=0.0)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+
+class FarmExpense(db.Model):
+    __tablename__ = 'farm_expenses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=False)
+    expense_category = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    amount = db.Column(db.Float, default=0.0)
+    expense_date = db.Column(db.Date)
+
+class CashBookEntry(db.Model):
+    __tablename__ = 'cash_book_entries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    description = db.Column(db.String(255), nullable=False)
+    reference = db.Column(db.String(50))
+    amount = db.Column(db.Float, nullable=False)
+    type = db.Column(db.String(20), nullable=False)  # 'Credit' or 'Debit'
+    category = db.Column(db.String(100))
+    department = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

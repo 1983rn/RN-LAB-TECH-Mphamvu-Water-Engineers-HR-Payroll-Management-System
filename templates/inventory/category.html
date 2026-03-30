@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category_name }} - MWE Inventory{% endblock %}
+
+{% block extra_css %}
+<style>
+    .inv-category-page {
+        font-family: 'Outfit', sans-serif;
+        background-color: #f8fbff;
+        padding: 20px;
+    }
+    .cat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+    .cat-title-area {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .cat-title-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.4rem;
+    }
+    /* Dynamic colors based on category */
+    .icon-Borehole { background: #eef6ff; color: #4384f5; }
+    .icon-Office { background: #fdf2ff; color: #8e44ad; }
+    .icon-Animal { background: #effcf4; color: #23b761; }
+    .icon-Crop { background: #fffcf0; color: #f2ad3c; }
+
+    .cat-title-text h2 {
+        font-weight: 700;
+        color: #1a2533;
+        margin-bottom: 2px;
+        font-size: 1.4rem;
+    }
+    .cat-title-text p {
+        color: #838a95;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+
+    .cat-actions {
+        display: flex;
+        gap: 12px;
+    }
+    .btn-outline-custom {
+        border: 1px solid #ebedf2;
+        background: white;
+        color: #3b4250;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 8px 16px;
+    }
+    .btn-add-item {
+        background: #4384f5;
+        color: white;
+        border: none;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 8px 16px;
+    }
+
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+    .sum-card {
+        background: white;
+        border: 1px solid #ebedf2;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .sum-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    .sum-text h6 {
+        font-size: 0.8rem;
+        color: #838a95;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    .sum-text h4 {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #1a2533;
+        margin-bottom: 0;
+    }
+
+    .toolbar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .search-box {
+        flex: 1;
+        position: relative;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 10px 15px 10px 40px;
+        border: 1px solid #ebedf2;
+        border-radius: 8px;
+        background: white;
+    }
+    .search-box i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #a0a5b1;
+    }
+    .filter-dropdown {
+        min-width: 150px;
+        padding: 10px 15px;
+        border: 1px solid #ebedf2;
+        border-radius: 8px;
+        background: white;
+        color: #3b4250;
+    }
+
+    /* Accordion styles */
+    .subcat-accordion {
+        background: white;
+        border: 1px solid #ebedf2;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        overflow: hidden;
+    }
+    .subcat-header {
+        padding: 18px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        background: white;
+        transition: background-color 0.2s;
+    }
+    .subcat-header:hover {
+        background-color: #f8fbff;
+    }
+    .subcat-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .subcat-chevron {
+        color: #a0a5b1;
+        transition: transform 0.3s;
+    }
+    .subcat-header.active .subcat-chevron {
+        transform: rotate(90deg);
+    }
+    .subcat-name {
+        font-weight: 700;
+        color: #3b4250;
+        font-size: 1.05rem;
+    }
+    .subcat-count {
+        background: #f1f3f7;
+        color: #838a95;
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .subcat-value {
+        font-weight: 800;
+        color: #1a2533;
+        font-size: 1.1rem;
+    }
+    
+    .subcat-body {
+        display: none;
+        padding: 0 20px 20px 20px;
+        border-top: 1px solid #ebedf2;
+    }
+    .subcat-body.show {
+        display: block;
+    }
+
+    .table-custom {
+        width: 100%;
+        margin-top: 15px;
+    }
+    .table-custom th {
+        font-size: 0.8rem;
+        color: #a0a5b1;
+        text-transform: uppercase;
+        font-weight: 600;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ebedf2;
+    }
+    .table-custom td {
+        padding: 12px 0;
+        vertical-align: middle;
+        border-bottom: 1px solid #f8fbff;
+        font-size: 0.95rem;
+        color: #3b4250;
+    }
+    .table-custom tr:last-child td {
+        border-bottom: none;
+    }
+    .cond-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .cond-good { background: #effcf4; color: #23b761; }
+    .cond-fair { background: #fffcf0; color: #f2ad3c; }
+    .cond-poor { background: #feeff0; color: #dc3545; }
+
+    .action-btn {
+        background: none;
+        border: none;
+        color: #a0a5b1;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .action-btn:hover { color: #4384f5; }
+    
+    /* Grand Total Footer */
+    .grand-total-footer {
+        background: #1a2533;
+        color: white;
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+    }
+    .gt-left h4 { margin: 0; font-weight: 600; font-size: 1.1rem; }
+    .gt-left p { margin: 0; color: #a0a5b1; font-size: 0.85rem; }
+    .gt-right h2 { margin: 0; font-weight: 800; font-size: 1.8rem; }
+    .gt-right p { margin: 0; color: #a0a5b1; font-size: 0.8rem; text-align: right; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+{% set is_borehole = (category_name == 'Borehole Drilling') %}
+{% set is_office = (category_name == 'Office Equipment') %}
+{% set is_animal = (category_name == 'Animal Farm') %}
+{% set is_crop = (category_name == 'Crop Farming') %}
+
+{% set icon_class = 'fa-tools color-blue' if is_borehole else 'fa-desktop color-purple' if is_office else 'fa-paw color-green' if is_animal else 'fa-tractor color-yellow' %}
+{% set bg_class = 'icon-Borehole' if is_borehole else 'icon-Office' if is_office else 'icon-Animal' if is_animal else 'icon-Crop' %}
+
+<div class="inv-category-page fade-in">
+    <!-- Header -->
+    <div class="cat-header">
+        <div class="cat-title-area">
+            <div class="cat-title-icon {{ bg_class }}">
+                <i class="fas {{ icon_class }}"></i>
+            </div>
+            <div class="cat-title-text">
+                <h2>
+                    {{ category_name }}
+                    {% if is_borehole %} Assets {% else %} Inventory {% endif %}
+                </h2>
+                <p>
+                    {% if is_borehole %}Drilling equipment, pumps, casing, vehicles, safety & survey tools
+                    {% elif is_office %}Computing devices, furniture, communication & climate control
+                    {% elif is_animal %}Livestock, housing, feeding, dairy, veterinary & health supplies
+                    {% elif is_crop %}Seeds, fertilizers, agrochemicals, machinery, irrigation & storage
+                    {% else %}Asset tracking and management
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="cat-actions">
+            <a href="{{ url_for('inventory.export_csv', category=category_name) }}" class="btn btn-outline-custom"><i class="fas fa-file-export me-2"></i>Export CSV</a>
+            <a href="{{ url_for('inventory.add_item') }}?cat={{ category_name }}" class="btn btn-add-item"><i class="fas fa-plus me-2"></i>Add Item</a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="sum-card">
+            <div class="sum-icon icon-blue" style="color:#4384f5;"><i class="fas fa-dollar-sign"></i></div>
+            <div class="sum-text">
+                <h6>Total Value</h6>
+                <h4>MWK {{ "{:,.2f}".format(total_value) }}</h4>
+            </div>
+        </div>
+        <div class="sum-card">
+            <div class="sum-icon icon-purple" style="color:#8e44ad;"><i class="fas fa-box"></i></div>
+            <div class="sum-text">
+                <h6>Line Items</h6>
+                <h4>{{ line_items }} items</h4>
+            </div>
+        </div>
+        <div class="sum-card">
+            <div class="sum-icon icon-green" style="color:#23b761;"><i class="fas fa-filter"></i></div>
+            <div class="sum-text">
+                <h6>Subcategories</h6>
+                <h4>{{ subcategories|length }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, category, location...">
+        </div>
+        <select class="filter-dropdown">
+            <option>All Subcategories</option>
+            {% for subcat in subcategories %}
+            <option>{{ subcat }}</option>
+            {% endfor %}
+        </select>
+        <select class="filter-dropdown">
+            <option>All Conditions</option>
+            <option>New</option>
+            <option>Excellent</option>
+            <option>Good</option>
+            <option>Fail</option>
+            <option>Poor</option>
+        </select>
+    </div>
+
+    <!-- Subcategories Accordion -->
+    {% for subcat, data in subcategories.items() %}
+    <div class="subcat-accordion">
+        <div class="subcat-header" onclick="toggleAccordion(this)">
+            <div class="subcat-left">
+                <i class="fas fa-chevron-right subcat-chevron"></i>
+                <span class="subcat-name">{{ subcat }}</span>
+                <span class="subcat-count">{{ data['items']|length }} items</span>
+            </div>
+            <div class="subcat-value">MWK {{ "{:,.2f}".format(data.total) }}</div>
+        </div>
+        <div class="subcat-body">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th width="30%">Item Name</th>
+                        <th width="15%">Location</th>
+                        <th width="15%">Condition</th>
+                        <th width="10%" class="text-center">Qty</th>
+                        <th width="15%" class="text-end">Unit Value</th>
+                        <th width="15%" class="text-end">Total</th>
+                        <th width="10%" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data['items'] %}
+                    <tr class="item-row">
+                        <td class="fw-bold">{{ item.asset_name }}</td>
+                        <td><span class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>{{ item.location or 'Main Office' }}</span></td>
+                        <td>
+                            {% set cond = item.condition|lower %}
+                            {% if cond in ['new', 'excellent', 'good'] %}
+                                <span class="cond-badge cond-good">{{ item.condition }}</span>
+                            {% elif cond in ['fail', 'poor'] %}
+                                <span class="cond-badge cond-poor">{{ item.condition }}</span>
+                            {% else %}
+                                <span class="cond-badge cond-fair">{{ item.condition or 'Good' }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center fw-bold">{{ item.quantity }}</td>
+                        <td class="text-end text-muted">{{ "{:,.2f}".format(item.unit_value) }}</td>
+                        <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(item.total_value) }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('inventory.edit_item', item_id=item.id) }}" class="action-btn me-2" title="Edit"><i class="fas fa-pen"></i></a>
+                            <form action="{{ url_for('inventory.delete_item', item_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this asset?');">
+                                <button type="submit" class="action-btn text-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5 bg-white border rounded">
+        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+        <h5>No assets found in {{ category_name }}</h5>
+        <a href="{{ url_for('inventory.add_item') }}?cat={{ category_name }}" class="btn btn-primary mt-2">Add First Item</a>
+    </div>
+    {% endfor %}
+
+    <!-- Footer Grand Total -->
+    {% if subcategories %}
+    <div class="grand-total-footer">
+        <div class="gt-left">
+            <h4>Grand Total &mdash; {{ category_name }}</h4>
+            <p>{{ line_items }} line items shown</p>
+        </div>
+        <div class="gt-right">
+            <h2>MWK {{ "{:,.2f}".format(total_value) }}</h2>
+            <p>Estimated Value</p>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function toggleAccordion(header) {
+        header.classList.toggle('active');
+        const body = header.nextElementSibling;
+        body.classList.toggle('show');
+    }
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let qs = this.value.toLowerCase();
+        let rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+            if(row.innerText.toLowerCase().includes(qs)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

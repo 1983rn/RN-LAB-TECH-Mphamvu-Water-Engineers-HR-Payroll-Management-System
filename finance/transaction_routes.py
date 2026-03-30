@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from models import db, Transaction, Client, Invoice
 from datetime import datetime, date
 from functools import wraps
+from utils.credit_scoring import update_client_credit_score
 
 transaction_bp = Blueprint('transactions', __name__, url_prefix='/transactions')
 
@@ -155,6 +156,7 @@ def delete_transaction(transaction_id):
     
     try:
         # Update invoice paid amount if invoice is linked
+        invoice = None
         if transaction.invoice_id:
             invoice = Invoice.query.get(transaction.invoice_id)
             if invoice:
@@ -168,7 +170,17 @@ def delete_transaction(transaction_id):
         db.session.delete(transaction)
         db.session.commit()
         
-        flash('Transaction deleted successfully!', 'success')
+        # Determine client ID depending on what's available
+        client_id_to_update = None
+        if invoice and hasattr(invoice, 'contract') and invoice.contract and \
+           hasattr(invoice.contract, 'quotation') and invoice.contract.quotation:
+            client_id_to_update = invoice.contract.quotation.client_id
+            
+        # Update credit score if we have the client context
+        if client_id_to_update:
+            update_client_credit_score(client_id_to_update)
+
+        flash('Payment processed successfully.', 'success')
         return redirect(url_for('transactions.transaction_list'))
         
     except Exception as e:

@@ -13,7 +13,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
-from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_signature_block, build_pdf_with_numbering, create_numbered_doc, generate_document_number, generate_qr_code, add_stamp_and_qr, generate_document_hash, secure_pdf, add_hash_to_story
+from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_signature_block, build_pdf_with_numbering, create_numbered_doc, generate_document_number, generate_qr_code, add_signature_stamp_qr, add_stamp_and_qr, generate_document_hash, secure_pdf, add_hash_to_story
 
 finance_bp = Blueprint('finance', __name__, url_prefix='/finance')
 
@@ -39,8 +39,8 @@ def admin_required(f):
 @admin_required
 def list_invoices():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
-    # Fetch approved quotations that haven't been delivered
-    approved_quotations = Quotation.query.filter_by(status='Approved', delivery_confirmed=False).all()
+    # Fetch approved quotations that haven't had an invoice generated yet
+    approved_quotations = Quotation.query.filter_by(status='Approved', invoice_generated=False).all()
     return render_template('finance/invoices/list.html', invoices=invoices, approved_quotations=approved_quotations)
 
 @finance_bp.route('/invoice/generate/<int:contract_id>', methods=['GET', 'POST'])
@@ -256,8 +256,7 @@ def download_invoice_pdf(invoice_id):
     story.append(bank_table)
     story.append(Spacer(1, 5))
     
-    story = add_signature_block(story, layout_mode=layout_mode)
-    story = add_stamp_and_qr(story, inv_number, qr_path)
+    story = add_signature_stamp_qr(story, inv_number, qr_path, layout_mode=layout_mode)
     story = add_hash_to_story(story, doc_hash)
     story = add_pdf_footer(story, layout_mode=layout_mode)
     build_pdf_with_numbering(doc, story)
@@ -278,9 +277,15 @@ def download_invoice_pdf(invoice_id):
 @admin_required
 def list_delivery_notes():
     delivery_notes = DeliveryNote.query.order_by(DeliveryNote.created_at.desc()).all()
-    # Fetch approved quotations that haven't been delivered
-    approved_quotations = Quotation.query.filter_by(status='Approved', delivery_confirmed=False).all()
-    return render_template('finance/delivery/list.html', delivery_notes=delivery_notes, approved_quotations=approved_quotations)
+    # Fetch invoices that are approved but haven't had a delivery note generated yet
+    # We join with Quotation to ensure we only get those that need delivery notes
+    approved_invoices = Invoice.query.filter_by(is_approved=True).all()
+    # Filter those that don't have a delivery note yet
+    pending_delivery_invoices = [inv for inv in approved_invoices if not inv.quotation.delivery_note_generated]
+    
+    return render_template('finance/delivery/list.html', 
+                         delivery_notes=delivery_notes, 
+                         pending_delivery_invoices=pending_delivery_invoices)
 
 @finance_bp.route('/delivery-note/create/<int:invoice_id>', methods=['GET', 'POST'])
 @login_required
@@ -449,8 +454,7 @@ def download_delivery_note_pdf(delivery_id):
     story.append(signature_table)
     story.append(Spacer(1, 2))
     
-    story = add_signature_block(story, layout_mode=layout_mode)
-    story = add_stamp_and_qr(story, dn_number, qr_path)
+    story = add_signature_stamp_qr(story, dn_number, qr_path, layout_mode=layout_mode)
     story = add_hash_to_story(story, doc_hash)
     story = add_pdf_footer(story, layout_mode=layout_mode)
     build_pdf_with_numbering(doc, story)
@@ -492,10 +496,10 @@ def preview_delivery_note(quotation_id):
         items=items
     )
 
-@finance_bp.route('/delivery-approve', methods=['POST'])
+@finance_bp.route('/invoice-generate', methods=['POST'])
 @login_required
 @admin_required
-def approve_delivery():
+def generate_invoice_from_quotation():
     data = request.get_json()
     quotation_id = data.get('quotation_id')
     password = data.get('password')
@@ -503,12 +507,7 @@ def approve_delivery():
     if not quotation_id or not password:
         return jsonify({'success': False, 'message': 'Missing quotation ID or password'}), 400
         
-    # Verify secure password "***777xxx///A"
     expected_password = "***777xxx///A"
-    # Using straight comparison as requested, or hashing if you prefer
-    # To use hashlib with sha256 as shown in the prompt:
-    # hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    # expected_hash = hashlib.sha256(expected_password.encode()).hexdigest()
     if password != expected_password:
         return jsonify({'success': False, 'message': 'Invalid Authorization Password'}), 403
         
@@ -517,12 +516,6 @@ def approve_delivery():
         return jsonify({'success': False, 'message': 'Quotation not found'}), 404
         
     try:
-        # Mark as delivered
-        quotation.delivery_confirmed = True
-        quotation.delivery_approved_by = session.get('username')
-        quotation.delivery_approved_date = datetime.utcnow()
-        quotation.status = 'Delivered'
-        
         # Check if contract exists, create if not
         contract = Contract.query.filter_by(quotation_id=quotation.quotation_id).first()
         if not contract:
@@ -533,7 +526,7 @@ def approve_delivery():
                 status='Approved'
             )
             db.session.add(contract)
-            db.session.flush() # get contract_id
+            db.session.flush()
             
         # Check if invoice exists, create if not
         invoice = Invoice.query.filter_by(contract_id=contract.contract_id).first()
@@ -547,11 +540,82 @@ def approve_delivery():
                 due_date=date.today() + timedelta(days=14),
                 amount=quotation.total_amount,
                 payment_terms='Payment within 14 days',
-                status='Unpaid'
+                status='Unpaid',
+                is_approved=False # Explicitly False until next step
             )
             db.session.add(invoice)
             db.session.flush()
             
+        quotation.invoice_generated = True
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Invoice Generated Successfully. It must now be approved before delivery.',
+            'invoice_id': invoice.invoice_id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@finance_bp.route('/invoice/approve', methods=['POST'])
+@login_required
+@admin_required
+def approve_invoice():
+    data = request.get_json()
+    invoice_id = data.get('invoice_id')
+    password = data.get('password')
+    
+    if not invoice_id or not password:
+        return jsonify({'success': False, 'message': 'Missing Invoice ID or password'}), 400
+        
+    expected_password = "***777xxx///A"
+    if password != expected_password:
+        return jsonify({'success': False, 'message': 'Invalid Authorization Password'}), 403
+        
+    invoice = Invoice.query.get(invoice_id)
+    if not invoice:
+        return jsonify({'success': False, 'message': 'Invoice not found'}), 404
+        
+    try:
+        invoice.is_approved = True
+        invoice.approved_by = session.get('username')
+        invoice.approved_date = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Invoice Approved Successfully. Delivery Note can now be generated.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@finance_bp.route('/delivery-generate', methods=['POST'])
+@login_required
+@admin_required
+def generate_delivery_note_from_invoice():
+    data = request.get_json()
+    invoice_id = data.get('invoice_id')
+    
+    if not invoice_id:
+        return jsonify({'success': False, 'message': 'Missing Invoice ID'}), 400
+        
+    invoice = Invoice.query.get(invoice_id)
+    if not invoice:
+        return jsonify({'success': False, 'message': 'Invoice not found'}), 404
+    
+    if not invoice.is_approved:
+        return jsonify({'success': False, 'message': 'Invoice must be approved first'}), 403
+        
+    quotation = invoice.quotation
+    
+    try:
+        # Mark as delivered
+        quotation.delivery_confirmed = True
+        quotation.status = 'Delivered'
+        
         # Check if delivery note exists, create if not
         delivery_note = DeliveryNote.query.filter_by(invoice_id=invoice.invoice_id).first()
         if not delivery_note:
@@ -566,14 +630,12 @@ def approve_delivery():
             )
             db.session.add(delivery_note)
             
-        quotation.invoice_generated = True
         quotation.delivery_note_generated = True
-        
         db.session.commit()
+        
         return jsonify({
             'success': True, 
-            'message': 'Delivery Approved Successfully',
-            'invoice_id': invoice.invoice_id,
+            'message': 'Delivery Note Generated Successfully.',
             'delivery_note_id': delivery_note.delivery_id
         })
         

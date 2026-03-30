@@ -259,14 +259,28 @@ def _get_recognizer():
         _recognizer = MultiFaceRecognizer()
     return _recognizer
 
+def _camera_available():
+    """Check if a physical camera device is accessible on this machine."""
+    try:
+        import cv2
+        cap = cv2.VideoCapture(0)
+        available = cap.isOpened()
+        cap.release()
+        return available
+    except Exception:
+        return False
+
 @attendance_bp.route('/live_kiosk')
 @login_required
 def live_kiosk():
+    if not _camera_available():
+        flash('Live camera is not available on this server. This feature requires a local machine with a connected webcam.', 'warning')
+        return render_template('attendance/live_kiosk.html', camera_unavailable=True)
     try:
         _get_recognizer().load_known_faces()
     except Exception:
         pass
-    return render_template('attendance/live_kiosk.html')
+    return render_template('attendance/live_kiosk.html', camera_unavailable=False)
 
 def gen_frames():
     try:
@@ -300,4 +314,6 @@ def gen_frames():
 @login_required
 def video_feed():
     from flask import Response
+    if not _camera_available():
+        return Response('Camera not available', status=503)
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')

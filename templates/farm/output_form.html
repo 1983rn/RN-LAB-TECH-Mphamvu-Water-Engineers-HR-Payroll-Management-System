@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Record Farm Output - MWE{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-seedling me-2 text-success"></i> Record Harvest / Output
+                </h5>
+                <a href="{{ url_for('farm.view_activity', activity_id=activity.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Activity
+                </a>
+            </div>
+            
+            <div class="bg-light px-4 py-2 border-bottom">
+                <span class="text-muted small fw-bold">ACTIVITY:</span>
+                <span class="text-dark fw-bold ms-2">{{ activity.activity_name }}</span>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label fw-bold">Product Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="product_name" name="product_name" required placeholder="e.g. White Maize, Tomatoes">
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="quantity" class="form-label fw-bold">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control" id="quantity" name="quantity" min="0" required onchange="calculateOutputTotal()">
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <label for="unit" class="form-label fw-bold">Unit of Measurement <span class="text-danger">*</span></label>
+                            <select class="form-select" id="unit" name="unit" required>
+                                <option value="" selected disabled>Select Unit</option>
+                                <option value="kg">Kilograms (KG)</option>
+                                <option value="bags">Bags (50kg)</option>
+                                <option value="tonnes">Tonnes (t)</option>
+                                <option value="crates">Crates</option>
+                                <option value="bunches">Bunches</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="unit_price" class="form-label fw-bold">Unit Price / Value (MWK) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted border-end-0">MWK</span>
+                            <input type="number" step="0.01" class="form-control border-start-0" id="unit_price" name="unit_price" required onchange="calculateOutputTotal()">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="p-3 bg-light rounded text-center border" style="border-left: 4px solid #28a745 !important;">
+                            <span class="text-muted fw-bold me-2">Total Output Value:</span>
+                            <span class="fs-4 fw-bold text-success" id="output_total_display">MWK 0.00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success py-2 text-uppercase fw-bold shadow-sm">
+                            <i class="fas fa-plus me-2"></i> Record Output
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateOutputTotal() {
+        var quantity = parseFloat(document.getElementById('quantity').value) || 0;
+        var unitPrice = parseFloat(document.getElementById('unit_price').value) || 0;
+        var total = quantity * unitPrice;
+        
+        var formatter = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+        
+        document.getElementById('output_total_display').textContent = 'MWK ' + formatter.format(total);
+    }
+</script>
+{% endblock %}

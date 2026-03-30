@@ -10,7 +10,9 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
-from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_signature_block, build_pdf_with_numbering, create_numbered_doc, generate_document_number, generate_qr_code, add_stamp_and_qr, generate_document_hash, secure_pdf, add_hash_to_story
+from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_signature_block, build_pdf_with_numbering, create_numbered_doc, generate_document_number, generate_qr_code, add_signature_stamp_qr, add_stamp_and_qr, generate_document_hash, secure_pdf, add_hash_to_story
+
+from utils.credit_scoring import update_client_credit_score
 
 quotations_bp = Blueprint('quotations', __name__, url_prefix='/quotations')
 
@@ -41,6 +43,12 @@ def list_quotations():
 @login_required
 @admin_required
 def create_quotation():
+    rfq_id = request.args.get('rfq_id')
+    rfq = None
+    if rfq_id:
+        from models import RFQRequest
+        rfq = RFQRequest.query.get(rfq_id)
+        
     if request.method == 'POST':
         try:
             # Get or create client
@@ -87,7 +95,7 @@ def create_quotation():
             
             # Create quotation items for each selected project type
             total_amount = 0
-            for i, project_type in enumerate(project_types):
+            for i, p_type in enumerate(project_types):
                 unit = request.form.get(f'project_unit_{i}', '')
                 quantity = float(request.form.get(f'project_quantity_{i}', 0) or '0')
                 unit_rate = float(request.form.get(f'project_unit_rate_{i}', 0) or '0')
@@ -99,7 +107,7 @@ def create_quotation():
                 # Create quotation item
                 quotation_item = QuotationItem(
                     quotation_id=quotation.quotation_id,
-                    project_type=project_type,
+                    project_type=p_type,
                     unit=unit,
                     quantity=quantity,
                     unit_rate=unit_rate,
@@ -109,6 +117,11 @@ def create_quotation():
             
             # Update quotation total
             quotation.total_amount = total_amount
+            
+            # Mark RFQ as processed if present
+            if rfq is not None:
+                rfq.status = 'processed'  # type: ignore
+                
             db.session.commit()
             
             # Update client quotation amount
@@ -120,15 +133,76 @@ def create_quotation():
             
         except Exception as e:
             flash(f'Error creating quotation: {str(e)}', 'error')
-            return redirect(url_for('quotations.create_quotation'))
+            return redirect(url_for('quotations.create_quotation', rfq_id=rfq_id))
     
-    return render_template('quotations/create.html')
+    return render_template('quotations/create.html', rfq=rfq)
 
 @quotations_bp.route('/view/<int:quotation_id>')
 @login_required
 def view_quotation(quotation_id):
     quotation = Quotation.query.get_or_404(quotation_id)
     return render_template('quotations/view.html', quotation=quotation, timedelta=timedelta)
+
+@quotations_bp.route('/edit/<int:quotation_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_quotation(quotation_id):
+    quotation = Quotation.query.get_or_404(quotation_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update client info
+            client = quotation.client
+            client.client_name = request.form['client_name']
+            client.phone = request.form.get('client_phone') or None
+            client.email = request.form.get('client_email') or None
+            client.address = request.form['client_address']
+            
+            project_types = request.form.getlist('project_type')
+            client.project_type = ', '.join(project_types)
+            
+            # Update quotation fields
+            quotation.project_location = request.form['project_location']
+            quotation.description = request.form.get('description', 'We have pleasure in quoting our prices for borehole development as follows;')
+            
+            # Delete existing quotation items
+            QuotationItem.query.filter_by(quotation_id=quotation_id).delete()
+            
+            # Create new quotation items
+            total_amount = 0
+            for i, p_type in enumerate(project_types):
+                unit = request.form.get(f'project_unit_{i}', '')
+                quantity = float(request.form.get(f'project_quantity_{i}', 0) or '0')
+                unit_rate = float(request.form.get(f'project_unit_rate_{i}', 0) or '0')
+                
+                item_total = quantity * unit_rate
+                total_amount += item_total
+                
+                quotation_item = QuotationItem(
+                    quotation_id=quotation.quotation_id,
+                    project_type=p_type,
+                    unit=unit,
+                    quantity=quantity,
+                    unit_rate=unit_rate,
+                    total=item_total
+                )
+                db.session.add(quotation_item)
+            
+            # Update quotation total
+            quotation.total_amount = total_amount
+            client.quotation_amount = total_amount
+            
+            db.session.commit()
+            
+            flash(f'Quotation updated for {client.client_name}', 'success')
+            return redirect(url_for('quotations.list_quotations'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating quotation: {str(e)}', 'error')
+            return redirect(url_for('quotations.edit_quotation', quotation_id=quotation_id))
+    
+    return render_template('quotations/edit.html', quotation=quotation)
 
 @quotations_bp.route('/pdf/<int:quotation_id>')
 @login_required
@@ -137,15 +211,15 @@ def download_quotation_pdf(quotation_id):
     client = quotation.client
     
     item_count = len(quotation.quotation_items)
-    if item_count <= 10:
+    if item_count <= 6:
         layout_mode = "normal"
-    elif item_count <= 20:
+    elif item_count <= 14:
         layout_mode = "compact"
     else:
         layout_mode = "dense"
         
-    top_margin = 35 if layout_mode == 'normal' else (30 if layout_mode == 'compact' else 25)
-    bottom_margin = 40 if layout_mode == 'normal' else (35 if layout_mode == 'compact' else 30)
+    top_margin = 25 if layout_mode == 'normal' else (20 if layout_mode == 'compact' else 15)
+    bottom_margin = 30 if layout_mode == 'normal' else (25 if layout_mode == 'compact' else 20)
     
     # Updated to accommodate 520pt table (595pt A4 width - 520pt = 75pt / 2 = 37.5pt margins)
     left_right_margin = 37.5
@@ -201,7 +275,7 @@ def download_quotation_pdf(quotation_id):
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
     story.append(line_table)
-    story.append(Spacer(1, 5))
+    story.append(Spacer(1, 3))
     
     # ── 2. Client Info + Date (side by side) ──
     client_address_lines = client.address.replace('\n', '<br/>') if client.address else ''
@@ -238,15 +312,15 @@ def download_quotation_pdf(quotation_id):
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
     ]))
     story.append(location_table)
-    story.append(Spacer(1, 5))
+    story.append(Spacer(1, 3))
     
     # ── 3. Greeting & Intro ──
     story.append(Paragraph("Dear Sir/Madam,", italic_style))
-    story.append(Spacer(1, 3))
+    story.append(Spacer(1, 1))
     
     description_text = quotation.description if quotation.description else "We have pleasure in quoting our prices for borehole development as follows;"
     story.append(Paragraph(description_text, normal_style))
-    story.append(Spacer(1, 5))
+    story.append(Spacer(1, 3))
     
     # Header row (6 columns restored)
     items_data = [
@@ -325,24 +399,21 @@ def download_quotation_pdf(quotation_id):
     ]))
     
     story.append(items_table)
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 4))
     
     # ── 5. Validity & Signature ──
     story.append(Paragraph(
         f"<i>This quotation is valid for {quotation.validity_days} days</i>",
         normal_style
     ))
-    story.append(Spacer(1, 3))
+    story.append(Spacer(1, 1))
     
-    # Add signature block
-    story = add_signature_block(story, layout_mode=layout_mode)
-    
-    # Add stamp and QR code
-    story = add_stamp_and_qr(story, qtn_number, qr_path, layout_mode=layout_mode)
+    # Add combined signature, stamp, and QR code block
+    story = add_signature_stamp_qr(story, qtn_number, qr_path, layout_mode=layout_mode)
     
     # Add verification hash
     story = add_hash_to_story(story, doc_hash)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 4))
     
     # ── 6. Bank Details Footer (bordered box) ──
     bank_data = [
@@ -413,7 +484,10 @@ def approve_quotation(quotation_id):
         
         db.session.commit()
         
-        flash('Quotation approved and contract created!', 'success')
+        # Recalculate credit score after new invoice creation (affects outstanding balance ratio)
+        update_client_credit_score(quotation.client_id)
+
+        flash(f'Quotation approved successfully. Contract and Invoice created.', 'success')
         return redirect(url_for('quotations.list_quotations'))
         
     except Exception as e:
