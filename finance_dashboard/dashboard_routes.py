@@ -202,8 +202,11 @@ def add_cashbook_entry():
 @admin_required
 def analysis():
     period = request.args.get('period', 'monthly') # monthly, mid-year, annual
-    month = int(request.args.get('month', datetime.now().month))
-    year = int(request.args.get('year', datetime.now().year))
+    
+    month_str = request.args.get('month')
+    year_str = request.args.get('year')
+    month = int(month_str) if month_str and month_str.isdigit() else datetime.now().month
+    year = int(year_str) if year_str and year_str.isdigit() else datetime.now().year
     
     # Define date filters based on period
     start_date = datetime(year, month, 1).date()
@@ -237,10 +240,12 @@ def analysis():
         if not dept: dept = "Uncategorized"
         if dept not in dept_data:
             dept_data[dept] = {'income': 0.0, 'expense': 0.0, 'net': 0.0}
+            
+        safe_amount = float(amount) if amount is not None else 0.0
         if is_income:
-            dept_data[dept]['income'] += float(amount)
+            dept_data[dept]['income'] += safe_amount
         else:
-            dept_data[dept]['expense'] += float(amount)
+            dept_data[dept]['expense'] += safe_amount
         dept_data[dept]['net'] = dept_data[dept]['income'] - dept_data[dept]['expense']
 
     # 1. Core Business
