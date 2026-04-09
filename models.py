@@ -127,6 +127,13 @@ class QuotationItem(db.Model):
     unit_rate = db.Column(db.Float, nullable=False)
     total = db.Column(db.Float, nullable=False)
 
+class CustomProjectType(db.Model):
+    __tablename__ = 'custom_project_types'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_type = db.Column(db.String(200), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Contract(db.Model):
     __tablename__ = 'contracts'
     

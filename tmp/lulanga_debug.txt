@@ -1,0 +1,14 @@
+Clients matching Lulanga: [(16, 'Mr Lulanga'), (17, 'Mr Lulanga')]
+
+Quotations for Mr Lulanga (ID: 16):
+
+Quotations for Mr Lulanga (ID: 17):
+  Quotation ID: 11, Ref: QUO20260403130307
+    - ID: 38, Type: Geophysical survey, Unit: No, Qty: 1.0, Rate: 300000.0, Total: 300000.0
+    - ID: 39, Type: Solar Pumping System Installation, Unit: Meters, Qty: 1.0, Rate: 7000000.0, Total: 7000000.0
+    - ID: 40, Type: Tank 5000L and Stand, Unit: Meters, Qty: 1.0, Rate: 10500000.0, Total: 10500000.0
+    - ID: 41, Type: Borehole drilling 50m deep, Unit: Meters, Qty: 1.0, Rate: 8500000.0, Total: 8500000.0
+    - ID: 42, Type: Geophysical survey, Unit: , Qty: 0.0, Rate: 0.0, Total: 0.0
+    - ID: 43, Type: Borehole drilling 50m deep, Unit: , Qty: 0.0, Rate: 0.0, Total: 0.0
+    - ID: 44, Type: Solar Pumping System Installation, Unit: , Qty: 0.0, Rate: 0.0, Total: 0.0
+    - ID: 45, Type: Tank 5000L and Stand, Unit: , Qty: 0.0, Rate: 0.0, Total: 0.0

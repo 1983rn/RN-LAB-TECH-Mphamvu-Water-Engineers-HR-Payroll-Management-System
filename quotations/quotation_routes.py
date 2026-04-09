@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, make_response, jsonify
-from models import db, Client, Quotation, QuotationItem, Contract, Invoice, DeliveryNote, Transaction, Notification
+from models import db, Client, Quotation, QuotationItem, Contract, Invoice, DeliveryNote, Transaction, Notification, CustomProjectType
 from datetime import datetime, date, timedelta
 from functools import wraps
 import re
@@ -59,10 +59,20 @@ def create_quotation():
             project_types = request.form.getlist('project_type')  # Get all selected project types
             project_type = ', '.join(project_types)  # For client record
             
-            # Check if client exists (only if phone is provided)
+            # Check if client exists (first by phone, then by exact name match)
             client = None
             if client_phone:
                 client = Client.query.filter_by(phone=client_phone).first()
+                
+            if not client:
+                # Fallback to name search to prevent duplicates if phone was missed
+                # Case-insensitive name match
+                client = Client.query.filter(Client.client_name.ilike(client_name.strip())).first()
+                
+                # If found by name but missing phone, update phone
+                if client and not client.phone and client_phone:
+                    client.phone = client_phone
+                    db.session.commit()
             
             if not client:
                 client = Client(
@@ -128,6 +138,9 @@ def create_quotation():
             client.quotation_amount = total_amount
             db.session.commit()
             
+            # Recalculate credit score after quotation creation
+            update_client_credit_score(client.client_id)
+            
             flash(f'Quotation created for {client.client_name}', 'success')
             return redirect(url_for('quotations.list_quotations'))
             
@@ -135,7 +148,8 @@ def create_quotation():
             flash(f'Error creating quotation: {str(e)}', 'error')
             return redirect(url_for('quotations.create_quotation', rfq_id=rfq_id))
     
-    return render_template('quotations/create.html', rfq=rfq)
+    custom_project_types = CustomProjectType.query.all()
+    return render_template('quotations/create.html', rfq=rfq, custom_project_types=[t.project_type for t in custom_project_types])
 
 @quotations_bp.route('/view/<int:quotation_id>')
 @login_required
@@ -194,6 +208,9 @@ def edit_quotation(quotation_id):
             
             db.session.commit()
             
+            # Recalculate credit score after quotation update
+            update_client_credit_score(client.client_id)
+            
             flash(f'Quotation updated for {client.client_name}', 'success')
             return redirect(url_for('quotations.list_quotations'))
             
@@ -202,7 +219,32 @@ def edit_quotation(quotation_id):
             flash(f'Error updating quotation: {str(e)}', 'error')
             return redirect(url_for('quotations.edit_quotation', quotation_id=quotation_id))
     
-    return render_template('quotations/edit.html', quotation=quotation)
+    custom_project_types = CustomProjectType.query.all()
+    return render_template('quotations/edit.html', quotation=quotation, custom_project_types=[t.project_type for t in custom_project_types])
+
+@quotations_bp.route('/api/custom_project_types', methods=['POST'])
+@login_required
+@admin_required
+def add_custom_project_type():
+    try:
+        data = request.get_json()
+        project_type = data.get('project_type')
+        if not project_type:
+            return jsonify({'success': False, 'message': 'Project type is required'}), 400
+            
+        # Check if already exists
+        existing = CustomProjectType.query.filter_by(project_type=project_type).first()
+        if existing:
+            return jsonify({'success': False, 'message': 'Project type already exists'}), 400
+            
+        new_type = CustomProjectType(project_type=project_type)
+        db.session.add(new_type)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Custom project type added successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @quotations_bp.route('/pdf/<int:quotation_id>')
 @login_required
@@ -500,6 +542,7 @@ def approve_quotation(quotation_id):
 def delete_quotation(quotation_id):
     try:
         quotation = Quotation.query.get_or_404(quotation_id)
+        client_id_to_update = quotation.client_id
         
         # Cascade delete using direct quotation_id relationships
         
@@ -530,6 +573,9 @@ def delete_quotation(quotation_id):
         # Delete the quotation
         db.session.delete(quotation)
         db.session.commit()
+        
+        # Recalculate credit score after quotation delete
+        update_client_credit_score(client_id_to_update)
         
         return jsonify({'success': True, 'message': 'Quotation and all related records deleted successfully'}), 200
         

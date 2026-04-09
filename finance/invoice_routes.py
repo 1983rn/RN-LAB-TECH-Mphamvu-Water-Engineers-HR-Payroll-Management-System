@@ -14,6 +14,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_signature_block, build_pdf_with_numbering, create_numbered_doc, generate_document_number, generate_qr_code, add_signature_stamp_qr, add_stamp_and_qr, generate_document_hash, secure_pdf, add_hash_to_story
+from utils.credit_scoring import update_client_credit_score
 
 finance_bp = Blueprint('finance', __name__, url_prefix='/finance')
 
@@ -71,6 +72,9 @@ def generate_invoice(contract_id):
             contract.status = 'Invoiced'
             
             db.session.commit()
+            
+            # Recalculate credit score after generating invoice
+            update_client_credit_score(contract.quotation.client_id)
             
             flash(f'Invoice {invoice_number} generated successfully!', 'success')
             return redirect(url_for('finance.list_invoices'))
@@ -311,6 +315,9 @@ def create_delivery_note(invoice_id):
             
             db.session.commit()
             
+            # Recalculate credit score after generating delivery note
+            update_client_credit_score(invoice.quotation.client_id)
+            
             flash('Delivery note created successfully!', 'success')
             return redirect(url_for('finance.list_delivery_notes'))
             
@@ -549,6 +556,9 @@ def generate_invoice_from_quotation():
         quotation.invoice_generated = True
         db.session.commit()
         
+        # Recalculate credit score after invoice generation
+        update_client_credit_score(quotation.client_id)
+        
         return jsonify({
             'success': True, 
             'message': 'Invoice Generated Successfully. It must now be approved before delivery.',
@@ -583,6 +593,9 @@ def approve_invoice():
         invoice.approved_by = session.get('username')
         invoice.approved_date = datetime.utcnow()
         db.session.commit()
+        
+        # Recalculate credit score after invoice approval
+        update_client_credit_score(invoice.quotation.client_id)
         
         return jsonify({
             'success': True, 
@@ -632,6 +645,9 @@ def generate_delivery_note_from_invoice():
             
         quotation.delivery_note_generated = True
         db.session.commit()
+        
+        # Recalculate credit score after generating delivery note
+        update_client_credit_score(quotation.client_id)
         
         return jsonify({
             'success': True, 

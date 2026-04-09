@@ -77,14 +77,39 @@
                                 'Fittings and accessories (FM bend, necessary elbows, coupilngs, Gatevalve, tank inlet and outlet)',
                                 'Water point',
                                 'Solar structure',
-                                'Labour cost and transport'
+                                'Labour cost and transport',
+                                'Borehole drilling 50m deep'
                             ] %}
+                            
+                            {% if custom_project_types %}
+                            {% for pt in custom_project_types %}
+                            {% if pt not in all_project_types %}
+                            {% set _ = all_project_types.append(pt) %}
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                            
+                            {% for pt in existing_types %}
+                            {% if pt not in all_project_types %}
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="pt_ext_{{ loop.index }}" value="{{ pt }}" checked>
+                                <label class="form-check-label" for="pt_ext_{{ loop.index }}">{{ pt }}</label>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
                             {% for pt in all_project_types %}
                             <div class="form-check">
-                                <input class="form-check-input project-type-checkbox" type="checkbox" name="project_type" id="pt{{ loop.index }}" value="{{ pt }}" {{ 'checked' if pt in existing_types else '' }}>
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="pt{{ loop.index }}" value="{{ pt }}" {{ 'checked' if pt in existing_types else '' }}>
                                 <label class="form-check-label" for="pt{{ loop.index }}">{{ pt }}</label>
                             </div>
                             {% endfor %}
+                            
+                            <!-- Custom project type addition -->
+                            <div class="dropdown-divider mt-2" id="customProjectDivider"></div>
+                            <div class="input-group mb-2 mt-2 px-2">
+                                <input type="text" class="form-control form-control-sm" id="customProjectType" placeholder="Add custom project...">
+                                <button class="btn btn-outline-secondary btn-sm" type="button" id="addCustomProjectTypeBtn">Add</button>
+                            </div>
                         </div>
                     </div>
                     <small class="text-muted">Click to select multiple project types</small>
@@ -182,18 +207,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Project type dropdown functionality
+    let selectedOrder = existingItems.map(item => item.projectType);
     const projectTypeCheckboxes = document.querySelectorAll('.project-type-checkbox');
     const selectedProjectTypesSpan = document.getElementById('selectedProjectTypes');
     const projectDetailsSection = document.getElementById('projectDetailsSection');
     const projectDetailsContainer = document.getElementById('projectDetailsContainer');
     
     function updateSelectedProjectTypes() {
-        const selectedTypes = [];
-        projectTypeCheckboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                selectedTypes.push(checkbox.value);
-            }
-        });
+        const selectedTypes = selectedOrder;
         
         if (selectedTypes.length === 0) {
             selectedProjectTypesSpan.textContent = 'Select project types...';
@@ -233,6 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
             projectCard.innerHTML = `
                 <div class="card-header bg-info text-white">
                     <h6 class="mb-0">${projectType}</h6>
+                    <input type="hidden" name="project_type" value="${projectType}">
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -266,7 +288,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     projectTypeCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelectedProjectTypes);
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                if (!selectedOrder.includes(this.value)) {
+                    selectedOrder.push(this.value);
+                }
+            } else {
+                selectedOrder = selectedOrder.filter(type => type !== this.value);
+            }
+            updateSelectedProjectTypes();
+        });
     });
     
     // Prevent dropdown from closing when clicking on checkboxes
@@ -278,6 +309,83 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.dropdown-menu').addEventListener('click', function(e) {
         e.stopPropagation();
     });
+    
+    // Custom project type functionality
+    const customProjectInput = document.getElementById('customProjectType');
+    const addCustomProjectBtn = document.getElementById('addCustomProjectTypeBtn');
+    let customProjectIndex = 1;
+
+    if (customProjectInput && addCustomProjectBtn) {
+        addCustomProjectBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            const newType = customProjectInput.value.trim();
+            if (newType) {
+                // Check if it already exists
+                const existing = Array.from(document.querySelectorAll('.project-type-checkbox')).some(cb => cb.value.toLowerCase() === newType.toLowerCase());
+                if (existing) {
+                    alert('Project type already exists in the list.');
+                    return;
+                }
+                
+                // Save to database
+                fetch('/quotations/api/custom_project_types', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ project_type: newType })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const newId = 'pt_custom_' + customProjectIndex;
+                        customProjectIndex++;
+                        
+                        const newCheckDiv = document.createElement('div');
+                        newCheckDiv.className = 'form-check';
+                        // Made unselected by default based on user request
+                        newCheckDiv.innerHTML = `
+                            <input class="form-check-input project-type-checkbox" type="checkbox" id="${newId}" value="${newType}">
+                            <label class="form-check-label" for="${newId}">${newType}</label>
+                        `;
+                        
+                        const divider = document.getElementById('customProjectDivider');
+                        divider.parentNode.insertBefore(newCheckDiv, divider);
+                        
+                        // Add event listener to the new checkbox
+                        const newCheckbox = newCheckDiv.querySelector('.project-type-checkbox');
+                        newCheckbox.addEventListener('change', function() {
+                            if (this.checked) {
+                                if (!selectedOrder.includes(this.value)) {
+                                    selectedOrder.push(this.value);
+                                }
+                            } else {
+                                selectedOrder = selectedOrder.filter(type => type !== this.value);
+                            }
+                            updateSelectedProjectTypes();
+                        });
+                        
+                        customProjectInput.value = '';
+                    } else {
+                        alert(data.message || 'Error saving custom project type');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Failed to save custom project type to server.');
+                });
+            }
+        });
+
+        customProjectInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomProjectBtn.click();
+            }
+        });
+    }
     
     // Initialize with existing data
     updateSelectedProjectTypes();

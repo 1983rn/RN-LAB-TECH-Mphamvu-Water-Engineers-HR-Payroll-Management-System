@@ -1,0 +1,3 @@
+ID: 1, Type: Construction Materials, Unit: No, Qty: 696.0, Rate: 13500.0, Total: 9396000.0
+ID: 2, Type: Labour, Unit: No, Qty: 10.0, Rate: 20000.0, Total: 200000.0
+ID: 3, Type: Transportation, Unit: No, Qty: 3.0, Rate: 100000.0, Total: 300000.0
