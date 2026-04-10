@@ -2,8 +2,176 @@
 
 {% block title %}Employees - MPHAMVU WATER ENGINEERS{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa !important;
+    }
+
+    .main-wrapper,
+    .main-content {
+        background: transparent !important;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ── Notebook paper: no card panels, just ink on ruled paper ── */
+    .card,
+    .card-body,
+    .card-header,
+    .table-responsive {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Page heading — increased for better legibility */
+    h2 {
+        color: #1a237e !important;
+        font-weight: 800;
+        font-family: 'Georgia', serif;
+        font-size: 1.6rem !important; /* slightly smaller */
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.6);
+        margin-bottom: 2px; /* reduced */
+        margin-top: 5px;
+    }
+
+    /* ── Table: fully transparent — sits on the printed lines ── */
+    .table {
+        background: transparent !important;
+        border-collapse: collapse !important;
+        /* auto layout allows columns to fit content */
+        table-layout: auto !important;
+        width: 100%;
+        margin-bottom: 0;
+    }
+
+    /* ── Stylish column header tabs ── */
+    .table thead tr {
+        background: transparent !important;
+    }
+    .table thead th {
+        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 0.82rem; /* increased */
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 10px 8px !important; /* adjusted */
+        border: none !important;
+        border-right: 1px solid rgba(255,255,255,0.15) !important;
+        text-align: center;
+        white-space: nowrap;
+        box-shadow: 0 4px 8px rgba(13, 71, 161, 0.4);
+        position: relative;
+    }
+    /* Rounded pill on first and last th */
+    .table thead th:first-child {
+        border-radius: 20px 0 0 20px;
+        padding-left: 18px !important;
+    }
+    .table thead th:last-child {
+        border-radius: 0 20px 20px 0;
+        border-right: none !important;
+        padding-right: 18px !important;
+    }
+    /* Subtle separator glow on hover */
+    .table thead th:hover {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
+        color: #FFD700 !important;
+    }
+
+    /* Each data row = one notebook line */
+    .table tbody tr {
+        height: 42px !important;
+    }
+
+    .table tbody td {
+        background: transparent !important;
+        color: #1a237e;
+        font-size: 0.95rem; /* increased */
+        vertical-align: middle !important;
+        padding: 8px 10px !important; /* deeper padding for alignment */
+        border-top: none !important;
+        /* Bold blue rule — like the notebook's printed lines */
+        border-bottom: 3px solid rgba(30, 100, 200, 0.75) !important;
+        line-height: 1.2;
+    }
+    
+    /* Allow wrapping for long text fields to save horizontal space */
+    .col-wrap {
+        white-space: normal !important;
+        word-break: break-word;
+        max-width: 180px; /* loosened slightly */
+    }
+    
+    .col-nowrap {
+        white-space: nowrap !important;
+    }
+
+    /* Remove Bootstrap striping — notebook has its own lines */
+    .table-striped>tbody>tr:nth-of-type(odd)>td,
+    .table-striped>tbody>tr:nth-of-type(even)>td {
+        background: transparent !important;
+    }
+
+    /* Hover: faint yellow highlight like a highlighter pen */
+    .table-hover>tbody>tr:hover>td {
+        background: rgba(255, 235, 59, 0.25) !important;
+        color: #0d47a1 !important;
+    }
+
+    /* Links inside table — ink blue, no underline */
+    .table td a {
+        color: #1565c0 !important;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .table td a:hover {
+        text-decoration: underline;
+    }
+
+    /* Badges — keep subtle */
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    /* Buttons — compact, ink-coloured outlines */
+    .btn-outline-primary {
+        border-color: #1565c0 !important;
+        color: #1565c0 !important;
+    }
+
+    .btn-outline-warning {
+        border-color: #f57f17 !important;
+        color: #f57f17 !important;
+    }
+
+    .btn-group-sm .btn {
+        padding: 4px 10px !important;
+        font-size: 0.8rem; /* increased */
+        white-space: nowrap;
+    }
+    
+    /* Extra compact button for 'Disciplinary' */
+    .btn-disciplinary {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    /* Ensure the table container allows horizontal scrolling instead of clipping */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 10px; /* space for scrollbar */
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-2">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <h2><i class="fas fa-users me-2"></i>Employee Management</h2>
@@ -23,55 +191,60 @@
 </div>
 
 <div class="card">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">Employee Directory</h5>
-    </div>
+
     <div class="card-body">
         {% if employees %}
         <div class="table-responsive">
             <table class="table table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Emp. Number</th>
-                        <th>Name</th>
-                        <th>Department</th>
-                        <th>Position</th>
-                        <th>Salary</th>
-                        <th>Status</th>
-                        <th>Date Hired</th>
-                        <th>Actions</th>
+                        <th class="col-nowrap">Emp. Number</th>
+                        <th class="col-nowrap">Name</th>
+                        <th class="col-wrap">Department</th>
+                        <th class="col-wrap">Position</th>
+                        <th class="col-nowrap">Salary</th>
+                        <th class="col-nowrap">Status</th>
+                        <th class="col-nowrap">Date Hired</th>
+                        <th class="col-nowrap">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for employee in employees %}
                     <tr>
-                        <td>{{ employee.employment_number }}</td>
-                        <td>
-                            <a href="{{ url_for('employees.view_employee', employee_id=employee.employee_id) }}" class="text-decoration-none">
+                        <td class="col-nowrap">{{ employee.employment_number }}</td>
+                        <td class="col-nowrap">
+                            <a href="{{ url_for('employees.view_employee', employee_id=employee.employee_id) }}"
+                                class="text-decoration-none">
                                 {{ employee.first_name }} {{ employee.last_name }}
                             </a>
                         </td>
-                        <td>{{ employee.department }}</td>
-                        <td>{{ employee.position }}</td>
-                        <td>MK {{ "{:,.2f}".format(employee.salary) }}</td>
-                        <td>
+                        <td class="col-wrap">{{ employee.department }}</td>
+                        <td class="col-wrap">{{ employee.position }}</td>
+                        <td class="col-nowrap">MK {{ "{:,.2f}".format(employee.salary) }}</td>
+                        <td class="col-nowrap">
                             <span class="badge bg-{{ 'success' if employee.status == 'Active' else 'secondary' }}">
                                 {{ employee.status }}
                             </span>
                         </td>
-                        <td>{{ employee.date_hired.strftime('%d/%m/%Y') }}</td>
-                        <td>
+                        <td class="col-nowrap">{{ employee.date_hired.strftime('%d/%m/%Y') }}</td>
+                        <td class="col-nowrap">
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('employees.view_employee', employee_id=employee.employee_id) }}" class="btn btn-outline-primary">
+                                <a href="{{ url_for('employees.view_employee', employee_id=employee.employee_id) }}"
+                                    class="btn btn-outline-primary" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ url_for('employees.edit_employee', employee_id=employee.employee_id) }}" class="btn btn-outline-warning">
+                                <a href="{{ url_for('employees.edit_employee', employee_id=employee.employee_id) }}"
+                                    class="btn btn-outline-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 {% if employee.status == 'Active' %}
-                                <form method="POST" action="{{ url_for('employees.delete_employee', employee_id=employee.employee_id) }}" style="display: inline;" onsubmit="return confirm('Take disciplinary action (Delete) against this employee?');">
-                                    <button type="submit" class="btn btn-danger" style="color: white;" title="Disciplinary Action">
-                                        <i class="fas fa-gavel me-1"></i>Disciplinary action
+                                <form method="POST"
+                                    action="{{ url_for('employees.delete_employee', employee_id=employee.employee_id) }}"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Take disciplinary action against this employee?');">
+                                    <button type="submit" class="btn btn-danger btn-disciplinary" style="color: white;"
+                                        title="Disciplinary">
+                                        <i class="fas fa-gavel me-1"></i>Disc.
                                     </button>
                                 </form>
                                 {% endif %}

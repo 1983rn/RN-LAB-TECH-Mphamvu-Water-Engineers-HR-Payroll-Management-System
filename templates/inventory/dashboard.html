@@ -13,7 +13,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 25px;
+        margin-bottom: 15px; /* reduced from 25px */
     }
     .page-title h2 {
         font-weight: 700;
@@ -54,7 +54,7 @@
     .stat-card-custom {
         background: #ffffff;
         border-radius: 12px;
-        padding: 24px;
+        padding: 16px 20px; /* reduced from 24px */
         border: 1px solid #ebedf2;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
         display: flex;
@@ -183,7 +183,7 @@
     .chart-box {
         background: #ffffff;
         border-radius: 12px;
-        padding: 24px;
+        padding: 18px; /* reduced from 24px */
         border: 1px solid #ebedf2;
     }
 </style>
@@ -251,7 +251,7 @@
     </div>
 
     <!-- Category Cards -->
-    <h3 class="section-title">Asset Categories</h3>
+    <h3 class="section-title mb-2">Asset Categories</h3>
     <div class="category-cards">
         {% set bore_val = categories.get('Borehole Drilling', {}).get('value', 0) %}
         {% set bore_cnt = categories.get('Borehole Drilling', {}).get('count', 0) %}

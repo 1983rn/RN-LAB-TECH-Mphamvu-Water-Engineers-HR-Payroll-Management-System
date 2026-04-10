@@ -2,6 +2,44 @@
 
 {% block title %}Edit Employee - MPHAMVU WATER ENGINEERS{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background-image: url("{{ url_for('static', filename='images/View through a garden window.png') }}") !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
+        background-repeat: no-repeat !important;
+    }
+    .main-wrapper, .main-content {
+        background: transparent !important;
+    }
+    /* Fully transparent — text floats on background image */
+    .card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .card-header {
+        background: transparent !important;
+        border-bottom: 1px solid rgba(30, 64, 175, 0.3) !important;
+    }
+    .card-body { background: transparent !important; }
+    h2 { color: #1d4ed8 !important; font-weight: 700; }
+    .form-label { color: #1e40af; font-weight: 600; }
+    .form-control, .form-select {
+        background: transparent !important;
+        border-color: rgba(30, 64, 175, 0.4);
+        color: #1e3a5f;
+    }
+    .form-control:focus, .form-select:focus {
+        background: rgba(255,255,255,0.5) !important;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">

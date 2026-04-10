@@ -7,10 +7,10 @@
     /* Cashbook Specific Styles */
     .cashbook-header {
         background: white;
-        padding: 20px;
-        border-radius: 15px;
+        padding: 10px 15px; /* reduced from 20px */
+        border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        margin-bottom: 25px;
+        margin-bottom: 12px; /* reduced from 25px */
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -19,23 +19,23 @@
     .balance-card {
         background: linear-gradient(135deg, #00b09b, #96c93d);
         color: white;
-        padding: 25px;
-        border-radius: 20px;
+        padding: 15px 20px; /* reduced from 25px */
+        border-radius: 15px;
         position: relative;
         overflow: hidden;
-        margin-bottom: 25px;
+        margin-bottom: 15px;
     }
 
     .balance-card h2 {
-        font-size: 2.5rem;
+        font-size: 1.8rem; /* reduced from 2.5rem */
         font-weight: 800;
-        margin-bottom: 5px;
+        margin-bottom: 2px;
     }
 
     .summary-box {
         background: white;
-        padding: 20px;
-        border-radius: 15px;
+        padding: 12px; /* reduced */
+        border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         text-align: center;
         height: 100%;
@@ -45,17 +45,17 @@
     .income-card {
         background: #0d6efd;
         color: white;
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 20px;
+        border-radius: 12px;
+        padding: 12px 15px; /* reduced */
+        margin-bottom: 15px;
     }
 
     .debit-card {
         background: #dc3545;
         color: white;
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 20px;
+        border-radius: 12px;
+        padding: 12px 15px; /* reduced */
+        margin-bottom: 15px;
     }
 
     .ledger-table thead th {
@@ -124,7 +124,8 @@
                 <option>This Month</option>
                 <option>Last Month</option>
             </select>
-            <a href="{{ url_for('finance_dashboard.export_cashbook') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-export me-1"></i>Export</a>
+            <a href="{{ url_for('finance_dashboard.export_cashbook') }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-csv me-1"></i>Export CSV</a>
+            <a href="{{ url_for('finance_dashboard.export_cashbook_pdf') }}" class="btn btn-outline-danger btn-sm"><i class="fas fa-file-pdf me-1"></i>Export PDF</a>
             <button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="fas fa-print me-1"></i>Print</button>
         </div>
     </div>
@@ -165,7 +166,7 @@
             </div>
         </div>
         <div class="col-lg-4">
-            <div class="summary-box mb-4 shadow-sm border">
+            <div class="summary-box mb-2 shadow-sm border">
                 <i class="fas fa-boxes fa-3x text-primary mb-3 opacity-25"></i>
                 <p class="text-muted small text-uppercase mb-2">Total Inventory Value</p>
                 <h3 class="fw-bold mb-1">MWK {{ "{:,.2f}".format(total_inventory) }}</h3>
@@ -175,7 +176,7 @@
     </div>
 
     <!-- Income & Debit Breakdown -->
-    <div class="row mb-4">
+    <div class="row mb-2">
         <div class="col-md-6">
             <div class="income-card shadow">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -228,7 +229,7 @@
 
     <!-- Ledger Tables -->
     <div class="card shadow border-0 mb-5 overflow-hidden">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
             <h6 class="mb-0 fw-bold">Mphamvu Water Engineers — Cash Book Ledger</h6>
             <div class="text-end">
                 <span class="small opacity-75">Opening Balance</span> &nbsp;

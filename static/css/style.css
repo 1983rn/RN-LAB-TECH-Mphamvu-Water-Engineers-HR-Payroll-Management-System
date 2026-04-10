@@ -23,7 +23,7 @@
     --sidebar-active-border: #0077cc;
     --sidebar-text: rgba(255, 255, 255, 0.7);
     --sidebar-text-active: #ffffff;
-    --header-height: 56px;
+    --header-height: 48px; /* reduced from 56px */
     --transition-speed: 0.3s;
 }
 
@@ -120,12 +120,12 @@ body {
 }
 
 .nav-section-label {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.8px;
+    letter-spacing: 1.5px;
     color: rgba(255, 255, 255, 0.3);
-    padding: 16px 20px 6px;
+    padding: 12px 20px 4px; /* reduced padding */
     overflow: hidden;
     white-space: nowrap;
 }
@@ -137,18 +137,18 @@ body {
 }
 
 .nav-menu-item {
-    margin: 1px 8px;
+    margin: 0 8px; /* reduced margin */
 }
 
 .nav-menu-link {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
+    gap: 10px; /* reduced gap */
+    padding: 8px 12px; /* reduced padding */
     border-radius: 8px;
     color: var(--sidebar-text);
     text-decoration: none;
-    font-size: 0.88rem;
+    font-size: 0.85rem; /* reduced font size */
     font-weight: 500;
     transition: all 0.2s ease;
     white-space: nowrap;
@@ -182,7 +182,7 @@ body {
 /* ── Submenu Styles ── */
 .nav-submenu {
     list-style: none;
-    padding: 4px 0 4px 12px;
+    padding: 1px 0 1px 12px; /* greatly reduced padding */
     margin: 0;
 }
 
@@ -191,8 +191,8 @@ body {
 }
 
 .nav-submenu .nav-menu-link {
-    padding: 8px 12px;
-    font-size: 0.82rem;
+    padding: 5px 12px; /* reduced padding */
+    font-size: 0.78rem; /* reduced font size */
 }
 
 .nav-submenu .nav-menu-link i {
@@ -401,8 +401,8 @@ body {
     border-bottom: 1px solid #0a3d91;
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    gap: 16px;
+    padding: 0 15px; /* reduced from 20px */
+    gap: 12px; /* reduced from 16px */
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
 }
 
@@ -501,7 +501,17 @@ body {
    ══════════════════════════════════════ */
 .main-content {
     flex: 1;
-    padding: 24px;
+    padding: 12px 15px; /* reduced from 24px */
+}
+
+/* Tighter vertical flow for headers */
+.main-content .mb-4 {
+    margin-bottom: 1rem !important; /* matches mb-2/mb-3 */
+}
+
+.main-content h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
 }
 
 /* ── App Footer ── */
@@ -509,9 +519,9 @@ body {
     background: #2c3e50;
     color: white;
     text-align: center;
-    padding: 15px 20px;
-    font-size: 14px;
-    border-top: 1px solid #1a252f;
+    padding: 8px 15px;
+    font-size: 11px;
+    border-top: 1px solid #1a232f;
     margin-top: auto;
 }
 
@@ -554,9 +564,14 @@ body {
 }
 
 .card-header {
-    border-radius: 15px 15px 0 0 !important;
+    padding: 8px 15px; /* reduced */
+    border-radius: 12px 12px 0 0 !important;
     border: none;
     font-weight: 600;
+}
+
+.card-body {
+    padding: 12px 15px; /* reduced from default */
 }
 
 /* ── Button Styling ── */
@@ -601,6 +616,14 @@ body {
     color: white;
     border: none;
     font-weight: 600;
+    padding: 8px 10px; /* reduced */
+    font-size: 0.85rem;
+}
+
+.table tbody td {
+    padding: 6px 10px; /* reduced */
+    font-size: 0.85rem;
+    vertical-align: middle;
 }
 
 .table tbody tr:hover {

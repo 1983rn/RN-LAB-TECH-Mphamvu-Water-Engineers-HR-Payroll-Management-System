@@ -6,10 +6,10 @@
 <style>
     .analysis-card {
         background: white;
-        border-radius: 15px;
+        border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        padding: 25px;
-        margin-bottom: 30px;
+        padding: 15px 20px; /* reduced from 25px */
+        margin-bottom: 20px; /* reduced from 30px */
         transition: transform 0.3s;
     }
     .analysis-card:hover {
@@ -17,9 +17,9 @@
     }
     .period-selector {
         background: #f8f9fa;
-        padding: 20px;
-        border-radius: 15px;
-        margin-bottom: 30px;
+        padding: 12px 20px; /* reduced from 20px */
+        border-radius: 12px;
+        margin-bottom: 20px; /* reduced from 30px */
         border-left: 5px solid #0d6efd;
     }
     .ranking-table thead th {
@@ -64,7 +64,7 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <div>
             <h3 class="text-dark fw-bold mb-0">Financial Analysis & Reporting</h3>
             <p class="text-muted small">Comprehensive performance tracking and departmental rankings</p>
@@ -138,7 +138,7 @@
         <!-- Top Revenue Generators -->
         <div class="col-lg-6">
             <div class="analysis-card">
-                <h6 class="fw-bold mb-4 text-uppercase small text-primary"><i class="fas fa-trophy me-2"></i>Income Ranking (By Department)</h6>
+                <h6 class="fw-bold mb-3 text-uppercase small text-primary"><i class="fas fa-trophy me-2"></i>Income Ranking (By Department)</h6>
                 <div class="table-responsive">
                     <table class="table ranking-table">
                         <thead>
@@ -172,7 +172,7 @@
         <!-- Highest Expenditures -->
         <div class="col-lg-6">
             <div class="analysis-card">
-                <h6 class="fw-bold mb-4 text-uppercase small text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Expense Ranking (Cost Centers)</h6>
+                <h6 class="fw-bold mb-3 text-uppercase small text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Expense Ranking (Cost Centers)</h6>
                 <div class="table-responsive">
                     <table class="table ranking-table">
                         <thead>
@@ -206,7 +206,7 @@
 
     <!-- Detailed Performance Analysis -->
     <div class="analysis-card">
-        <h6 class="fw-bold mb-4 text-uppercase small text-success"><i class="fas fa-chart-bar me-2"></i>Net Performance Ranking</h6>
+        <h6 class="fw-bold mb-3 text-uppercase small text-success"><i class="fas fa-chart-bar me-2"></i>Net Performance Ranking</h6>
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead class="bg-light">

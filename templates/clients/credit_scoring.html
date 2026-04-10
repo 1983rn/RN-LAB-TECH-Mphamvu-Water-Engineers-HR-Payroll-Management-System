@@ -3,7 +3,7 @@
 {% block title %}Credit Scoring - MWE{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+<div class="d-flex justify-content-between align-items-center mb-2 fade-in">
     <div>
         <h2 class="mb-1"><i class="fas fa-chart-line text-primary me-2"></i>Client Credit Scoring</h2>
         <p class="text-muted mb-0">Evaluate client reliability based on transaction history and outstanding balances.</p>
@@ -21,12 +21,12 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
-                                <th class="px-4 py-3">Client</th>
-                                <th class="py-3 text-center">Score (1-6)</th>
-                                <th class="py-3 text-center">Rating</th>
-                                <th class="py-3">Repayment Chance</th>
-                                <th class="py-3">Interpretation</th>
-                                <th class="px-4 py-3 text-end">Actions</th>
+                                <th class="px-3 py-2">Client</th>
+                                <th class="py-2 text-center">Score (1-6)</th>
+                                <th class="py-2 text-center">Rating</th>
+                                <th class="py-2">Repayment Chance</th>
+                                <th class="py-2">Interpretation</th>
+                                <th class="px-3 py-2 text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -35,25 +35,25 @@
                             {% if score_record %}
                                 {% set badge_class = 'success' if score_record.score <= 2 else ('warning' if score_record.score <= 4 else 'danger') %}
                                 <tr>
-                                    <td class="px-4 py-3">
+                                    <td class="px-3 py-2">
                                         <div class="fw-bold text-dark">{{ client.client_name }}</div>
                                         <div class="small text-muted"><i class="fas fa-phone-alt me-1"></i>{{ client.phone }}</div>
                                     </td>
-                                    <td class="py-3 text-center">
+                                    <td class="py-2 text-center">
                                         <div class="h4 mb-0 fw-bold text-{{ badge_class }}">{{ score_record.score }}</div>
                                     </td>
-                                    <td class="py-3 text-center">
-                                        <span class="badge bg-{{ badge_class }} bg-opacity-10 text-{{ badge_class }} px-3 py-2 rounded-pill border border-{{ badge_class }}">
+                                    <td class="py-2 text-center">
+                                        <span class="badge bg-{{ badge_class }} bg-opacity-10 text-{{ badge_class }} px-3 py-1 rounded-pill border border-{{ badge_class }}">
                                             {{ score_record.rating }}
                                         </span>
                                     </td>
-                                    <td class="py-3">
+                                    <td class="py-1">
                                         <div class="fw-medium">{{ score_record.repayment_chance }}</div>
                                     </td>
-                                    <td class="py-3 text-muted">
+                                    <td class="py-1 text-muted small">
                                         {{ score_record.interpretation }}
                                     </td>
-                                    <td class="px-4 py-3 text-end">
+                                    <td class="px-3 py-1 text-end">
                                         <form action="{{ url_for('clients.recalculate_score', client_id=client.client_id) }}" method="POST" class="d-inline">
                                             <button type="submit" class="btn btn-sm btn-outline-primary" title="Recalculate Score">
                                                 <i class="fas fa-sync-alt me-1"></i> Recalculate

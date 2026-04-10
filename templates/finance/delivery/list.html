@@ -34,7 +34,15 @@
                     {% for inv in pending_delivery_invoices %}
                     <tr id="pending-row-{{ inv.invoice_id }}">
                         <td><span class="badge bg-secondary">{{ inv.invoice_number }}</span></td>
-                        <td>{{ inv.quotation.client.client_name }}</td>
+                        <td>
+                            {% if inv.quotation %}
+                                {{ inv.quotation.client.client_name }}
+                            {% elif inv.contract and inv.contract.quotation %}
+                                {{ inv.contract.quotation.client.client_name }}
+                            {% else %}
+                                <span class="text-muted">Unknown Client</span>
+                            {% endif %}
+                        </td>
                         <td><strong>MK {{ "{:,.2f}".format(inv.amount) }}</strong></td>
                         <td>
                             <button class="btn btn-info btn-sm" onclick="generateDeliveryNote('{{ inv.invoice_id }}')">
@@ -81,7 +89,17 @@
                             <span class="badge bg-secondary">{{ delivery_note.reference_number }}</span>
                         </td>
                         <td>{{ delivery_note.invoice.invoice_number }}</td>
-                        <td>{{ delivery_note.invoice.contract.quotation.client.client_name }}</td>
+                        <td>
+                            {% if delivery_note.invoice and delivery_note.invoice.quotation %}
+                                {{ delivery_note.invoice.quotation.client.client_name }}
+                            {% elif delivery_note.invoice and delivery_note.invoice.contract and delivery_note.invoice.contract.quotation %}
+                                {{ delivery_note.invoice.contract.quotation.client.client_name }}
+                            {% elif delivery_note.quotation %}
+                                {{ delivery_note.quotation.client.client_name }}
+                            {% else %}
+                                <span class="text-muted">Unknown Client</span>
+                            {% endif %}
+                        </td>
                         <td>{{ delivery_note.delivery_date.strftime('%d/%m/%Y') }}</td>
                         <td>{{ delivery_note.equipment_delivered[:50] }}{% if delivery_note.equipment_delivered|length > 50 %}...{% endif %}</td>
                         <td>{{ delivery_note.delivered_by }}</td>

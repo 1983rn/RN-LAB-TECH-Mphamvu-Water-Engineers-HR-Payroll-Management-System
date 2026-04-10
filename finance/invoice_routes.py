@@ -284,8 +284,12 @@ def list_delivery_notes():
     # Fetch invoices that are approved but haven't had a delivery note generated yet
     # We join with Quotation to ensure we only get those that need delivery notes
     approved_invoices = Invoice.query.filter_by(is_approved=True).all()
-    # Filter those that don't have a delivery note yet
-    pending_delivery_invoices = [inv for inv in approved_invoices if not inv.quotation.delivery_note_generated]
+    # Filter those that don't have a delivery note yet, being careful to handle both direct and contract-based quotation links
+    pending_delivery_invoices = []
+    for inv in approved_invoices:
+        quotation = inv.quotation or (inv.contract.quotation if inv.contract else None)
+        if quotation and not quotation.delivery_note_generated:
+            pending_delivery_invoices.append(inv)
     
     return render_template('finance/delivery/list.html', 
                          delivery_notes=delivery_notes, 
@@ -594,8 +598,15 @@ def approve_invoice():
         invoice.approved_date = datetime.utcnow()
         db.session.commit()
         
-        # Recalculate credit score after invoice approval
-        update_client_credit_score(invoice.quotation.client_id)
+        # Recalculate credit score after invoice approval - safely get client_id
+        client_id = None
+        if invoice.quotation:
+            client_id = invoice.quotation.client_id
+        elif invoice.contract and invoice.contract.quotation:
+            client_id = invoice.contract.quotation.client_id
+            
+        if client_id:
+            update_client_credit_score(client_id)
         
         return jsonify({
             'success': True, 
@@ -622,7 +633,10 @@ def generate_delivery_note_from_invoice():
     if not invoice.is_approved:
         return jsonify({'success': False, 'message': 'Invoice must be approved first'}), 403
         
-    quotation = invoice.quotation
+    quotation = invoice.quotation or (invoice.contract.quotation if invoice.contract else None)
+    
+    if not quotation:
+        return jsonify({'success': False, 'message': 'Quotation information not found for this invoice'}), 404
     
     try:
         # Mark as delivered

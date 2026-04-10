@@ -2,8 +2,142 @@
 
 {% block title %}Attendance Management - MPHAMVU WATER ENGINEERS{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa !important;
+        position: relative;
+    }
+    .main-wrapper, .main-content {
+        background: transparent !important;
+    }
+
+    /* ── Notebook paper: no card panels, just ink on ruled paper ── */
+    .card, .card-body, .card-header, .table-responsive {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Page heading — established larger size */
+    h2 {
+        color: #1a237e !important;
+        font-weight: 800;
+        font-family: 'Georgia', serif;
+        font-size: 1.6rem !important; /* slightly smaller */
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.6);
+        margin-bottom: 2px;
+        margin-top: 5px;
+    }
+
+    /* ── Table: fully transparent — sits on the printed lines ── */
+    .table {
+        background: transparent !important;
+        border-collapse: collapse !important;
+        table-layout: auto !important; /* allows fitting content */
+        width: 100%;
+    }
+
+    /* ── Stylish column header tabs ── */
+    .table thead tr {
+        background: transparent !important;
+    }
+    .table thead th {
+        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 0.82rem; /* increased */
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 10px 8px !important;
+        border: none !important;
+        border-right: 1px solid rgba(255,255,255,0.15) !important;
+        text-align: center;
+        white-space: nowrap;
+        box-shadow: 0 4px 8px rgba(13, 71, 161, 0.4);
+        position: relative;
+    }
+    /* Rounded pill on first and last th */
+    .table thead th:first-child {
+        border-radius: 20px 0 0 20px;
+        padding-left: 18px !important;
+    }
+    .table thead th:last-child {
+        border-radius: 0 20px 20px 0;
+        border-right: none !important;
+        padding-right: 18px !important;
+    }
+    /* Subtle separator glow on hover */
+    .table thead th:hover {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
+        color: #FFD700 !important;
+    }
+
+    /* Each data row = one notebook line */
+    .table tbody tr {
+        height: 60px !important; /* increased for inputs */
+    }
+
+    .table tbody td {
+        background: transparent !important;
+        color: #1a237e;
+        font-size: 0.95rem; /* increased */
+        vertical-align: middle !important;
+        padding: 6px 8px !important;
+        border-top: none !important;
+        /* Bold blue rule — like the notebook's printed lines */
+        border-bottom: 3px solid rgba(30, 100, 200, 0.75) !important;
+        line-height: 1.2;
+    }
+    
+    /* Column wrapping for space conservation */
+    .col-wrap {
+        white-space: normal !important;
+        word-break: break-all;
+        max-width: 150px;
+    }
+    
+    .col-nowrap {
+        white-space: nowrap !important;
+    }
+
+    /* Hover: faint yellow highlight like a highlighter pen */
+    .table-hover>tbody>tr:hover>td {
+        background: rgba(255, 235, 59, 0.25) !important;
+        color: #0d47a1 !important;
+    }
+
+    /* Links inside table — ink blue, no underline */
+    .table td a {
+        color: #1565c0 !important;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .table td a:hover { text-decoration: underline; }
+
+    /* Buttons — compact, ink-coloured outlines */
+    .btn-outline-primary { border-color: #1565c0 !important; color: #1565c0 !important; }
+    .btn-outline-warning { border-color: #f57f17 !important; color: #f57f17 !important; }
+    
+    /* Input adjustments for notebook */
+    .form-control-sm, .form-select-sm {
+        background: rgba(255,255,255,0.4) !important;
+        border: 1px solid rgba(30, 100, 200, 0.3) !important;
+        color: #1a237e !important;
+    }
+    
+    /* Summary Section Styling */
+    .summary-box {
+        border-bottom: 3px solid rgba(30, 100, 200, 0.75);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-2">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <h2><i class="fas fa-calendar-check me-2"></i>Attendance Management</h2>
@@ -17,9 +151,7 @@
 </div>
 
 <div class="card">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">Mark Attendance - {{ today.strftime('%d/%m/%Y') }}</h5>
-    </div>
+
     <div class="card-body">
         <form method="POST" action="{{ url_for('attendance.mark_attendance') }}">
             <input type="hidden" name="date" value="{{ today.strftime('%Y-%m-%d') }}">
@@ -29,26 +161,26 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Employee</th>
-                            <th>Employment Number</th>
-                            <th>Department</th>
-                            <th>Status</th>
-                            <th>Check In</th>
-                            <th>Check Out</th>
-                            <th>Notes</th>
+                            <th class="col-nowrap">Employee</th>
+                            <th class="col-nowrap">Employment Number</th>
+                            <th class="col-wrap">Department</th>
+                            <th class="col-nowrap">Status</th>
+                            <th class="col-nowrap">Check In</th>
+                            <th class="col-nowrap">Check Out</th>
+                            <th class="col-wrap">Notes</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for employee in employees %}
                         <tr>
-                            <td>
+                            <td class="col-nowrap">
                                 <a href="{{ url_for('employees.view_employee', employee_id=employee.employee_id) }}" class="text-decoration-none">
                                     {{ employee.first_name }} {{ employee.last_name }}
                                 </a>
                             </td>
-                            <td>{{ employee.employment_number }}</td>
-                            <td>{{ employee.department }}</td>
-                            <td>
+                            <td class="col-nowrap">{{ employee.employment_number }}</td>
+                            <td class="col-wrap">{{ employee.department }}</td>
+                            <td class="col-nowrap">
                                 <select class="form-select form-select-sm" name="attendance_{{ employee.employee_id }}">
                                     <option value="Present">Present</option>
                                     <option value="Absent">Absent</option>
@@ -56,13 +188,13 @@
                                     <option value="Half Day">Half Day</option>
                                 </select>
                             </td>
-                            <td>
+                            <td class="col-nowrap">
                                 <input type="time" class="form-control form-control-sm" name="check_in_{{ employee.employee_id }}">
                             </td>
-                            <td>
+                            <td class="col-nowrap">
                                 <input type="time" class="form-control form-control-sm" name="check_out_{{ employee.employee_id }}">
                             </td>
-                            <td>
+                            <td class="col-wrap">
                                 <input type="text" class="form-control form-control-sm" name="notes_{{ employee.employee_id }}" placeholder="Optional notes">
                             </td>
                         </tr>
@@ -95,9 +227,7 @@
 
 {% if today_attendance %}
 <div class="card mt-4">
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0">Today's Attendance Summary</h5>
-    </div>
+
     <div class="card-body">
         <div class="row">
             <div class="col-md-3">

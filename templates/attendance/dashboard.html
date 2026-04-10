@@ -2,6 +2,103 @@
 
 {% block title %}Attendance Management - MPHAMVU WATER ENGINEERS{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa !important;
+        position: relative;
+    }
+    .main-wrapper, .main-content {
+        background: transparent !important;
+    }
+
+    /* ── Notebook paper: no card panels, just ink on ruled paper ── */
+    .card, .card-body, .card-header, .table-responsive {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Page heading — handwriting-style dark ink */
+    h2 {
+        color: #1a237e !important;
+        font-weight: 800;
+        font-family: 'Georgia', serif;
+        font-size: 1.6rem !important;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+        margin-bottom: 2px;
+        margin-top: 5px;
+    }
+
+    /* ── Table: fully transparent — sits on the printed lines ── */
+    .table {
+        background: transparent !important;
+        border-collapse: collapse !important;
+        table-layout: auto !important;
+        width: 100%;
+    }
+
+    /* ── Stylish column header tabs ── */
+    .table thead tr {
+        background: transparent !important;
+    }
+    .table thead th {
+        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 8px 6px !important;
+        border: none !important;
+        border-right: 2px solid rgba(255,255,255,0.15) !important;
+        text-align: center;
+        white-space: nowrap;
+        box-shadow: 0 4px 8px rgba(13, 71, 161, 0.4);
+        position: relative;
+    }
+    /* Rounded pill on first and last th */
+    .table thead th:first-child {
+        border-radius: 20px 0 0 20px;
+        padding-left: 12px !important;
+    }
+    .table thead th:last-child {
+        border-radius: 0 20px 20px 0;
+        border-right: none !important;
+        padding-right: 12px !important;
+    }
+
+    /* Each data row = one notebook line */
+    .table tbody td {
+        background: transparent !important;
+        color: #1a237e;
+        font-size: 0.82rem;
+        vertical-align: middle !important;
+        padding: 5px 6px !important;
+        border-top: none !important;
+        border-bottom: 3px solid rgba(30, 100, 200, 0.75) !important;
+    }
+
+    /* Pulse for live session */
+    .pulse-animation {
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+
+    /* Input adjustments for notebook */
+    .form-control, .form-select {
+        background: rgba(255,255,255,0.4) !important;
+        border: 1px solid rgba(30, 100, 200, 0.3) !important;
+        color: #1a237e !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
@@ -56,10 +153,10 @@
     <div class="card-body">
         {% if records %}
         <div class="table-responsive">
-            <table class="table table-striped table-hover datatable">
-                <thead class="table-dark">
+            <table class="table table-hover">
+                <thead>
                     <tr>
-                        <th>Employment No</th>
+                        <th>Emp. No</th>
                         <th>Name</th>
                         <th>Check In</th>
                         <th>Check Out</th>
@@ -73,25 +170,17 @@
                     <tr>
                         <td>{{ record.employee.employment_number }}</td>
                         <td>
-                            <a href="{{ url_for('employees.view_employee', employee_id=record.employee.employee_id) }}" class="text-decoration-none fw-bold">
+                            <a href="{{ url_for('employees.view_employee', employee_id=record.employee.employee_id) }}">
                                 {{ record.employee.first_name }} {{ record.employee.last_name }}
                             </a>
                         </td>
                         <td>{{ record.check_in.strftime('%H:%M') if record.check_in else '-' }}</td>
                         <td>{{ record.check_out.strftime('%H:%M') if record.check_out else '-' }}</td>
-                        <td>
-                            {% if record.late_minutes > 0 %}
-                                <span class="text-danger fw-bold">{{ record.late_minutes }} min</span>
-                            {% else %}
-                                -
-                            {% endif %}
+                        <td class="{{ 'text-danger fw-bold' if record.late_minutes > 0 else '' }}">
+                            {{ record.late_minutes if record.late_minutes > 0 else '-' }}
                         </td>
-                        <td>
-                            {% if record.overtime_minutes > 0 %}
-                                <span class="text-success fw-bold">{{ record.overtime_minutes }} min</span>
-                            {% else %}
-                                -
-                            {% endif %}
+                        <td class="{{ 'text-success fw-bold' if record.overtime_minutes > 0 else '' }}">
+                            {{ record.overtime_minutes if record.overtime_minutes > 0 else '-' }}
                         </td>
                         <td>
                             <span class="badge bg-{{ 
@@ -109,7 +198,7 @@
         </div>
         {% else %}
         <div class="text-center py-5 text-muted">
-            <i class="fas fa-calendar-times fa-4x mb-3 text-secondary"></i>
+            <i class="fas fa-calendar-times fa-4x mb-3 text-secondary" style="opacity: 0.5;"></i>
             <h4>No Records</h4>
             <p>There are no attendance records for this date.</p>
         </div>

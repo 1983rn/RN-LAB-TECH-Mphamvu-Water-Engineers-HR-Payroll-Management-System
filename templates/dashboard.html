@@ -2,6 +2,102 @@
 
 {% block title %}Dashboard - MPHAMVU WATER ENGINEERS{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background-image: url("{{ url_for('static', filename='images/water_tech_bg.png') }}") !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
+        background-repeat: no-repeat !important;
+    }
+    
+    .main-wrapper {
+        background: transparent !important;
+    }
+    
+    .main-content {
+        background: transparent !important;
+        border-radius: 12px;
+        margin: 15px;
+        min-height: calc(100vh - 120px);
+    }
+    
+    /* Display cards with a professional, dark glassmorphism effect for high readability */
+    .card {
+        background: rgba(15, 23, 42, 0.85) !important; /* Dark slate semi-transparent background */
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.15) !important; /* Soft edge */
+        border-top: 3px solid #00E5FF !important; /* Vibrant cyan top border for colorful accent */
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+        border-radius: 12px;
+    }
+    
+    .card-header {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    /* Ensure all dashboard text elements use clear, professional colors */
+    h2, .text-muted, .text-muted i, .card, .card p, .card a, .card strong, .card div {
+        color: #F8F9FA !important; /* Crisp white for standard text */
+        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important; /* Clean, subtle shadow */
+    }
+
+    .card i {
+        color: #00E5FF !important; /* Vibrant cyan for icons */
+        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    .card h3, h2 i {
+        color: #FFB300 !important; /* Warm Amber for numbers to provide a colorful pop */
+        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important;
+        font-weight: 700;
+    }
+    
+    .card h5, .card h6, h2 {
+        color: #00E5FF !important; /* Vibrant cyan for headings */
+        font-weight: 600;
+        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    /* Adjust badges and buttons to fit the new aesthetic */
+    .badge {
+        text-shadow: none !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    }
+    
+    .btn-outline-light {
+        background: rgba(0, 229, 255, 0.1) !important;
+        border-color: #00E5FF !important;
+        color: #FFFFFF !important;
+        text-shadow: none !important;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-light:hover {
+        background: rgba(0, 229, 255, 0.25) !important;
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+    }
+    
+    .btn-light {
+        background: #FFFFFF !important;
+        color: #0f172a !important;
+        border: none !important;
+        text-shadow: none !important;
+        font-weight: 600;
+    }
+    
+    .btn-light:hover {
+        background: #E0F7FA !important;
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+    }
+    
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">

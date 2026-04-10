@@ -3,7 +3,7 @@
 {% block title %}Inventory Management - MWE{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+<div class="d-flex justify-content-between align-items-center mb-2 fade-in">
     <div>
         <h2 class="mb-1"><i class="fas fa-boxes text-primary me-2"></i>Inventory Management</h2>
         <p class="text-muted mb-0">Track and manage company assets, equipment, and tools.</p>
@@ -16,7 +16,7 @@
 </div>
 
 <!-- Summary Cards -->
-<div class="row mb-4 fade-in">
+<div class="row mb-2 fade-in">
     <div class="col-md-4">
         <div class="stat-card">
             <h6>Total Inventory Value</h6>
@@ -60,38 +60,38 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr>
-                                <th class="px-4 py-3">Asset Name</th>
-                                <th class="py-3">Category</th>
-                                <th class="py-3 text-center">Quantity</th>
-                                <th class="py-3 text-end">Unit Value (MWK)</th>
-                                <th class="py-3 text-end">Total Value (MWK)</th>
-                                <th class="py-3">Description</th>
-                                <th class="px-4 py-3 text-end">Actions</th>
+                                <th class="px-3 py-2">Asset Name</th>
+                                <th class="py-2">Category</th>
+                                <th class="py-2 text-center">Quantity</th>
+                                <th class="py-2 text-end">Unit Value (MWK)</th>
+                                <th class="py-2 text-end">Total Value (MWK)</th>
+                                <th class="py-2">Description</th>
+                                <th class="px-3 py-2 text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in items %}
                             <tr>
-                                <td class="px-4 py-3">
+                                <td class="px-3 py-2">
                                     <div class="fw-bold text-dark">{{ item.asset_name }}</div>
                                     <div class="small text-muted">ID: INV-{{ '%04d' % item.id }}</div>
                                 </td>
-                                <td class="py-3">
+                                <td class="py-2">
                                     <span class="badge bg-secondary">{{ item.category }}</span>
                                 </td>
-                                <td class="py-3 text-center fw-medium">
+                                <td class="py-2 text-center fw-medium">
                                     {{ item.quantity }}
                                 </td>
-                                <td class="py-3 text-end text-muted">
+                                <td class="py-2 text-end text-muted">
                                     {{ "{:,.2f}".format(item.unit_value) }}
                                 </td>
-                                <td class="py-3 text-end fw-bold text-dark">
+                                <td class="py-2 text-end fw-bold text-dark">
                                     {{ "{:,.2f}".format(item.total_value) }}
                                 </td>
-                                <td class="py-3 text-muted small user-select-all" style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ item.description }}">
+                                <td class="py-2 text-muted small user-select-all" style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ item.description }}">
                                     {{ item.description or '-' }}
                                 </td>
-                                <td class="px-4 py-3 text-end">
+                                <td class="px-3 py-2 text-end">
                                     <div class="btn-group btn-group-sm">
                                         <a href="{{ url_for('inventory.edit_item', item_id=item.id) }}" class="btn btn-outline-primary" title="Edit">
                                             <i class="fas fa-edit"></i>

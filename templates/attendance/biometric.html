@@ -2,11 +2,51 @@
 
 {% block title %}Biometric Kiosk - MPHAMVU WATER ENGINEERS{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa !important;
+        position: relative;
+    }
+    .main-wrapper, .main-content {
+        background: transparent !important;
+    }
+
+    /* ── Notebook paper: no card panels, just ink on ruled paper ── */
+    .card, .card-body, .card-header {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-header {
+        border-bottom: 3px solid rgba(30, 100, 200, 0.75) !important;
+        padding-bottom: 15px !important;
+    }
+
+    /* Page heading — handwriting-style dark ink */
+    h4 {
+        color: #1a237e !important;
+        font-weight: 800;
+        font-family: 'Georgia', serif;
+        font-size: 1.4rem !important;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+    }
+    
+    .form-control {
+        background: rgba(255,255,255,0.4) !important;
+        border: 1px solid rgba(30, 100, 200, 0.3) !important;
+        color: #1a237e !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row pt-4 justify-content-center">
     <div class="col-md-8 col-lg-6">
-        <div class="card border-0 shadow-lg">
-            <div class="card-header bg-dark text-white text-center py-3">
+        <div class="card">
+            <div class="card-header text-center">
                 <h4 class="mb-0"><i class="fas fa-camera-retro me-2"></i>Biometric Attendance Kiosk</h4>
             </div>
             <div class="card-body p-4 text-center">

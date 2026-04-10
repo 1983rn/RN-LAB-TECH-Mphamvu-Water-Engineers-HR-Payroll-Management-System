@@ -1,10 +1,15 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, Response
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, Response, make_response
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, date
 from models import Inventory, FarmActivity, Transaction, Invoice, Quotation, Contract, FarmOutput, FarmExpense, Payroll, CashBookEntry
 from db_utils import db
 import csv
 import io
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from utils.pdf_utils import create_numbered_doc, add_company_header_to_story, build_pdf_with_numbering, add_pdf_footer
 
 finance_dashboard_bp = Blueprint('finance_dashboard', __name__, url_prefix='/financial-dashboard')
 
@@ -341,4 +346,178 @@ def export_cashbook():
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=cashbook_export.csv"}
     )
+
+@finance_dashboard_bp.route('/cashbook/pdf', methods=['GET'])
+@login_required
+@admin_required
+def export_cashbook_pdf():
+    # 1. Data Collection
+    transactions = Transaction.query.all()
+    farm_outputs = FarmOutput.query.all()
+    manual_credits = CashBookEntry.query.filter_by(type='Credit').all()
+    
+    farm_expenses = FarmExpense.query.all()
+    payrolls = Payroll.query.all()
+    manual_debits = CashBookEntry.query.filter_by(type='Debit').all()
+    
+    credits_list = []
+    for t in transactions:
+        credits_list.append({
+            'date': t.payment_date,
+            'description': t.notes or f"Business Transaction - {t.client.client_name if t.client else ''}",
+            'ref': t.reference_number,
+            'amount': float(t.amount) if t.amount else 0.0
+        })
+    for fo in farm_outputs:
+        credits_list.append({
+            'date': fo.date_added.date() if isinstance(fo.date_added, datetime) else fo.date_added,
+            'description': fo.product_name,
+            'ref': "FARM-OUT",
+            'amount': float(fo.total_value) if fo.total_value else 0.0
+        })
+    for mc in manual_credits:
+        credits_list.append({
+            'date': mc.date,
+            'description': mc.description,
+            'ref': mc.reference or "MANUAL",
+            'amount': float(mc.amount) if mc.amount else 0.0
+        })
+        
+    debits_list = []
+    for fe in farm_expenses:
+        debits_list.append({
+            'date': fe.expense_date,
+            'description': fe.description or fe.expense_category,
+            'ref': "FARM-EXP",
+            'amount': float(fe.amount) if fe.amount else 0.0
+        })
+    for p in payrolls:
+        debits_list.append({
+            'date': p.created_at.date() if isinstance(p.created_at, datetime) else p.created_at,
+            'description': f"Staff Salary - {p.payroll_month} ({p.employee.first_name if p.employee else ''})",
+            'ref': p.reference_number,
+            'amount': float(p.net_salary) if p.net_salary else 0.0
+        })
+    for md in manual_debits:
+        debits_list.append({
+            'date': md.date,
+            'description': md.description,
+            'ref': md.reference or "MANUAL",
+            'amount': float(md.amount) if md.amount else 0.0
+        })
+        
+    # Sort
+    credits_list.sort(key=lambda x: x['date'] if x['date'] else date.min, reverse=True)
+    debits_list.sort(key=lambda x: x['date'] if x['date'] else date.min, reverse=True)
+    
+    # Financials
+    opening_balance_entry = CashBookEntry.query.filter(CashBookEntry.description.ilike('%Opening Balance%')).first()
+    opening_balance = float(opening_balance_entry.amount) if opening_balance_entry else 0.0
+    total_income = sum(c['amount'] for c in credits_list if "Opening Balance" not in c['description'])
+    total_debits = sum(d['amount'] for d in debits_list)
+    balance = opening_balance + total_income - total_debits
+
+    # 2. PDF Generation
+    buffer = io.BytesIO()
+    doc = create_numbered_doc(buffer, pagesize=landscape(A4), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    story = []
+    
+    # Header
+    story = add_company_header_to_story(story, layout_mode='dense')
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, alignment=1, spaceAfter=10)
+    story.append(Paragraph("CASH BOOK LEDGER", title_style))
+    story.append(Paragraph(f"Financial Period: Up to {datetime.now().strftime('%d/%m/%Y')}", styles['Normal']))
+    story.append(Spacer(1, 15))
+    
+    # Summary Table
+    summary_data = [
+        [Paragraph("<b>OPENING BALANCE</b>", styles['Normal']), f"MWK {opening_balance:,.2f}"],
+        [Paragraph("<b>TOTAL CREDITS (+)</b>", styles['Normal']), f"MWK {total_income:,.2f}"],
+        [Paragraph("<b>TOTAL DEBITS (-)</b>", styles['Normal']), f"MWK {total_debits:,.2f}"],
+        [Paragraph("<b>CLOSING BALANCE</b>", styles['Normal']), f"MWK {balance:,.2f}"]
+    ]
+    summary_table = Table(summary_data, colWidths=[200, 150])
+    summary_table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1, colors.black),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+        ('BACKGROUND', (0,3), (1,3), colors.lightgrey),
+    ]))
+    story.append(summary_table)
+    story.append(Spacer(1, 25))
+    
+    # 3. Two-Column Ledger Layout
+    # Left Side: Credits (Income)
+    credits_header = [['Date', 'Description', 'Ref', 'Amount']]
+    credits_data = credits_header + [[
+        c['date'].strftime('%d/%m/%Y') if c['date'] else '',
+        Paragraph(c['description'], styles['Normal']),
+        c['ref'],
+        f"{c['amount']:,.2f}"
+    ] for c in credits_list]
+    
+    if opening_balance > 0:
+        credits_data.insert(1, ['01/01/2026', 'Opening Balance b/f', 'OPEN-BAL', f"{opening_balance:,.2f}"])
+
+    # Right Side: Debits (Payments)
+    debits_header = [['Date', 'Description', 'Ref', 'Amount']]
+    debits_data = debits_header + [[
+        d['date'].strftime('%d/%m/%Y') if d['date'] else '',
+        Paragraph(d['description'], styles['Normal']),
+        d['ref'],
+        f"{d['amount']:,.2f}"
+    ] for d in debits_list]
+    
+    # Create the two sub-tables
+    col_widths = [65, 160, 60, 85] 
+    
+    t_credits = Table(credits_data, colWidths=col_widths, repeatRows=1)
+    t_credits.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkblue),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('ALIGN', (-1, 0), (-1, -1), 'RIGHT'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+    ]))
+    
+    t_debits = Table(debits_data, colWidths=col_widths, repeatRows=1)
+    t_debits.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkred),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('ALIGN', (-1, 0), (-1, -1), 'RIGHT'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+    ]))
+    
+    # Wrapper table to place them side-by-side
+    side_by_side = Table([
+        [Paragraph("<b>CREDITS (Income / Receipts)</b>", styles['Normal']), Paragraph("<b>DEBITS (Payments / Expenditure)</b>", styles['Normal'])],
+        [t_credits, t_debits]
+    ], colWidths=[385, 385])
+    side_by_side.setStyle(TableStyle([
+        ('VALIGN', (0,1), (-1,1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
+    ]))
+    
+    story.append(side_by_side)
+    
+    # Footer
+    story = add_pdf_footer(story)
+    
+    build_pdf_with_numbering(doc, story)
+    buffer.seek(0)
+    
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=CashBook_Ledger_Mphamvu.pdf'
+    return response
 
