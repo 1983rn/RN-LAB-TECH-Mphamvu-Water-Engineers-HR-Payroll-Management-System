@@ -176,12 +176,21 @@ def cashbook():
 @admin_required
 def add_cashbook_entry():
     try:
-        date_str = request.form['date']
+        # Using .get() for robustness
+        date_str = request.form.get('date')
+        description = request.form.get('description')
+        amount_str = request.form.get('amount')
+        entry_type = request.form.get('type')
+        
+        # Explicit validation for required fields
+        if not all([date_str, description, amount_str, entry_type]):
+            missing = [k for k in ['date', 'description', 'amount', 'type'] if not request.form.get(k)]
+            flash(f"Error adding entry: Missing required fields: {', '.join(missing)}", 'error')
+            return redirect(url_for('finance_dashboard.cashbook'))
+
         date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-        description = request.form['description']
+        amount = float(amount_str)
         reference = request.form.get('reference')
-        amount = float(request.form['amount'])
-        entry_type = request.form['type']
         category = request.form.get('category')
         department = request.form.get('department')
         
@@ -197,6 +206,8 @@ def add_cashbook_entry():
         db.session.add(entry)
         db.session.commit()
         flash('Entry added to Cash Book successfully!', 'success')
+    except ValueError:
+        flash('Error adding entry: Invalid date or amount format.', 'error')
     except Exception as e:
         flash(f'Error adding entry: {str(e)}', 'error')
     
