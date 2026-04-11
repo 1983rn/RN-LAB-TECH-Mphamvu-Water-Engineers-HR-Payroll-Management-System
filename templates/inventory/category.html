@@ -230,6 +230,85 @@
     .cond-fair { background: #fffcf0; color: #f2ad3c; }
     .cond-poor { background: #feeff0; color: #dc3545; }
 
+    /* Borehole Drilling Custom Theme - Suspended Effect */
+    .borehole-bg {
+        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
+                    url("{{ url_for('static', filename='images/Borehole drilling operation in rural setting.png') }}") no-repeat center center fixed;
+        background-size: cover;
+        min-height: 100vh;
+        padding-top: 30px !important;
+    }
+
+    .borehole-bg .cat-title-text h2, 
+    .borehole-bg .section-title,
+    .borehole-bg .sum-text h4,
+    .borehole-bg .subcat-name,
+    .borehole-bg .subcat-value,
+    .borehole-bg .gt-right h2,
+    .borehole-bg .gt-left h4 {
+        color: #FFD700 !important; /* Bright Gold */
+        text-shadow: 2px 2px 4px rgba(0,0,0,1);
+    }
+
+    .borehole-bg .cat-title-text p,
+    .borehole-bg .sum-text h6,
+    .borehole-bg .table-custom td,
+    .borehole-bg .table-custom th,
+    .borehole-bg .gt-left p,
+    .borehole-bg .gt-right p,
+    .borehole-bg .cat-actions .btn-outline-custom {
+        color: #ffffff !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,1);
+    }
+
+    .borehole-bg .sum-card,
+    .borehole-bg .toolbar .search-box input,
+    .borehole-bg .toolbar .filter-dropdown,
+    .borehole-bg .subcat-accordion,
+    .borehole-bg .subcat-header,
+    .borehole-bg .grand-total-footer,
+    .borehole-bg .cat-actions .btn-outline-custom {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 215, 0, 0.4) !important; /* Gold border */
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        color: #ffffff !important;
+    }
+
+    .borehole-bg .toolbar .search-box input::placeholder {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .borehole-bg .toolbar .search-box i {
+        color: #ffffff !important;
+    }
+
+    .borehole-bg .toolbar .filter-dropdown option {
+        background: #1a2332 !important; /* Dark background for options to remain readable */
+        color: #ffffff !important;
+    }
+
+    .borehole-bg .subcat-header:hover {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .borehole-bg .table-custom th {
+        color: rgba(255,255,255,0.8) !important;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .borehole-bg .table-custom td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .borehole-bg .cat-actions .btn-add-item {
+        background: #FFD700 !important;
+        color: #000 !important;
+        font-weight: 800;
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    }
+
     .action-btn {
         background: none;
         border: none;
@@ -267,7 +346,7 @@
 {% set icon_class = 'fa-tools color-blue' if is_borehole else 'fa-desktop color-purple' if is_office else 'fa-paw color-green' if is_animal else 'fa-tractor color-yellow' %}
 {% set bg_class = 'icon-Borehole' if is_borehole else 'icon-Office' if is_office else 'icon-Animal' if is_animal else 'icon-Crop' %}
 
-<div class="inv-category-page fade-in">
+<div class="inv-category-page fade-in {% if is_borehole %}borehole-bg{% endif %}">
     <!-- Header -->
     <div class="cat-header">
         <div class="cat-title-area">
