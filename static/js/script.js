@@ -78,11 +78,13 @@ $(document).ready(function() {
     });
     
     // Date picker initialization (if needed)
-    $('.date-picker').datepicker({
-        format: 'yyyy-mm-dd',
-        autoclose: true,
-        todayHighlight: true
-    });
+    if (typeof $.fn.datepicker === 'function') {
+        $('.date-picker').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true
+        });
+    }
     
     // Table row click actions
     $('.table-row-clickable').on('click', function() {

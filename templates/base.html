@@ -87,6 +87,12 @@
                     <div class="collapse {{ 'show' if request.endpoint and ('client' in request.endpoint or 'quotations' in request.endpoint or 'rfq' in request.endpoint or 'invoice' in request.endpoint or 'delivery' in request.endpoint or 'finance' in request.endpoint) else '' }}" id="clientSubmenu" data-bs-parent="#sidebarAccordion">
                         <ul class="nav-submenu">
                             <li class="nav-menu-item">
+                                <a href="{{ url_for('clients.list_clients') }}" class="nav-menu-link {% if request.endpoint == 'clients.list_clients' %}active{% endif %}">
+                                    <i class="fas fa-address-book"></i>
+                                    <span class="nav-text">Client Directory</span>
+                                </a>
+                            </li>
+                            <li class="nav-menu-item">
                                 <a href="{{ url_for('quotations.list_quotations') }}" class="nav-menu-link {% if request.endpoint and 'quotations' in request.endpoint and 'rfq' not in request.endpoint %}active{% endif %}">
                                     <i class="fas fa-file-invoice"></i>
                                     <span class="nav-text">Quotations</span>

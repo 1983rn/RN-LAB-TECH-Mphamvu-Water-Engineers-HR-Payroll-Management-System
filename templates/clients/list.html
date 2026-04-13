@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Clients - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa !important;
+    }
+
+    .main-wrapper,
+    .main-content {
+        background: transparent !important;
+    }
+
+    h2 {
+        color: #1a237e !important;
+        font-weight: 800;
+        font-family: 'Georgia', serif;
+        font-size: 1.6rem !important;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    /* Transparent card — notebook style */
+    .card,
+    .card-body,
+    .card-header,
+    .table-responsive {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .table {
+        background: transparent !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+        width: 100%;
+        margin-bottom: 0;
+    }
+
+    /* Stylish column header tabs */
+    .table thead tr {
+        background: transparent !important;
+    }
+
+    .table thead th {
+        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 10px 8px !important;
+        border: none !important;
+        border-right: 1px solid rgba(255,255,255,0.15) !important;
+        text-align: center;
+        white-space: nowrap;
+        box-shadow: 0 4px 8px rgba(13, 71, 161, 0.4);
+    }
+
+    .table thead th:first-child {
+        border-radius: 20px 0 0 20px;
+        padding-left: 15px !important;
+    }
+
+    .table thead th:last-child {
+        border-radius: 0 20px 20px 0;
+        border-right: none !important;
+        padding-right: 15px !important;
+    }
+
+    .table thead th:hover {
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
+        color: #FFD700 !important;
+    }
+
+    /* Each data row = one notebook line */
+    .table tbody td {
+        background: transparent !important;
+        color: #1a237e;
+        font-size: 0.95rem;
+        vertical-align: middle !important;
+        padding: 10px 8px !important;
+        border-top: none !important;
+        /* Bold blue rule — notebook printed lines */
+        border-bottom: 3px solid rgba(30, 100, 200, 0.75) !important;
+        line-height: 1.3;
+    }
+
+    /* Remove Bootstrap striping */
+    .table-striped>tbody>tr:nth-of-type(odd)>td,
+    .table-striped>tbody>tr:nth-of-type(even)>td {
+        background: transparent !important;
+    }
+
+    /* Hover: yellow highlighter effect */
+    .table-hover>tbody>tr:hover>td {
+        background: rgba(255, 235, 59, 0.25) !important;
+        color: #0d47a1 !important;
+    }
+
+    /* Project type — truncated with ellipsis */
+    .project-type-label {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #1a237e;
+        display: block;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Action buttons */
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Contact info styling */
+    .contact-line {
+        font-size: 0.88rem;
+        color: #1a237e;
+        line-height: 1.4;
+    }
+
+    .contact-line.email {
+        color: #546e7a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-2">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-handshake me-2"></i>Client Directory</h2>
+            <div>
+                <a href="{{ url_for('clients.credit_scoring') }}" class="btn btn-info text-white me-2">
+                    <i class="fas fa-chart-line me-2"></i>Credit Scoring
+                </a>
+                <a href="{{ url_for('clients.add_client') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add Client
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if clients %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">Ref</th>
+                        <th style="width: 22%;">Client Name</th>
+                        <th style="width: 22%;">Contact</th>
+                        <th style="width: 18%;">Project Type</th>
+                        <th style="width: 14%;">Credit Rating</th>
+                        <th style="width: 12%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td class="fw-bold">{{ client.reference_number }}</td>
+                        <td>{{ client.client_name }}</td>
+                        <td>
+                            <div class="contact-line"><i class="fas fa-phone me-1"></i>{{ client.phone }}</div>
+                            <div class="contact-line email"><i class="fas fa-envelope me-1"></i>{{ client.email or 'N/A' }}</div>
+                        </td>
+                        <td><span class="project-type-label" title="{{ client.project_type }}">{{ client.project_type }}</span></td>
+                        <td>
+                            {% if client.credit_scores %}
+                                {% set score = client.credit_scores[0] %}
+                                {% set badge_class = 'success' if score.score <= 2 else ('warning' if score.score <= 4 else 'danger') %}
+                                <span class="badge bg-{{ badge_class }}">
+                                    {{ score.rating }} ({{ score.score }}/6)
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">No Rating</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('clients.credit_scoring') }}" class="btn btn-sm btn-outline-primary action-btn" title="Credit Profile">
+                                    <i class="fas fa-user-check"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('clients.delete_client', client_id=client.client_id) }}" onsubmit="return confirm('Are you sure you want to delete this client?');" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger action-btn" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No clients registered yet</h4>
+            <p class="text-muted">Register your first client to start generating quotations and invoices.</p>
+            <a href="{{ url_for('clients.add_client') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-2"></i>Add First Client
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
