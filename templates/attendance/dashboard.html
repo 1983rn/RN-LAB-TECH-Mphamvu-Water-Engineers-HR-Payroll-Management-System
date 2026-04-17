@@ -12,6 +12,35 @@
         background: transparent !important;
     }
 
+    /* Premium Dept Header - Notebook Style */
+    .dept-header {
+        text-align: center;
+        z-index: 10;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #1a237e;
+    }
+
+    .dept-header h1 {
+        font-size: 2.2rem;
+        font-weight: 900;
+        color: #1a237e;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+        font-family: 'Georgia', serif;
+    }
+
+    .dept-header h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #5c6bc0;
+        text-transform: uppercase;
+        letter-spacing: 6px;
+        margin-top: 5px;
+        font-family: 'Georgia', serif;
+    }
+
     /* ── Notebook paper: no card panels, just ink on ruled paper ── */
     .card, .card-body, .card-header, .table-responsive {
         background: transparent !important;
@@ -30,7 +59,8 @@
         margin-bottom: 2px;
         margin-top: 5px;
     }
-
+</style>
+<style>
     /* ── Table: fully transparent — sits on the printed lines ── */
     .table {
         background: transparent !important;
@@ -100,6 +130,10 @@
 {% endblock %}
 
 {% block content %}
+<div class="dept-header mb-4">
+    <h1>MPHAMVU WATER ENGINEERS</h1>
+    <h2>HUMAN RESOURCES DEPARTMENT</h2>
+</div>
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center flex-wrap">

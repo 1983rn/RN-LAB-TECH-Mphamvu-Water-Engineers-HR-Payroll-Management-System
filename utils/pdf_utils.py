@@ -11,6 +11,7 @@ import os
 import qrcode
 import hashlib
 from pypdf import PdfReader, PdfWriter
+import io
 
 # Patch ReportLab Table.identity for Python 3.10+ compatibility
 # ReportLab's Table.identity calls max() on rowHeights, which fails if they are None in Python 3.
@@ -145,11 +146,27 @@ def create_text_header(styles):
         info_style
     )
 
-def add_company_header_to_story(story, layout_mode='normal'):
-    """Add company header to PDF story"""
+def add_company_header_to_story(story, layout_mode='normal', department=None):
+    """Add company header to PDF story, with optional department subtitle"""
     header_content = create_company_header(layout_mode=layout_mode)
     for element in header_content:
         story.append(element)
+    
+    # Add department name below header if provided
+    if department:
+        styles = getSampleStyleSheet()
+        dept_style = ParagraphStyle(
+            'DeptHeader',
+            parent=styles['Normal'],
+            fontSize=11 if layout_mode == 'normal' else (10 if layout_mode == 'compact' else 9),
+            leading=14,
+            alignment=1,  # Center
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#003366'),
+            spaceBefore=2,
+            spaceAfter=2,
+        )
+        story.append(Paragraph(f"Department: {department}", dept_style))
     
     spacer_height = 8 if layout_mode == 'normal' else (4 if layout_mode == 'compact' else 2)
     story.append(Spacer(1, spacer_height))
@@ -639,3 +656,64 @@ def generate_bulk_id_cards(employees):
     buffer.seek(0)
     return buffer
 
+
+def generate_receipt_pdf(transaction, department=None):
+    """Generate a premium payment receipt PDF"""
+    buffer = io.BytesIO()
+    doc = create_numbered_doc(buffer, pagesize=A4)
+    story = []
+    
+    # 1. Company Header
+    story = add_company_header_to_story(story, layout_mode='normal', department=department or 'Accounts Department')
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, alignment=1, spaceAfter=20, textColor=colors.darkblue)
+    story.append(Paragraph("OFFICIAL PAYMENT RECEIPT", title_style))
+    
+    # 2. Receipt Info Table
+    receipt_no = f"REC-{datetime.now().year}-{transaction.transaction_id:04d}"
+    info_data = [
+        [Paragraph(f"<b>Receipt No:</b> {receipt_no}", styles['Normal']), 
+         Paragraph(f"<b>Date:</b> {transaction.payment_date.strftime('%d/%m/%Y')}", styles['Normal'])]
+    ]
+    info_table = Table(info_data, colWidths=[3*inch, 3*inch])
+    info_table.setStyle(TableStyle([('ALIGN', (1,0), (1,0), 'RIGHT')]))
+    story.append(info_table)
+    story.append(Spacer(1, 20))
+    
+    # 3. Payment Details
+    styles.add(ParagraphStyle('DetailLabel', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10))
+    styles.add(ParagraphStyle('DetailValue', parent=styles['Normal'], fontSize=11, leading=14))
+    
+    details = [
+        [Paragraph("Received From:", styles['DetailLabel']), Paragraph(transaction.client.client_name if transaction.client else "N/A", styles['DetailValue'])],
+        [Paragraph("Amount Received:", styles['DetailLabel']), Paragraph(f"MWK {transaction.amount:,.2f}", styles['DetailValue'])],
+        [Paragraph("Payment Method:", styles['DetailLabel']), Paragraph(transaction.payment_method, styles['DetailValue'])],
+        [Paragraph("Reference:", styles['DetailLabel']), Paragraph(transaction.transaction_reference or "N/A", styles['DetailValue'])],
+        [Paragraph("Being Payment For:", styles['DetailLabel']), Paragraph(transaction.notes or f"Payment for Invoice {transaction.invoice.invoice_number if transaction.invoice else 'N/A'}", styles['DetailValue'])]
+    ]
+    
+    details_table = Table(details, colWidths=[1.5*inch, 4.5*inch], rowHeights=25)
+    details_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('BACKGROUND', (0,0), (0,-1), colors.lightgrey),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+    ]))
+    story.append(details_table)
+    story.append(Spacer(1, 30))
+    
+    # 4. Professional Stamp & Signature Area
+    qr_path = generate_qr_code("RECEIPT", receipt_no, transaction.client.client_name if transaction.client else "N/A", transaction.amount)
+    story = add_signature_stamp_qr(story, receipt_no, qr_path)
+    
+    # 5. Footer
+    story = add_pdf_footer(story)
+    
+    # Build
+    doc.build(story, canvasmaker=NumberedCanvas)
+    
+    # Secure and return
+    pdf_out = buffer.getvalue()
+    buffer.close()
+    return io.BytesIO(pdf_out)

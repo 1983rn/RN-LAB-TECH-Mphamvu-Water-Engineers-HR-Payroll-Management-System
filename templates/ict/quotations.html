@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}ICT Quotations - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-white fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i>ICT QUOTATIONS</h2>
+            <p class="text-white-50">Manage project quotations and cost estimates.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary react-button" data-bs-toggle="modal" data-bs-target="#createQuotationModal">
+                <i class="fas fa-plus me-2"></i>NEW QUOTATION
+            </button>
+        </div>
+    </div>
+
+    <div class="card react-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table react-table">
+                    <thead>
+                        <tr>
+                            <th>REF #</th>
+                            <th>CLIENT</th>
+                            <th>LOCATION</th>
+                            <th>AMOUNT (MWK)</th>
+                            <th>DATE</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quo in quotations %}
+                        <tr>
+                            <td class="fw-bold">{{ quo.reference_number }}</td>
+                            <td>{{ quo.client.client_name }}</td>
+                            <td>{{ quo.project_location }}</td>
+                            <td class="text-info fw-bold">{{ "{:,.2f}".format(quo.total_amount) }}</td>
+                            <td>{{ quo.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge {% if quo.status == 'Approved' %}bg-success{% elif quo.status == 'Pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                    {{ quo.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a>
+                                {% if not quo.invoice_generated and quo.status == 'Approved' %}
+                                <form action="{{ url_for('ict.create_invoice') }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="quotation_id" value="{{ quo.quotation_id }}">
+                                    <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-file-invoice"></i></button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Quotation Modal -->
+<div class="modal fade" id="createQuotationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content react-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">NEW ICT QUOTATION</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('ict.create_quotation') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">CLIENT</label>
+                            <select name="client_id" class="form-select bg-dark text-white border-secondary" required>
+                                {% for client in clients %}
+                                <option value="{{ client.client_id }}">{{ client.client_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">LOCATION</label>
+                            <input type="text" name="location" class="form-control bg-dark text-white border-secondary" placeholder="Project Site" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label text-white-50">TOTAL AMOUNT (MWK)</label>
+                            <input type="number" step="0.01" name="total_amount" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label text-white-50">PROJECT SCOPE / DESCRIPTION</label>
+                            <textarea name="description" class="form-control bg-dark text-white border-secondary" rows="4"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+                    <button type="submit" class="btn btn-primary react-button">CREATE QUOTATION</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

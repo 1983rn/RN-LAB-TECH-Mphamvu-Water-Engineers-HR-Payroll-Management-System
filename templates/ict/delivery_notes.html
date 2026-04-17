@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}ICT Delivery Notes - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-white fw-bold"><i class="fas fa-truck-loading me-2"></i>ICT DELIVERY NOTES</h2>
+            <p class="text-white-50">Confirm project delivery and generate official receipts.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary react-button" data-bs-toggle="modal" data-bs-target="#createDeliveryModal">
+                <i class="fas fa-plus me-2"></i>NEW DELIVERY NOTE
+            </button>
+        </div>
+    </div>
+
+    <div class="card react-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table react-table">
+                    <thead>
+                        <tr>
+                            <th>REF #</th>
+                            <th>INVOICE #</th>
+                            <th>CLIENT</th>
+                            <th>EQUIPMENT / SERVICES</th>
+                            <th>DATE</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dn in delivery_notes %}
+                        <tr>
+                            <td class="fw-bold">{{ dn.reference_number }}</td>
+                            <td>{{ dn.invoice.invoice_number }}</td>
+                            <td>{{ dn.invoice.quotation.client.client_name }}</td>
+                            <td>{{ dn.equipment_delivered }}</td>
+                            <td>{{ dn.delivery_date.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <form action="{{ url_for('ict.generate_receipt', delivery_id=dn.delivery_id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Generate Receipt">
+                                        <i class="fas fa-receipt me-1"></i> RECEIPT
+                                    </button>
+                                </form>
+                                <a href="#" class="btn btn-sm btn-info text-white"><i class="fas fa-file-pdf"></i> DN</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Delivery Note Modal -->
+<div class="modal fade" id="createDeliveryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content react-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">NEW ICT DELIVERY NOTE</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('ict.create_delivery_note') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label text-white-50">LINKED INVOICE</label>
+                            <select name="invoice_id" class="form-select bg-dark text-white border-secondary" required>
+                                {% for inv in invoices %}
+                                <option value="{{ inv.invoice_id }}">{{ inv.invoice_number }} - {{ inv.quotation.client.client_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label text-white-50">EQUIPMENT / SERVICES DELIVERED</label>
+                            <textarea name="equipment" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="List software modules, hardware, or services provided..." required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+                    <button type="submit" class="btn btn-primary react-button">CREATE DELIVERY NOTE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

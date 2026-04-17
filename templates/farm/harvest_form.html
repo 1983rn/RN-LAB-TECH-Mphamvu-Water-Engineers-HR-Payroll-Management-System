@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Record Harvest - MWE Farm{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: url("{{ url_for('static', filename='images/Sunny farm life with goats and corn.png') }}") no-repeat center center fixed;
+        background-size: cover;
+    }
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+    .form-glass {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        color: white;
+        max-width: 600px;
+        margin: 40px auto;
+    }
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border-color: #ffc107;
+    }
+    label { font-weight: 600; color: #fff3cd; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-glass fade-in text-center">
+    <h2 class="mb-4"><i class="fas fa-box-open me-2 text-warning"></i>Record Harvest</h2>
+    <p class="mb-4">Recording harvest for <strong>{{ crop.crop_name }}</strong> (Variety: {{ crop.variety or 'Standard' }}) planted on {{ crop.planting_date }}</p>
+
+    <form method="POST">
+        <div class="row g-3 text-start">
+            <div class="col-12">
+                <label for="actual_harvest_date">Harvest Date</label>
+                <input type="date" class="form-control" id="actual_harvest_date" name="actual_harvest_date" required value="{{ now.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="col-md-8">
+                <label for="quantity_harvested">Quantity Harvested</label>
+                <input type="number" step="0.1" class="form-control" id="quantity_harvested" name="quantity_harvested" required placeholder="e.g. 50">
+            </div>
+            <div class="col-md-4">
+                <label for="unit">Unit</label>
+                <select class="form-select" id="unit" name="unit">
+                    <option value="Bags">Bags</option>
+                    <option value="Kgs">Kgs</option>
+                    <option value="Tons">Tons</option>
+                    <option value="Crates">Crates</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3">
+            <button type="submit" class="btn btn-warning w-100 py-2 fw-bold">
+                <i class="fas fa-check-circle me-1"></i> Finalize Harvest
+            </button>
+            <a href="{{ url_for('farm.dashboard') }}" class="btn btn-link text-white mt-2 small">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Authentication Gateway - {{ module }} - Mphamvu Water Engineers{% endblock %}
+
+{% block content %}
+<div class="container py-5 d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 120px);">
+    <div class="card bg-dark text-white shadow-lg border-info" style="width: 100%; max-width: 500px; border-radius: 12px;">
+        <div class="card-header bg-black text-center py-4 rounded-top" style="border-bottom: 2px solid #0dcaf0;">
+            <h4 class="text-info text-uppercase mb-0 tracking-wider">
+                <i class="fas fa-lock me-2"></i> {{ module }} Gateway
+            </h4>
+            <p class="text-secondary small mt-2 mb-0">Managing Director Approval Required</p>
+        </div>
+        
+        <div class="card-body p-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <ul class="nav nav-tabs nav-justified mb-4 border-secondary" id="gatewayTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link bg-dark text-white border-secondary active" id="request-tab" data-bs-toggle="tab" data-bs-target="#request" type="button" role="tab">1. Request Access</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link bg-dark text-white border-secondary" id="verify-tab" data-bs-toggle="tab" data-bs-target="#verify" type="button" role="tab">2. Enter OTP</button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="gatewayTabContent">
+                <!-- Request Access Tab -->
+                <div class="tab-pane fade show active" id="request" role="tabpanel">
+                    <form action="{{ url_for('hr.request_access') }}" method="POST">
+                        <input type="hidden" name="module" value="{{ module }}">
+                        <div class="mb-4">
+                            <label class="form-label text-white-50">Authorized Personnel Name</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" name="requester_name" placeholder="E.g. John Doe, HR Manager" required autocomplete="off">
+                            <div class="form-text text-white-50">Specify your name for MD approval.</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-info text-dark fw-bold text-uppercase"><i class="fas fa-paper-plane me-2"></i> Send Request to MD</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Enter OTP Tab -->
+                <div class="tab-pane fade" id="verify" role="tabpanel">
+                    <div class="alert alert-warning text-dark mb-4">
+                        <i class="fas fa-info-circle me-1"></i> Ensure you have received the 6-character OTP from the Managing Director.
+                    </div>
+                    <form action="{{ url_for('hr.verify_otp') }}" method="POST">
+                        <input type="hidden" name="module" value="{{ module }}">
+                        <div class="mb-4 text-center">
+                            <label class="form-label text-warning mb-3 fw-bold">ENTER OTP PASSCODE</label>
+                            <input type="text" class="form-control form-control-lg bg-black text-warning border-warning text-center fw-bold fs-3 mx-auto" style="max-width: 200px; letter-spacing: 5px;" name="otp_code" required autocomplete="off" maxlength="10">
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-warning text-dark fw-bold text-uppercase fs-5"><i class="fas fa-unlock me-2"></i> Verify & Unlock</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <a href="{{ url_for('hr.dashboard') }}" class="btn btn-link text-white-50 text-decoration-none border-bottom border-secondary pb-1">Return to HR Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

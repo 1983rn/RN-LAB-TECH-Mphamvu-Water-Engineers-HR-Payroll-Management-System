@@ -1,0 +1,647 @@
+{% extends 'base.html' %}
+
+{% block title %}Construction Division - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: url("{{ url_for('static', filename='images/construction_bg.png') }}") no-repeat center center fixed;
+        background-size: cover;
+        position: relative;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: -1;
+    }
+    
+    /* Premium Dept Header */
+    .dept-header {
+        text-align: center;
+        z-index: 10;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: linear-gradient(135deg, rgba(12, 107, 62, 0.9) 0%, rgba(40, 167, 69, 0.7) 100%);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .dept-header h1 {
+        font-size: 2rem;
+        font-weight: 900;
+        color: #FFFFFF;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+        text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .dept-header h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-top: 5px;
+    }
+
+    /* Tabs Styling */
+    .construction-tabs {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(15px);
+        border-radius: 10px;
+        padding: 8px;
+        margin-bottom: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-pills .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        transition: all 0.3s ease;
+        border-radius: 6px;
+        margin: 2px;
+    }
+
+    .nav-pills .nav-link.active {
+        background: #28a745 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.1);
+        color: #FFFFFF;
+    }
+
+    /* Content Area */
+    .tab-content-wrapper {
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+        padding: 5px;
+        scrollbar-width: thin;
+        scrollbar-color: #28a745 transparent;
+    }
+
+    .stat-card-glass {
+        background: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        padding: 15px;
+        border-left: 6px solid #28a745;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card-glass:hover { transform: translateY(-3px); }
+    
+    .stat-card-glass h3 { 
+        font-size: 1.5rem; 
+        color: #FFFFFF;
+        font-weight: 800;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card-glass small { 
+        color: #FFD700;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Table Glassmorphism */
+    .table-container-glass {
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(15px);
+        border-radius: 15px;
+        padding: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+        margin-bottom: 20px;
+    }
+
+    .table { color: #FFFFFF !important; font-size: 0.85rem; }
+    .table thead th {
+        color: #FFD700 !important;
+        border-bottom: 2px solid #28a745 !important;
+        text-transform: uppercase;
+        font-weight: 700;
+        border-top: none;
+    }
+    .table td { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 8px; }
+
+    .empty-state-hub {
+        background: rgba(0, 0, 0, 0.6) !important;
+        color: #FFD700 !important;
+        border-radius: 20px;
+        padding: 40px !important;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        border: 1px dashed rgba(255, 215, 0, 0.3);
+    }
+
+    .badge { font-size: 0.7rem; padding: 0.4em 0.7em; border-radius: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dept-header fade-in">
+    <h1>MPHAMVU WATER ENGINEERS</h1>
+    <h2>CONSTRUCTION DIVISION</h2>
+</div>
+
+<div class="construction-tabs fade-in">
+    <ul class="nav nav-pills nav-fill" id="constTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button">
+                <i class="fas fa-project-diagram me-1"></i> Projects
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials" type="button">
+                <i class="fas fa-hard-hat me-1"></i> Materials
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="costs-tab" data-bs-toggle="tab" data-bs-target="#costs" type="button">
+                <i class="fas fa-coins me-1"></i> Cost Tracking
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="quotes-tab" data-bs-toggle="tab" data-bs-target="#quotes" type="button">
+                <i class="fas fa-file-invoice-dollar me-1"></i> Quotes
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="invoices-tab" data-bs-toggle="tab" data-bs-target="#invoices" type="button">
+                <i class="fas fa-file-invoice me-1"></i> Invoices
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="delivery-tab" data-bs-toggle="tab" data-bs-target="#delivery" type="button">
+                <i class="fas fa-truck me-1"></i> Delivery
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="clients-tab" data-bs-toggle="tab" data-bs-target="#clients" type="button">
+                <i class="fas fa-users me-1"></i> Clients
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" type="button">
+                <i class="fas fa-warehouse me-1"></i> Inventory
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="cashbook-tab" data-bs-toggle="tab" data-bs-target="#cashbook" type="button">
+                <i class="fas fa-book-open me-1"></i> Cashbook
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div class="tab-content tab-content-wrapper fade-in" id="constTabsContent">
+    <!-- Projects Tab -->
+    <div class="tab-pane fade show active" id="projects" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-white mb-0"><i class="fas fa-building text-success me-2"></i>Construction Projects</h4>
+            <a href="{{ url_for('construction.add_project') }}" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i> New Project</a>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card-glass">
+                    <small>Active Projects</small>
+                    <h3 class="mb-0">{{ active_projects_count }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card-glass" style="border-left-color: #ffc107;">
+                    <small>Total Project Costs</small>
+                    <h3 class="mb-0">MWK {{ "{:,.0f}".format(total_project_cost) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card-glass" style="border-left-color: #0dcaf0;">
+                    <small>Accrued Revenue</small>
+                    <h3 class="mb-0">MWK {{ "{:,.0f}".format(total_revenue) }}</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container-glass">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>PROJECT NAME</th>
+                            <th>CLIENT</th>
+                            <th>LOCATION</th>
+                            <th>STATUS</th>
+                            <th>BUDGET</th>
+                            <th>ACTUAL</th>
+                            <th class="text-end">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td class="fw-bold">{{ project.project_name }}</td>
+                            <td>{{ project.client.client_name }}</td>
+                            <td>{{ project.location }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if project.status == 'Completed' else 'info' if project.status == 'In Progress' else 'warning' }}">
+                                    {{ project.status }}
+                                </span>
+                            </td>
+                            <td>MWK {{ "{:,.0f}".format(project.estimated_budget) }}</td>
+                            <td class="text-warning">MWK {{ "{:,.0f}".format(project.actual_cost) }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('construction.add_cost') }}?project_id={{ project.id }}" class="btn btn-outline-warning btn-sm" title="Add Cost"><i class="fas fa-plus-circle"></i></a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center empty-state-hub"><i class="fas fa-building fa-3x mb-3"></i><br>No active projects found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Materials Tab -->
+    <div class="tab-pane fade" id="materials" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-white mb-0"><i class="fas fa-cubes text-success me-2"></i>Materials Tracking</h4>
+            <div>
+                <a href="{{ url_for('construction.add_material') }}" class="btn btn-success btn-sm me-2"><i class="fas fa-plus me-1"></i> Restock</a>
+                <a href="{{ url_for('construction.use_material') }}" class="btn btn-info btn-sm text-dark fw-bold"><i class="fas fa-hand-holding-box me-1"></i> Issue to Project</a>
+            </div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card-glass">
+                    <small>Cement Stock</small>
+                    <h3 class="mb-0">{{ (materials|selectattr('item_name','search','Cement')|first).quantity if materials|selectattr('item_name','search','Cement')|list else 0 }} Bags</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card-glass" style="border-left-color: #fd7e14;">
+                    <small>Bricks Stock</small>
+                    <h3 class="mb-0">{{ (materials|selectattr('item_name','search','Brick')|first).quantity if materials|selectattr('item_name','search','Brick')|list else 0 }} Pieces</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container-glass">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>MATERIAL NAME</th>
+                            <th>CATEGORY</th>
+                            <th>REMAINING</th>
+                            <th>UNIT PRICE</th>
+                            <th>TOTAL VALUE</th>
+                            <th>LAST UPDATED</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in materials %}
+                        <tr>
+                            <td class="fw-bold">{{ item.item_name }}</td>
+                            <td>{{ item.category }}</td>
+                            <td>{{ item.quantity }} {{ item.unit }}</td>
+                            <td>MWK {{ "{:,.2f}".format(item.unit_price) }}</td>
+                            <td class="text-success">MWK {{ "{:,.2f}".format(item.total_value) }}</td>
+                            <td class="small text-white-50">{{ item.last_updated.strftime('%Y-%m-%d %H:%M') if item.last_updated else '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center empty-state-hub"><i class="fas fa-boxes fa-3x mb-3"></i><br>Inventory is currently empty.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Tracking Tab -->
+    <div class="tab-pane fade" id="costs" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-white mb-0"><i class="fas fa-file-invoice-dollar text-success me-2"></i>Cost Breakdown</h4>
+            <a href="{{ url_for('construction.add_cost') }}" class="btn btn-warning btn-sm text-dark fw-bold"><i class="fas fa-plus me-1"></i> Record Project Cost</a>
+        </div>
+        <div class="table-container-glass">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>PROJECT</th>
+                            <th>COST TYPE</th>
+                            <th>DESCRIPTION</th>
+                            <th class="text-end">AMOUNT (MWK)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                            {% for cost in project.costs %}
+                            <tr>
+                                <td>{{ cost.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ project.project_name }}</td>
+                                <td><span class="badge bg-secondary">{{ cost.cost_type }}</span></td>
+                                <td>{{ cost.description }}</td>
+                                <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(cost.amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quotes Tab -->
+    <div class="tab-pane fade" id="quotes" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-white mb-0"><i class="fas fa-file-invoice text-primary me-2"></i>Construction Quotations</h4>
+            <a href="{{ url_for('quotations.create_quotation', department='Construction') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i> Create Quotation
+            </a>
+        </div>
+        <div class="table-container-glass">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>REF</th>
+                        <th>CLIENT</th>
+                        <th>LOCATION</th>
+                        <th>STATUS</th>
+                        <th class="text-end">TOTAL QUOTE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in quotes %}
+                    <tr>
+                        <td class="fw-bold text-success">{{ q.reference_number }}</td>
+                        <td>{{ q.client.client_name }}</td>
+                        <td>{{ q.project_location }}</td>
+                        <td><span class="badge bg-info">{{ q.status }}</span></td>
+                        <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(q.total_amount) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Invoices Tab -->
+    <div class="tab-pane fade" id="invoices" role="tabpanel">
+        <div class="table-container-glass">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>INV REF</th>
+                        <th>CLIENT</th>
+                        <th>DATE</th>
+                        <th>DUE DATE</th>
+                        <th>STATUS</th>
+                        <th class="text-end">AMOUNT</th>
+                        <th class="text-end">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td class="fw-bold">{{ inv.invoice_number }}</td>
+                        <td>{{ inv.quotation.client.client_name if inv.quotation else 'N/A' }}</td>
+                        <td>{{ inv.invoice_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ inv.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td><span class="badge bg-{{ 'success' if inv.status == 'Paid' else 'danger' }}">{{ inv.status }}</span></td>
+                        <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(inv.amount) }}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('finance.download_invoice_pdf', invoice_id=inv.invoice_id) }}" class="btn btn-outline-info" title="Download PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                                {% if not inv.is_approved %}
+                                <button class="btn btn-danger" onclick="openInvoiceApprovalModal('{{ inv.invoice_id }}')" title="Approve & Generate Delivery Note">
+                                    <i class="fas fa-stamp"></i> Approve
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Delivery Tab -->
+    <div class="tab-pane fade" id="delivery" role="tabpanel">
+        <div class="table-container-glass">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>DATE</th>
+                        <th>DEL REF</th>
+                        <th>CLIENT</th>
+                        <th>NOTES / EQUIPMENT</th>
+                        <th>STATUS</th>
+                        <th class="text-end">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for del in deliveries %}
+                    <tr>
+                        <td>{{ del.delivery_date.strftime('%d %b %Y') }}</td>
+                        <td class="fw-bold text-info">{{ del.reference_number }}</td>
+                        <td>{{ del.quotation.client.client_name }}</td>
+                        <td>{{ del.equipment_delivered[:40] }}...</td>
+                        <td><span class="badge bg-success">{{ del.status }}</span></td>
+                        <td class="text-end">
+                            <form action="{{ url_for('construction.generate_receipt_from_delivery', delivery_id=del.delivery_id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="amount" value="{{ del.quotation.total_amount }}">
+                                <input type="hidden" name="payment_method" value="Cash">
+                                <button type="submit" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-file-pdf me-1"></i> Generate Receipt
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Clients Tab -->
+    <div class="tab-pane fade" id="clients" role="tabpanel">
+        <div class="table-container-glass">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>CLIENT NAME</th>
+                        <th>PHONE</th>
+                        <th>EMAIL</th>
+                        <th>ADDRESS</th>
+                        <th class="text-end">CREDIT SCORE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clients %}
+                    <tr>
+                        <td class="fw-bold">{{ c.client_name }}</td>
+                        <td>{{ c.phone }}</td>
+                        <td>{{ c.email or '-' }}</td>
+                        <td>{{ c.address }}</td>
+                        <td class="text-end"><span class="badge bg-dark border border-warning text-warning">{{ c.credit_score }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Inventory Tab -->
+    <div class="tab-pane fade" id="inventory" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-white mb-0"><i class="fas fa-warehouse text-success me-2"></i>Construction Inventory</h4>
+            <a href="{{ url_for('inventory.add_item') }}?category=Construction" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i> Add Asset</a>
+        </div>
+        <div class="table-container-glass">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ASSET NAME</th>
+                        <th>SUBCATEGORY</th>
+                        <th>CONDITION</th>
+                        <th>LOCATION</th>
+                        <th class="text-end">VALUE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inventory %}
+                    <tr>
+                        <td class="fw-bold">{{ item.asset_name }}</td>
+                        <td>{{ item.subcategory or '-' }}</td>
+                        <td><span class="badge bg-light text-dark">{{ item.condition }}</span></td>
+                        <td>{{ item.location }}</td>
+                        <td class="text-end fw-bold">MWK {{ "{:,.0f}".format(item.unit_value) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Cashbook Tab -->
+    <div class="tab-pane fade" id="cashbook" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-white mb-0"><i class="fas fa-book text-success me-2"></i>Construction Finance</h4>
+            <a href="{{ url_for('construction.dashboard') }}" class="btn btn-outline-light btn-sm"><i class="fas fa-sync me-1"></i> Refresh</a>
+        </div>
+        <div class="table-container-glass">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>DATE</th>
+                        <th>DESCRIPTION</th>
+                        <th>CATEGORY</th>
+                        <th>TYPE</th>
+                        <th class="text-end">AMOUNT (MWK)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in cashbook %}
+                    <tr>
+                        <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td><span class="badge bg-dark">{{ entry.category }}</span></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if entry.type == 'Credit' else 'danger' }}">
+                                {{ entry.type }}
+                            </span>
+                        </td>
+                        <td class="text-end fw-bold {{ 'text-success' if entry.type == 'Credit' else 'text-danger' }}">
+                            MWK {{ "{:,.2f}".format(entry.amount) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Approval Modal -->
+<div class="modal fade" id="invoiceApprovalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-danger">
+            <div class="modal-header border-danger">
+                <h5 class="modal-title text-danger"><i class="fas fa-lock me-2"></i>AUTHORIZATION REQUIRED</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p>Enter Approval Password to approve this invoice and **automatically generate the Delivery Note**.</p>
+                <input type="hidden" id="approvalInvoiceId">
+                <div class="mb-3">
+                    <input type="password" class="form-control text-center bg-dark text-white border-secondary" id="approvalPassword" placeholder="[______________]">
+                </div>
+                <div id="approvalError" class="text-danger small mb-3" style="display: none;"></div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" onclick="submitInvoiceApproval()">Approve & Generate DN</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openInvoiceApprovalModal(invoiceId) {
+        document.getElementById('approvalInvoiceId').value = invoiceId;
+        document.getElementById('approvalPassword').value = '';
+        document.getElementById('approvalError').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('invoiceApprovalModal')).show();
+    }
+
+    function submitInvoiceApproval() {
+        const invoiceId = document.getElementById('approvalInvoiceId').value;
+        const password = document.getElementById('approvalPassword').value;
+        const errorDiv = document.getElementById('approvalError');
+
+        if (!password) {
+            errorDiv.innerText = 'Please enter password';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        fetch('/finance/invoice/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoice_id: invoiceId, password: password })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                errorDiv.innerText = data.message;
+                errorDiv.style.display = 'block';
+            }
+        })
+    }
+</script>
+{% endblock %}

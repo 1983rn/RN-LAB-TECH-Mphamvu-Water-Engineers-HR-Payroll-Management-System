@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Record Farm Sale - MWE Farm{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: url("{{ url_for('static', filename='images/Sunny farm life with goats and corn.png') }}") no-repeat center center fixed;
+        background-size: cover;
+    }
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+    .form-glass {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        color: white;
+        max-width: 700px;
+        margin: 40px auto;
+    }
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border-color: #ffc107;
+    }
+    label { font-weight: 600; color: #fff3cd; }
+    option { background: #1e4d2b; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-glass fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-hand-holding-usd me-2 text-warning"></i>Record Farm Sale</h2>
+        <a href="{{ url_for('farm.dashboard') }}" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <form method="POST">
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="item_description">Item / Description</label>
+                <input type="text" class="form-control" id="item_description" name="item_description" required placeholder="e.g. 50 Bags of Corn, 2 Boer Goats">
+            </div>
+            
+            <div class="col-md-6">
+                <label for="animal_id">Linked Livestock (Optional)</label>
+                <select class="form-select" id="animal_id" name="animal_id">
+                    <option value="">-- Not an animal sale --</option>
+                    {% for animal in animals %}
+                    <option value="{{ animal.id }}" {{ 'selected' if pre_selected_animal|int == animal.id }}>
+                        {{ animal.tag_number }} - {{ animal.animal_type }} ({{ animal.breed }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="amount">Sale Amount (MWK)</label>
+                <input type="number" step="0.01" class="form-control" id="amount" name="amount" required placeholder="0.00">
+            </div>
+
+            <div class="col-md-6">
+                <label for="payment_method">Payment Method</label>
+                <select class="form-select" id="payment_method" name="payment_method">
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Check">Check</option>
+                    <option value="Mobile Money">Mobile Money</option>
+                </select>
+            </div>
+            
+            <div class="col-md-6">
+                <label>Date of Sale</label>
+                <input type="text" class="form-control" value="{{ now.strftime('%Y-%m-%d') }}" readonly disabled>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-top border-light">
+            <button type="submit" class="btn btn-warning w-100 py-2 fw-bold text-dark">
+                <i class="fas fa-receipt me-2"></i> Finalize Sale & Record Revenue
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

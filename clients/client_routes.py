@@ -3,6 +3,7 @@ from functools import wraps
 from models import Client, ClientCreditScore
 from db_utils import db
 from utils.credit_scoring import update_client_credit_score
+from utils.auth_utils import apply_dept_filter, get_current_dept
 
 clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
 
@@ -24,36 +25,26 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@clients_bp.route('/credit-scoring')
-@login_required
-@admin_required
-def credit_scoring():
-    clients = Client.query.all()
-    # Ensure all clients have a score
-    for client in clients:
-        if not client.credit_scores:
-            update_client_credit_score(client.client_id)
-            
-    # Re-fetch after updates class, sorting by credit score (1 is best, 6 is worst)
-    clients = Client.query.outerjoin(ClientCreditScore).order_by(ClientCreditScore.score.asc(), Client.created_at.desc()).all()
-    return render_template('clients/credit_scoring.html', clients=clients)
 
-@clients_bp.route('/recalculate-score/<int:client_id>', methods=['POST'])
+@clients_bp.route('/recalculate-all', methods=['POST'])
 @login_required
 @admin_required
-def recalculate_score(client_id):
-    score_record = update_client_credit_score(client_id)
-    if score_record:
-        flash('Credit score recalculated successfully.', 'success')
-    else:
-        flash('Failed to recalculate credit score: Client not found.', 'error')
-    return redirect(url_for('clients.credit_scoring'))
+def recalculate_all_scores():
+    query = Client.query
+    clients = apply_dept_filter(query, Client).all()
+    for client in clients:
+        update_client_credit_score(client.client_id)
+    flash('All credit scores have been uniformly recalculated.', 'success')
+    return redirect(url_for('clients.list_clients'))
 
 @clients_bp.route('/')
 @login_required
 def list_clients():
-    # Sort clients by their credit score (1 is best, 6 is worst) so the highest ranked are at the top
-    clients = Client.query.outerjoin(ClientCreditScore).order_by(ClientCreditScore.score.asc(), Client.created_at.desc()).all()
+    query = Client.query
+    query = apply_dept_filter(query, Client)
+    
+    # Sort clients by their credit score highest first
+    clients = query.order_by(Client.credit_score.desc(), Client.created_at.desc()).all()
     return render_template('clients/list.html', clients=clients)
 
 @clients_bp.route('/add', methods=['GET', 'POST'])
@@ -79,7 +70,8 @@ def add_client():
                 phone=phone,
                 email=email,
                 address=address,
-                project_type=project_type
+                project_type=project_type,
+                department=get_current_dept()
             )
             db.session.add(new_client)
             db.session.commit()

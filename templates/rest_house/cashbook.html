@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Cash Book - Lodge Department{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-header h3 { color: #0d47a1; font-weight: 800; margin: 0; }
+    .summary-card {
+        border-radius: 12px;
+        padding: 18px 20px;
+        color: #fff;
+    }
+    .summary-card .label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.8;
+    }
+    .summary-card .value {
+        font-size: 1.6rem;
+        font-weight: 800;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <h3><i class="fas fa-book me-2"></i>Lodge Cash Book</h3>
+        <div class="text-muted">
+            <i class="fas fa-clock me-1"></i>{{ now.strftime('%d %B %Y, %H:%M') }}
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="summary-card" style="background: linear-gradient(135deg, #198754, #157347);">
+                <div class="label"><i class="fas fa-arrow-up me-1"></i>Total Income</div>
+                <div class="value">MWK {{ '{:,.0f}'.format(total_income) }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card" style="background: linear-gradient(135deg, #dc3545, #bb2d3b);">
+                <div class="label"><i class="fas fa-arrow-down me-1"></i>Total Expenses</div>
+                <div class="value">MWK {{ '{:,.0f}'.format(total_debits) }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card" style="background: linear-gradient(135deg, #0d6efd, #0b5ed7);">
+                <div class="label"><i class="fas fa-balance-scale me-1"></i>Net Balance</div>
+                <div class="value">MWK {{ '{:,.0f}'.format(balance) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breakdowns -->
+    <div class="row g-3 mb-4">
+        {% if income_breakdown %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white py-2"><h6 class="mb-0"><i class="fas fa-chart-pie me-1"></i>Income by Payment Method</h6></div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            {% for cat, amount in income_breakdown.items() %}
+                            <tr>
+                                <td class="ps-3 fw-bold">{{ cat }}</td>
+                                <td class="text-end pe-3 text-success fw-bold">MWK {{ '{:,.0f}'.format(amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if expense_breakdown %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white py-2"><h6 class="mb-0"><i class="fas fa-chart-pie me-1"></i>Expenses by Category</h6></div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            {% for cat, amount in expense_breakdown.items() %}
+                            <tr>
+                                <td class="ps-3 fw-bold">{{ cat }}</td>
+                                <td class="text-end pe-3 text-danger fw-bold">MWK {{ '{:,.0f}'.format(amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Credits (Income) -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white py-2">
+            <h6 class="mb-0"><i class="fas fa-arrow-circle-up me-2"></i>Credits (Income) — MWK {{ '{:,.0f}'.format(total_income) }}</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Reference</th>
+                            <th>Method</th>
+                            <th class="text-end">Amount (MWK)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in credits %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ c.date.strftime('%d %b %Y') if c.date else '-' }}</td>
+                            <td>{{ c.description }}</td>
+                            <td>{{ c.ref }}</td>
+                            <td>{{ c.category }}</td>
+                            <td class="text-end fw-bold text-success">{{ '{:,.0f}'.format(c.amount) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-3">No income records yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debits (Expenses) -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white py-2">
+            <h6 class="mb-0"><i class="fas fa-arrow-circle-down me-2"></i>Debits (Expenses) — MWK {{ '{:,.0f}'.format(total_debits) }}</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Reference</th>
+                            <th>Category</th>
+                            <th class="text-end">Amount (MWK)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in debits %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ d.date.strftime('%d %b %Y') if d.date else '-' }}</td>
+                            <td>{{ d.description }}</td>
+                            <td>{{ d.ref }}</td>
+                            <td>{{ d.category }}</td>
+                            <td class="text-end fw-bold text-danger">{{ '{:,.0f}'.format(d.amount) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-3">No expenses recorded yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

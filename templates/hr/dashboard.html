@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}HR Department Dashboard - Mphamvu Water Engineers{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hr-dashboard-wrapper {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 80px);
+        overflow: hidden;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: row;
+    }
+
+    /* Background layer (No tint) */
+    .hr-dashboard-wrapper::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url('{{ url_for('static', filename='images/hr_neutral_bg.png') }}') no-repeat center center;
+        background-size: cover;
+        z-index: 0;
+    }
+
+    /* Left content area */
+    .hr-content-area {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 25px;
+        overflow-y: auto;
+    }
+
+    /* Right MD Passport Area */
+    .md-image-area {
+        position: relative;
+        z-index: 10;
+        width: 320px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .md-passport-frame {
+        width: 220px;
+        height: 280px;
+        border: 4px solid #FFD700;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(255, 215, 0, 0.2);
+        background: #000;
+        margin-bottom: 20px;
+    }
+
+    .md-passport-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        filter: contrast(1.1) brightness(1.05);
+    }
+
+    .md-title-tag {
+        color: #FFD700;
+        font-weight: 900;
+        font-size: 1.1rem;
+        background: rgba(0, 0, 0, 0.82);
+        padding: 6px 20px;
+        border: 2px solid #FFD700;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+        white-space: nowrap;
+    }
+
+    /* Title area */
+    .hr-title {
+        margin-bottom: 20px;
+        border-bottom: 2px solid #ffffff;
+        padding-bottom: 10px;
+    }
+    .hr-title h1 {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.9), 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+
+    /* Hub and Spoke cards */
+    .hr-modules {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .hr-module-card {
+        background: transparent;
+        border: 2px solid #ffffff;
+        border-radius: 12px;
+        padding: 18px 15px;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        text-decoration: none;
+        display: block;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .hr-module-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        border-color: #FFD700;
+        text-decoration: none;
+    }
+
+    .hr-module-card .module-icon {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        font-size: 1.8rem;
+        background: rgba(0,0,0,0.4) !important;
+        border: 1px solid rgba(255,255,255,0.4);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .hr-module-card .module-name {
+        font-size: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #fff;
+        margin-bottom: 5px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+    }
+
+    .hr-module-card .module-stat {
+        font-size: 0.8rem;
+        color: #fff;
+        font-weight: 600;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+    }
+
+    /* Bottom analysis cards */
+    .hr-analysis-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .hr-analysis-card {
+        background: transparent;
+        border: 2px solid #ffffff;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .hr-analysis-card h5 {
+        color: #FFD700;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 0.95rem;
+        margin-bottom: 15px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+    }
+
+    .list-group-item {
+        background: transparent !important;
+        border-color: rgba(255,255,255,0.2) !important;
+        color: #fff !important;
+        font-weight: 600;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+        font-size: 0.9rem;
+    }
+
+    .table {
+        color: #fff !important;
+        margin: 0;
+    }
+    .table td, .table th {
+        border-color: rgba(255,255,255,0.15) !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+        font-weight: 600;
+    }
+
+    /* Responsiveness */
+    @media (max-width: 1200px) {
+        .hr-modules { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+        .hr-dashboard-wrapper { flex-direction: column; height: auto; min-height: calc(100vh - 80px); }
+        .md-image-area { width: 100%; height: 250px; order: -1; }
+        .hr-analysis-row { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hr-dashboard-wrapper">
+
+    <!-- LEFT: Content Area -->
+    <div class="hr-content-area">
+        <div class="hr-title d-flex justify-content-end align-items-center">
+            <div class="text-white fw-bold px-3 py-1 rounded" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3);">
+                <i class="fas fa-clock me-1 text-warning"></i> {{ now.strftime('%d %b %Y, %H:%M') }}
+            </div>
+        </div>
+
+        <!-- 4 Core Hub Modules -->
+        <div class="hr-modules">
+            <!-- Employees -->
+            <a href="{{ url_for('hr.gateway', module='Employees') }}" class="hr-module-card">
+                <div class="module-icon text-warning">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="module-name">Employees</div>
+                <div class="module-stat">{{ total_employees }} Registered &bull; {{ active_employees }} Active</div>
+            </a>
+
+            <!-- Payroll -->
+            <a href="{{ url_for('hr.gateway', module='Payroll') }}" class="hr-module-card">
+                <div class="module-icon text-success">
+                    <i class="fas fa-money-check-alt"></i>
+                </div>
+                <div class="module-name">Payroll</div>
+                <div class="module-stat">{{ pending_payroll }} Pending Processing</div>
+            </a>
+
+            <!-- Discipline -->
+            <a href="{{ url_for('employees.disciplinary_list') }}" class="hr-module-card">
+                <div class="module-icon text-danger">
+                    <i class="fas fa-gavel"></i>
+                </div>
+                <div class="module-name">Discipline</div>
+                <div class="module-stat">Employee Misconduct Logs</div>
+            </a>
+
+            <!-- Attendance -->
+            <a href="{{ url_for('attendance.dashboard') }}" class="hr-module-card">
+                <div class="module-icon text-info">
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+                <div class="module-name">Attendance</div>
+                <div class="module-stat">{{ today_attendance }} logs recorded today</div>
+            </a>
+        </div>
+
+        <!-- Analysis / Activity Row -->
+        <div class="hr-analysis-row">
+            <div class="hr-analysis-card">
+                <h5><i class="fas fa-chart-pie me-2"></i>Workforce Overview</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center ps-0">
+                        Total Staff Force <span class="badge bg-primary rounded-pill">{{ total_employees }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center ps-0">
+                        Active in Duty <span class="badge bg-success rounded-pill">{{ active_employees }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center ps-0">
+                        On Authorized Leave <span class="badge bg-warning text-dark rounded-pill">{{ on_leave }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="hr-analysis-card">
+                <h5><i class="fas fa-tasks me-2"></i>Recent Activity</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr class="small text-uppercase opacity-75">
+                                <th class="ps-0">Month</th>
+                                <th>Processed By</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in recent_payrolls %}
+                            <tr>
+                                <td class="ps-0">{{ p.month_year }}</td>
+                                <td>{{ p.processed_by or 'System' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if p.status == 'Processed' else 'warning' }}">{{ p.status }}</span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-3 opacity-50">No recent activity.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Managing Director Passport Card -->
+    <div class="md-image-area">
+        <div class="md-passport-frame">
+            <img src="{{ url_for('static', filename='images/managing director.jpg') }}" alt="Managing Director">
+        </div>
+        <div class="md-title-tag">MANAGING DIRECTOR</div>
+        <a href="{{ url_for('hr.md_login') }}" class="btn btn-warning mt-3 w-100 fw-bold border-dark text-dark shadow-lg">MD LOGIN</a>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}ICT Cash Book - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-white fw-bold"><i class="fas fa-book-medical me-2"></i>ICT CASH BOOK</h2>
+            <p class="text-white-50">Departmental income and expenditure tracking.</p>
+        </div>
+        <div class="col-auto">
+            <div class="d-flex gap-2">
+                <div class="card react-card border-success py-2 px-3">
+                    <span class="text-white-50 small">TOTAL INCOME</span>
+                    <span class="text-success fw-bold">MWK {{ "{:,.2f}".format(total_income) }}</span>
+                </div>
+                <div class="card react-card border-danger py-2 px-3">
+                    <span class="text-white-50 small">TOTAL EXPENSE</span>
+                    <span class="text-danger fw-bold">MWK {{ "{:,.2f}".format(total_expense) }}</span>
+                </div>
+                <div class="card react-card border-info py-2 px-3">
+                    <span class="text-white-50 small">NET BALANCE</span>
+                    <span class="text-info fw-bold">MWK {{ "{:,.2f}".format(total_income - total_expense) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card react-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table react-table">
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>DESCRIPTION</th>
+                            <th>REFERENCE</th>
+                            <th>CATEGORY</th>
+                            <th>TYPE</th>
+                            <th>AMOUNT (MWK)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr>
+                            <td>{{ entry.date.strftime('%d %b %Y') }}</td>
+                            <td>{{ entry.description }}</td>
+                            <td class="text-white-50">{{ entry.reference or 'N/A' }}</td>
+                            <td><span class="badge bg-dark border border-secondary">{{ entry.category }}</span></td>
+                            <td>
+                                <span class="badge {% if entry.type == 'Credit' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ entry.type }}
+                                </span>
+                            </td>
+                            <td class="fw-bold {% if entry.type == 'Credit' %}text-success{% else %}text-danger{% endif %}">
+                                {{ "{:,.2f}".format(entry.amount) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

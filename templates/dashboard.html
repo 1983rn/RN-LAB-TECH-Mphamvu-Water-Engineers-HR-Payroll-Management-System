@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - MPHAMVU WATER ENGINEERS{% endblock %}
+{% block title %}Enterprise Dashboard - MPHAMVU WATER ENGINEERS{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -10,6 +10,7 @@
         background-position: center !important;
         background-attachment: fixed !important;
         background-repeat: no-repeat !important;
+        overflow-y: hidden !important; /* Force fit to window */
     }
     
     .main-wrapper {
@@ -18,293 +19,257 @@
     
     .main-content {
         background: transparent !important;
-        border-radius: 12px;
-        margin: 15px;
-        min-height: calc(100vh - 120px);
-    }
-    
-    /* Display cards with a professional, dark glassmorphism effect for high readability */
-    .card {
-        background: rgba(15, 23, 42, 0.85) !important; /* Dark slate semi-transparent background */
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.15) !important; /* Soft edge */
-        border-top: 3px solid #00E5FF !important; /* Vibrant cyan top border for colorful accent */
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-        border-radius: 12px;
-    }
-    
-    .card-header {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 12px 12px 0 0;
-    }
-    
-    /* Ensure all dashboard text elements use clear, professional colors */
-    h2, .text-muted, .text-muted i, .card, .card p, .card a, .card strong, .card div {
-        color: #F8F9FA !important; /* Crisp white for standard text */
-        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important; /* Clean, subtle shadow */
+        padding: 0 !important;
+        height: calc(100vh - 80px); /* Adjust based on header/footer */
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
-    .card i {
-        color: #00E5FF !important; /* Vibrant cyan for icons */
-        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important;
+    /* ─── Hub and Spoke Container ─── */
+    .dashboard-hub-container {
+        position: relative;
+        width: 1000px;
+        height: 600px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
-    .card h3, h2 i {
-        color: #FFB300 !important; /* Warm Amber for numbers to provide a colorful pop */
-        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important;
-        font-weight: 700;
+    /* ─── SVG Connectors Layer ─── */
+    .hub-connectors {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
     }
     
-    .card h5, .card h6, h2 {
-        color: #00E5FF !important; /* Vibrant cyan for headings */
-        font-weight: 600;
-        text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important;
+    .hub-connectors line {
+        stroke: #00E5FF;
+        stroke-width: 2.5;
+        stroke-dasharray: 10, 5;
+        animation: dashFlow 30s linear infinite;
+        filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.6));
+    }
+
+    .hub-connectors line.accounts-link {
+        stroke: #FFB300;
+        stroke-width: 2;
+        stroke-dasharray: 5, 7;
+        animation: dashFlow 20s linear infinite;
+        filter: drop-shadow(0 0 3px rgba(255, 179, 0, 0.5));
     }
     
-    /* Adjust badges and buttons to fit the new aesthetic */
-    .badge {
-        text-shadow: none !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    @keyframes dashFlow {
+        from { stroke-dashoffset: 200; }
+        to { stroke-dashoffset: 0; }
     }
-    
-    .btn-outline-light {
-        background: rgba(0, 229, 255, 0.1) !important;
+
+    /* ─── Node Styling ─── */
+    .dashboard-node {
+        position: absolute;
+        width: 180px;
+        padding: 14px;
+        background: rgba(15, 23, 42, 0.9) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 20px;
+        text-align: center;
+        text-decoration: none !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        color: #F8F9FA !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
+        z-index: 2;
+    }
+
+    .dashboard-node:hover {
+        transform: scale(1.1);
         border-color: #00E5FF !important;
+        box-shadow: 0 15px 50px rgba(0, 229, 255, 0.4) !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+        z-index: 10; /* Bring to front on hover */
+    }
+
+    /* Specific fixes for nodes with positional transforms */
+    .node-hr:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .node-accounts:hover {
+        transform: translateX(-50%) scale(1.1);
+    }
+
+    .node-ict:hover {
+        transform: translateX(-50%) scale(1.1);
+    }
+
+    .node-title {
+        display: block;
+        font-weight: 800;
+        font-size: 0.85rem;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin-top: 10px;
+        color: #00E5FF !important;
+        text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    }
+
+    .node-icon {
+        font-size: 2rem;
+        color: #FFB300 !important;
+        margin-bottom: 4px;
+    }
+
+    /* ─── Node Positions (Hub & Spoke) ─── */
+    
+    /* Central Hub */
+    .node-hr {
+        width: 170px;
+        height: 170px;
+        border-radius: 50% !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(circle, rgba(15, 23, 42, 0.95), rgba(7, 10, 20, 1)) !important;
+        border: 4px solid #00E5FF !important;
+        top: 42%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .node-hr .node-title { font-size: 1.5rem; color: #FFFFFF !important; }
+    .node-hr .node-icon { font-size: 2.5rem; }
+
+    /* Spokes (Angles from center) */
+    .node-ict          { top: 5%; left: 50%; transform: translateX(-50%); }
+    .node-borehole     { top: 10%; left: 5%; }
+    .node-farm         { top: 10%; right: 5%; }
+    .node-construction { bottom: 10%; left: 2%; }
+    .node-accounts     { bottom: 10%; left: 50%; transform: translateX(-50%); }
+    .node-resthouse    { bottom: 10%; right: 2%; }
+
+    /* MD Approval Card */
+    .md-approval-portal {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        background: rgba(15, 23, 42, 0.9);
+        border: 2px solid #FFD700;
+        border-radius: 15px;
+        padding: 15px;
+        z-index: 100;
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+    }
+
+    /* Stats inside nodes */
+    .node-stat {
+        font-size: 0.8rem;
+        opacity: 0.8;
+        margin-top: 5px;
         color: #FFFFFF !important;
-        text-shadow: none !important;
-        transition: all 0.3s ease;
     }
-    
-    .btn-outline-light:hover {
-        background: rgba(0, 229, 255, 0.25) !important;
-        box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
-    }
-    
-    .btn-light {
-        background: #FFFFFF !important;
-        color: #0f172a !important;
-        border: none !important;
-        text-shadow: none !important;
-        font-weight: 600;
-    }
-    
-    .btn-light:hover {
-        background: #E0F7FA !important;
-        box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
-    }
-    
+
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2><i class="fas fa-dashboard me-2"></i>Dashboard</h2>
-            <div class="text-muted">
-                <i class="fas fa-user me-1"></i> Welcome, {{ session.username }}
-                <span class="badge bg-primary ms-2">{{ session.role }}</span>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="dashboard-hub-container">
+    
+    <!-- SVG Connections -->
+    <svg class="hub-connectors">
+        <!-- Primary: Lines from HR hub (500, 252) to each department -->
+        <line x1="500" y1="252" x2="500" y2="50" /> <!-- ICT -->
+        <line x1="500" y1="252" x2="160" y2="100" /> <!-- Borehole -->
+        <line x1="500" y1="252" x2="840" y2="100" /> <!-- Farm -->
+        <line x1="500" y1="252" x2="130" y2="480" /> <!-- Construction -->
+        <line x1="500" y1="252" x2="500" y2="480" /> <!-- Accounts -->
+        <line x1="500" y1="252" x2="870" y2="480" /> <!-- Lodge -->
 
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Employees</h6>
-                        <h3 class="mb-0">{{ stats.total_employees }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-users fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Active Employees</h6>
-                        <h3 class="mb-0">{{ stats.active_employees }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-user-check fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Clients</h6>
-                        <h3 class="mb-0">{{ stats.total_clients }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-handshake fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Pending Quotations</h6>
-                        <h3 class="mb-0">{{ stats.pending_quotations }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-file-invoice fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        <!-- Secondary: All departments connected to Accounts (500, 480) -->
+        <line class="accounts-link" x1="500" y1="50" x2="500" y2="480" /> <!-- ICT → Accounts -->
+        <line class="accounts-link" x1="160" y1="100" x2="500" y2="480" /> <!-- Borehole → Accounts -->
+        <line class="accounts-link" x1="840" y1="100" x2="500" y2="480" /> <!-- Farm → Accounts -->
+        <line class="accounts-link" x1="130" y1="480" x2="500" y2="480" /> <!-- Construction → Accounts -->
+        <line class="accounts-link" x1="870" y1="480" x2="500" y2="480" /> <!-- Lodge → Accounts -->
+    </svg>
 
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Approved Contracts</h6>
-                        <h3 class="mb-0">{{ stats.approved_contracts }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-file-contract fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
+    <!-- CENTER HUB: HR -->
+    <a href="{{ url_for('hr.dashboard') }}" class="dashboard-node node-hr">
+        <i class="fas fa-users-cog node-icon"></i>
+        <span class="node-title">HR</span>
+        <div class="node-stat">{{ stats.active_employees }} Active Staff</div>
+    </a>
+
+    <!-- SPOKE: ICT DEPARTMENT -->
+    <a href="{{ url_for('ict.dashboard') }}" class="dashboard-node node-ict">
+        <i class="fas fa-laptop-code node-icon"></i>
+        <span class="node-title">ICT Department</span>
+        <div class="node-stat">Software Solutions</div>
+    </a>
+
+    <!-- SPOKE: BOREHOLE DRILLING -->
+    <a href="{{ url_for('borehole.dashboard') }}" class="dashboard-node node-borehole">
+        <i class="fas fa-tools node-icon"></i>
+        <span class="node-title">Borehole Drilling</span>
+        <div class="node-stat">Asset & Project Management</div>
+    </a>
+
+    <!-- SPOKE: FARM -->
+    <a href="{{ url_for('farm.dashboard') }}" class="dashboard-node node-farm">
+        <i class="fas fa-seedling node-icon"></i>
+        <span class="node-title">Farm</span>
+        <div class="node-stat">Agricultural Operations</div>
+    </a>
+
+    <!-- SPOKE: ACCOUNTS DEPARTMENT -->
+    <a href="{{ url_for('accounts.dashboard') }}" class="dashboard-node node-accounts">
+        <i class="fas fa-calculator node-icon"></i>
+        <span class="node-title">Accounts Department</span>
+        <div class="node-stat">Financials & Cashbook</div>
+    </a>
+
+    <!-- SPOKE: LODGE -->
+    <a href="{{ url_for('rest_house.dashboard') }}" class="dashboard-node node-resthouse">
+        <i class="fas fa-hotel node-icon"></i>
+        <span class="node-title">Lodge</span>
+        <div class="node-stat">Accommodation Services</div>
+    </a>
+
+    <!-- SPOKE: CONSTRUCTION -->
+    <a href="{{ url_for('construction.dashboard') }}" class="dashboard-node node-construction">
+        <i class="fas fa-hard-hat node-icon"></i>
+        <span class="node-title">Construction</span>
+        <div class="node-stat">Materials & Engineering</div>
+    </a>
+
+    <!-- MD Approval Portal (Floating) -->
+    {% if session.role == 'Director' and pending_otps %}
+    <div class="md-approval-portal fade-in">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-gold mb-0 fw-bold"><i class="fas fa-shield-alt me-2"></i>PENDING PAYROLL AUTHORIZATIONS</h6>
+            <span class="badge bg-danger">{{ pending_otps|length }} REQUESTS</span>
         </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-secondary text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total Transactions</h6>
-                        <h3 class="mb-0">{{ stats.total_transactions }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-exchange-alt fa-2x opacity-75"></i>
-                    </div>
-                </div>
+        {% for otp in pending_otps %}
+        <div class="d-flex justify-content-between align-items-center bg-dark bg-opacity-50 p-2 rounded mb-1">
+            <div class="small">
+                <span class="text-white-50">Requested by:</span> <b>Accounts Dept</b><br>
+                <span class="text-white-50">Expires in:</span> 2.5 Hours
             </div>
+            <form action="{{ url_for('accounts.md_approve_otp') }}" method="POST">
+                <input type="hidden" name="batch_id" value="{{ otp.batch_id }}">
+                <button type="submit" class="btn btn-sm btn-warning fw-bold">GENERATE OTP</button>
+            </form>
         </div>
-    </div>
-    
-    {% if session.role in ['Administrator', 'HR Manager'] %}
-    <div class="col-lg-6 mb-3">
-        <div class="card bg-dark text-white h-100">
-            <div class="card-body">
-                <h6 class="card-title">Quick Actions</h6>
-                <div class="row">
-                    <div class="col-6 mb-2">
-                        <a href="{{ url_for('employees.add_employee') }}" class="btn btn-outline-light btn-sm w-100">
-                            <i class="fas fa-user-plus me-1"></i> Add Employee
-                        </a>
-                    </div>
-                    <div class="col-6 mb-2">
-                        <a href="{{ url_for('payroll.process_payroll') }}" class="btn btn-outline-light btn-sm w-100">
-                            <i class="fas fa-calculator me-1"></i> Process Payroll
-                        </a>
-                    </div>
-                    <div class="col-6 mb-2">
-                        <a href="{{ url_for('quotations.create_quotation') }}" class="btn btn-outline-light btn-sm w-100">
-                            <i class="fas fa-plus me-1"></i> Create Quotation
-                        </a>
-                    </div>
-                    <div class="col-6 mb-2">
-                        <a href="{{ url_for('finance.list_invoices') }}" class="btn btn-outline-light btn-sm w-100">
-                            <i class="fas fa-file-invoice-dollar me-1"></i> View Invoices
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% endfor %}
     </div>
     {% endif %}
-</div>
 
-<!-- Recent Activity Tabs -->
-<div class="row">
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center p-3">
-                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Employees</h5>
-                <a href="{{ url_for('employees.list_employees') }}" class="btn btn-sm btn-light text-primary fw-bold">View All</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center p-3">
-                <h5 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Quotations</h5>
-                <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-sm btn-light text-info fw-bold">View All</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- System Information -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>System Information</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6>Company Details</h6>
-                        <p class="small text-muted">
-                            <strong>MPHAMVU WATER ENGINEERS</strong><br>
-                            P.O BOX 561 Lilongwe<br>
-                            +265 998 039 554, +265 999 678 417<br>
-                            mphamvuwaterengineers@gmail.com
-                        </p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>System Features</h6>
-                        <p class="small text-muted">
-                            ✓ HR Management<br>
-                            ✓ Payroll Processing<br>
-                            ✓ Client Management<br>
-                            ✓ Quotation Generation<br>
-                            ✓ Financial Tracking
-                        </p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>Bank Details</h6>
-                        <p class="small text-muted">
-                            <strong>Account:</strong> Mphamvu Water Engineers<br>
-                            <strong>National Bank:</strong> 1006978898<br>
-                            <strong>Standard Bank:</strong> 9100005388640<br>
-                            <strong>Branch:</strong> Capital City
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}

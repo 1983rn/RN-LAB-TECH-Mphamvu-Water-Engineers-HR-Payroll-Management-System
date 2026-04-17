@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}BOREHOLE DRILLING DASHBOARD - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --borehole-gold: #FFD700;
+        --borehole-dark: rgba(0, 0, 0, 0.8);
+        --borehole-glass: rgba(0, 50, 100, 0.4);
+    }
+
+    .borehole-dashboard {
+        position: relative;
+        min-height: calc(100vh - 120px);
+        background: url("{{ url_for('static', filename='images/Borehole drilling operation in rural setting.png') }}") no-repeat center center;
+        background-size: cover;
+        margin: -20px;
+        padding: 40px 20px 20px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
+    }
+
+    /* Premium Dept Header */
+    .dept-header {
+        text-align: center;
+        z-index: 10;
+        margin-bottom: 30px;
+        animation: fadeInDown 1s ease-out;
+    }
+
+    .dept-header h1 {
+        font-size: 3rem;
+        font-weight: 900;
+        color: #FFFFFF;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin: 0;
+        text-shadow: 0 5px 15px rgba(0,0,0,0.8), 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    .dept-header h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--borehole-gold);
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-top: 5px;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+    }
+
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Gradient overlay for better contrast */
+    .borehole-dashboard::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%);
+        z-index: 1;
+    }
+
+    .hub-container {
+        position: relative;
+        z-index: 2;
+        width: 800px;
+        height: 650px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: -50px;
+    }
+
+    /* Central Hub */
+    .central-hub {
+        width: 200px;
+        height: 200px;
+        background: var(--borehole-dark);
+        border: 4px solid var(--borehole-gold);
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.3), inset 0 0 30px rgba(255, 215, 0, 0.2);
+        z-index: 10;
+        padding: 20px;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .central-hub:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 70px rgba(255, 215, 0, 0.5);
+    }
+
+    .central-hub i {
+        font-size: 3rem;
+        color: var(--borehole-gold);
+        margin-bottom: 10px;
+        text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    }
+
+    .central-hub h2 {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--borehole-gold);
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Spokes (Static circle) */
+    .spokes-circle {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        /* Animation removed */
+    }
+
+    .spoke-item {
+        position: absolute;
+        width: 170px;
+        height: 170px;
+        margin-left: -85px;
+        margin-top: -85px;
+        transform-origin: center center;
+        z-index: 5;
+    }
+
+    /* Spoke connection lines */
+    .spoke-line {
+        position: absolute;
+        height: 2px;
+        background: linear-gradient(90deg, var(--borehole-gold), transparent);
+        width: 150px;
+        top: 50%;
+        left: 50%;
+        transform-origin: left center;
+        z-index: 3;
+        opacity: 0.6;
+    }
+
+    .spoke-node {
+        width: 100%;
+        height: 100%;
+        background: var(--borehole-glass);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+        transition: all 0.4s ease;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .spoke-node:hover {
+        transform: translateY(-10px);
+        border-color: var(--borehole-gold);
+        background: rgba(0, 80, 160, 0.6);
+        box-shadow: 0 15px 40px rgba(255, 215, 0, 0.2);
+    }
+
+    /* Spoke content (Upright and static) */
+    .spoke-item .spoke-node-content {
+        /* Animation removed */
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .spoke-node i {
+        font-size: 2rem;
+        color: var(--borehole-gold);
+        margin-bottom: 8px;
+    }
+
+    .spoke-node span {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* Status indicators */
+    .node-status {
+        font-size: 0.65rem;
+        color: var(--borehole-gold);
+        margin-top: 5px;
+        background: rgba(0,0,0,0.5);
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+
+    /* Position the 6 items in a circle (Relative to center) */
+    .spoke-item:nth-child(1) { top: 50%; left: 50%; transform: rotate(0deg) translate(280px); }
+    .spoke-item:nth-child(2) { top: 50%; left: 50%; transform: rotate(60deg) translate(280px); }
+    .spoke-item:nth-child(3) { top: 50%; left: 50%; transform: rotate(120deg) translate(280px); }
+    .spoke-item:nth-child(4) { top: 50%; left: 50%; transform: rotate(180deg) translate(280px); }
+    .spoke-item:nth-child(5) { top: 50%; left: 50%; transform: rotate(240deg) translate(280px); }
+    .spoke-item:nth-child(6) { top: 50%; left: 50%; transform: rotate(300deg) translate(280px); }
+
+    /* Counter-rotate the node contents so their text stays horizontal */
+    .spoke-item:nth-child(1) .spoke-node-content { transform: rotate(0deg); }
+    .spoke-item:nth-child(2) .spoke-node-content { transform: rotate(-60deg); }
+    .spoke-item:nth-child(3) .spoke-node-content { transform: rotate(-120deg); }
+    .spoke-item:nth-child(4) .spoke-node-content { transform: rotate(-180deg); }
+    .spoke-item:nth-child(5) .spoke-node-content { transform: rotate(-240deg); }
+    .spoke-item:nth-child(6) .spoke-node-content { transform: rotate(-300deg); }
+
+    /* Mobile adjustments */
+    @media (max-width: 991px) {
+        .hub-container {
+            width: 100%;
+            height: auto;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+        .spokes-circle, .spoke-line { display: none; }
+        .spoke-item {
+            position: static;
+            width: calc(50% - 10px);
+            height: 150px;
+            margin: 0;
+            transform: none !important;
+        }
+        .spoke-item .spoke-node-content { animation: none; }
+        .central-hub { width: 100%; height: 180px; border-radius: 15px; margin-bottom: 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="borehole-dashboard">
+    <div class="hub-container">
+        <!-- Central Hub -->
+        <div class="central-hub">
+            <i class="fas fa-drilling"></i>
+            <h2>BOREHOLE<br>DRILLING</h2>
+            <div class="node-status">Active Operations</div>
+        </div>
+
+        <!-- Rotating Spokes Circle -->
+        <div class="spokes-circle">
+            <!-- 1. Quotations -->
+            <div class="spoke-item">
+                <a href="{{ url_for('borehole.list_quotations') }}" class="spoke-node">
+                    <div class="spoke-node-content">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Quotations</span>
+                        <div class="node-status">New Proposals</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 2. Invoices -->
+            <div class="spoke-item">
+                <a href="{{ url_for('finance.list_invoices') }}" class="spoke-node">
+                    <div class="spoke-node-content">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Invoices</span>
+                        <div class="node-status">Billing Records</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 3. Delivery Notes & Receipts -->
+            <div class="spoke-item">
+                <a href="{{ url_for('finance.list_delivery_notes') }}" class="spoke-node">
+                    <div class="spoke-node-content">
+                        <i class="fas fa-truck-loading"></i>
+                        <span>Delivery & Receipts</span>
+                        <div class="node-status">Order Logistics</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 4. Client Directory -->
+            <div class="spoke-item">
+                <a href="{{ url_for('clients.list_clients') }}" class="spoke-node">
+                    <div class="spoke-node-content">
+                        <i class="fas fa-address-book"></i>
+                        <span>Client Directory</span>
+                        <div class="node-status">Customer Hub</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 5. Inventory -->
+            <div class="spoke-item">
+                <a href="{{ url_for('borehole.list_inventory') }}" class="spoke-node">
+                    <div class="spoke-node-content">
+                        <i class="fas fa-boxes"></i>
+                        <span>Inventory</span>
+                        <div class="node-status">Equipment & Parts</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 6. Cashbook -->
+            <div class="spoke-item">
+                <a href="{{ url_for('borehole.cashbook') }}" class="spoke-node">
+                    <div class="spoke-node-content">
+                        <i class="fas fa-book"></i>
+                        <span>Cashbook</span>
+                        <div class="node-status">Financial Ledger</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

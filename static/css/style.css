@@ -49,16 +49,17 @@ body {
     top: 0;
     width: var(--sidebar-width);
     height: 100vh;
-    background: url("../images/pure_water_bg.png") center center !important;
-    background-size: cover !important;
-    color: #1a2332; /* Darker text for readability on pure water */
+    background: rgba(15, 23, 42, 0.85) !important; /* Dark React UI Slate */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: #f8fafc;
     z-index: 1040;
     display: flex;
     flex-direction: column;
     transition: width var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
-    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar::before {
@@ -68,9 +69,8 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(224, 247, 250, 0.2) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    pointer-events: none;
     z-index: 0;
 }
 
@@ -110,18 +110,19 @@ body {
 .brand-name {
     font-size: 1.1rem;
     font-weight: 800;
-    color: #052c65; /* Darker navy */
+    color: #f8fafc;
     letter-spacing: 0.5px;
-    text-shadow: 2px 2px 4px rgba(255, 255, 255, 1);
+    text-transform: uppercase;
+    text-shadow: none;
 }
 
 .brand-sub {
     font-size: 0.7rem;
-    color: #0d47a1;
+    color: #38bdf8; /* React Blue */
     text-transform: uppercase;
     letter-spacing: 1.2px;
     font-weight: 700;
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+    text-shadow: none;
 }
 
 /* ── Navigation ── */
@@ -147,11 +148,11 @@ body {
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: #052c65;
+    color: #94a3b8; /* Slate text */
     padding: 15px 20px 6px;
     overflow: hidden;
     white-space: nowrap;
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.9);
+    text-shadow: none;
 }
 
 .nav-menu {
@@ -171,38 +172,40 @@ body {
     padding: 9px 12px;
     margin: 3px 0;
     border-radius: 8px;
-    color: #052c65; /* Darker navy */
+    color: #cbd5e1; /* Slate text */
     text-decoration: none;
     font-size: 0.88rem;
-    font-weight: 700;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     transition: all 0.2s ease;
     white-space: nowrap;
     border-left: 3px solid transparent;
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+    text-shadow: none;
 }
 
 .nav-menu-link i {
     font-size: 1.1rem;
-    color: #0d47a1;
+    color: #94a3b8; /* Slate text */
 }
 
 .nav-menu-link:hover {
-    background: rgba(255, 255, 255, 0.5);
-    color: #0043a8;
+    background: rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
     text-decoration: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 .nav-menu-link.active {
-    background: rgba(255, 255, 255, 0.6);
-    color: #0077cc;
-    border-left-color: #0077cc;
+    background: rgba(56, 189, 248, 0.15); /* React blue glow */
+    color: #38bdf8;
+    border-left-color: #38bdf8;
     backdrop-filter: blur(8px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.1);
 }
 
 .nav-menu-link.active i {
-    color: #0077cc;
+    color: #38bdf8;
 }
 
 /* ── Submenu Styles ── */
@@ -272,19 +275,20 @@ body {
 .user-name {
     font-size: 0.85rem;
     font-weight: 800;
-    color: #052c65;
+    color: #f8fafc;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 2px 2px 3px rgba(255, 255, 255, 1);
+    text-transform: uppercase;
+    text-shadow: none;
 }
 
 .user-role {
     font-size: 0.7rem;
-    color: #0d47a1;
+    color: #38bdf8;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .sidebar-footer-actions {
@@ -300,18 +304,19 @@ body {
     gap: 6px;
     padding: 7px 8px;
     border-radius: 6px;
-    color: #0d47a1;
+    color: #94a3b8;
     text-decoration: none;
     font-size: 0.75rem;
     font-weight: 600;
+    text-transform: uppercase;
     transition: all 0.2s;
     white-space: nowrap;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .footer-action-link:hover {
-    background: rgba(255, 255, 255, 0.4);
-    color: #0077cc;
+    background: rgba(255, 255, 255, 0.1);
+    color: #38bdf8;
     text-decoration: none;
 }
 
@@ -1163,3 +1168,121 @@ body.welcome-body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+/* ══════════════════════════════════════
+   REACT UI STYLE CLASSES (ICT DEPARTMENT)
+   ══════════════════════════════════════ */
+.ict-dashboard-bg {
+    background-image: url("../images/ict department dashbord.png");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+}
+
+.ict-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent; /* Removed dark tech overlay for clear visibility */
+    z-index: -1;
+}
+
+.react-card {
+    background: rgba(30, 41, 59, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.react-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: rgba(56, 189, 248, 0.5); /* React Blue glow */
+}
+
+.react-card h3 {
+    color: #38bdf8;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.react-card p {
+    color: #cbd5e1;
+}
+
+.react-button {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.react-button:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+    color: white;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+}
+
+.react-table-container {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.react-table {
+    width: 100%;
+    color: #f1f5f9;
+    border-collapse: collapse;
+}
+
+.react-table th {
+    background: rgba(15, 23, 42, 0.6);
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: #94a3b8;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.react-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.react-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.react-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.badge-pending { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.5); }
+.badge-progress { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.5); }
+.badge-completed { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.5); }

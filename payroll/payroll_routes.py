@@ -16,6 +16,21 @@ from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_sig
 
 payroll_bp = Blueprint('payroll', __name__, url_prefix='/payroll')
 
+@payroll_bp.before_request
+def check_md_approval():
+    # Only enforce when hitting actual payroll endpoints
+    if 'md_access_payroll' not in session or not session.get('md_access_payroll'):
+        flash("Managing Director approval required to access the Payroll module.", "error")
+        return redirect(url_for('hr.gateway', module='Payroll'))
+        
+    # Check expiry
+    expiry_str = session.get('md_access_payroll_expiry')
+    from datetime import datetime
+    if not expiry_str or datetime.fromisoformat(expiry_str) < datetime.utcnow():
+        session['md_access_payroll'] = False
+        flash("Your MD approval token has expired. Please request a new OTP.", "warning")
+        return redirect(url_for('hr.gateway', module='Payroll'))
+
 def clean_filename(text):
     """Sanitize text for safe use in filenames."""
     return re.sub(r'[^A-Za-z0-9_]', '_', text)
@@ -38,22 +53,43 @@ def hr_required(f):
     return decorated_function
 
 def calculate_payee_tax(gross_salary):
-    """Calculates Malawi PAYE Tax based on flat-rate brackets.
+    """Calculates Malawi PAYE Tax using the MRA progressive bracket system.
     
-    Brackets:
-      150,000 - 170,000   → 0%
-      170,001 - 1,570,000 → 30% of entire gross
-      1,570,001 - 10,000,000 → 35% of entire gross
-      Outside range → 0%
+    Effective 1 January 2026 (Taxation Amendment Act No. 36 of 2025):
+    
+    Monthly Taxable Income (MWK)      Rate
+    ─────────────────────────────     ────
+    0 – 170,000                        0%
+    170,000.01 – 1,570,000            30%
+    1,570,000.01 – 10,000,000         35%
+    10,000,000.01 and above           40%
+    
+    Progressive means only the portion within each bracket is taxed
+    at that bracket's rate.
     """
-    if 150000 <= gross_salary <= 170000:
-        return 0
-    elif 170001 <= gross_salary <= 1570000:
-        return round(gross_salary * 0.30, 2)
-    elif 1570001 <= gross_salary <= 10000000:
-        return round(gross_salary * 0.35, 2)
-    else:
-        return 0
+    tax = 0.0
+    
+    # Bracket 1: 0 – 170,000 → 0%
+    if gross_salary <= 170000:
+        return 0.0
+    
+    # Bracket 2: 170,000.01 – 1,570,000 → 30%
+    taxable_in_bracket2 = min(gross_salary, 1570000) - 170000
+    if taxable_in_bracket2 > 0:
+        tax += taxable_in_bracket2 * 0.30
+    
+    # Bracket 3: 1,570,000.01 – 10,000,000 → 35%
+    if gross_salary > 1570000:
+        taxable_in_bracket3 = min(gross_salary, 10000000) - 1570000
+        if taxable_in_bracket3 > 0:
+            tax += taxable_in_bracket3 * 0.35
+    
+    # Bracket 4: 10,000,000.01 and above → 40%
+    if gross_salary > 10000000:
+        taxable_in_bracket4 = gross_salary - 10000000
+        tax += taxable_in_bracket4 * 0.40
+    
+    return round(tax, 2)
 
 def calculate_monthly_loan(loan_amount, months):
     """Calculates monthly loan deduction strictly as per directive."""
@@ -257,7 +293,7 @@ def download_payslip_pdf(payroll_id):
     qr_path = generate_qr_code('Payslip', payslip_number, f"{employee.first_name} {employee.last_name}", payroll.net_salary)
     
     # Add company header
-    story = add_company_header_to_story(story, layout_mode=layout_mode)
+    story = add_company_header_to_story(story, layout_mode=layout_mode, department=employee.department)
     
     # Get styles
     styles = getSampleStyleSheet()
@@ -460,7 +496,7 @@ def download_payroll_report(month):
     styles = getSampleStyleSheet()
     
     # Company header
-    story = add_company_header_to_story(story, layout_mode='normal')
+    story = add_company_header_to_story(story, layout_mode='normal', department='Accounts & HR Department')
     
     # Report title
     title_style = ParagraphStyle(
@@ -634,3 +670,29 @@ def download_payroll_report(month):
     response.headers['Content-Disposition'] = f'attachment; filename=Payroll_Mphamvu_Water_Engineers_{month_file}.pdf'
     
     return response
+@payroll_bp.route('/approve-batch/<int:batch_id>', methods=['POST'])
+@login_required
+@hr_required
+def approve_batch(batch_id):
+    from models import PayrollBatch
+    batch = PayrollBatch.query.get_or_404(batch_id)
+    
+    if batch.status != 'Draft':
+        flash("Batch is already processed or approved.", "info")
+        return redirect(url_for('payroll.payroll_list'))
+        
+    batch.status = 'Approved by SHR'
+    batch.shr_approved_by = session.get('username')
+    batch.shr_approved_at = datetime.utcnow()
+    db.session.commit()
+    
+    flash(f"Payroll batch for {batch.month} has been approved and sent to Accounts.", "success")
+    return redirect(url_for('payroll.payroll_list'))
+
+@payroll_bp.route('/batches')
+@login_required
+@hr_required
+def list_batches():
+    from models import PayrollBatch
+    batches = PayrollBatch.query.order_by(PayrollBatch.created_at.desc()).all()
+    return render_template('payroll/batches.html', batches=batches)

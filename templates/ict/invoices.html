@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}ICT Invoices - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-white fw-bold"><i class="fas fa-file-invoice me-2"></i>ICT INVOICES</h2>
+            <p class="text-white-50">Generate and track billing for ICT projects.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary react-button" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
+                <i class="fas fa-plus me-2"></i>NEW INVOICE
+            </button>
+        </div>
+    </div>
+
+    <div class="card react-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table react-table">
+                    <thead>
+                        <tr>
+                            <th>INVOICE #</th>
+                            <th>QUOTATION REF</th>
+                            <th>AMOUNT (MWK)</th>
+                            <th>DATE</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inv in invoices %}
+                        <tr>
+                            <td class="fw-bold">{{ inv.invoice_number }}</td>
+                            <td>{{ inv.quotation.reference_number }}</td>
+                            <td class="text-info fw-bold">{{ "{:,.2f}".format(inv.amount) }}</td>
+                            <td>{{ inv.invoice_date.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge {% if inv.status == 'Paid' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ inv.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a>
+                                {% if inv.status != 'Paid' %}
+                                <a href="#" class="btn btn-sm btn-warning"><i class="fas fa-money-bill-wave"></i></a>
+                                {% endif %}
+                                <a href="{{ url_for('ict.delivery_notes') }}" class="btn btn-sm btn-secondary" title="Go to Delivery Notes">
+                                    <i class="fas fa-truck"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Invoice Modal -->
+<div class="modal fade" id="createInvoiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content react-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">GENERATE INVOICE</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('ict.create_invoice') }}" method="POST">
+                <div class="modal-body">
+                    <p class="text-white-50 small">Select an approved quotation to generate an invoice.</p>
+                    <div class="mb-3">
+                        <label class="form-label text-white-50">APPROVED QUOTATION</label>
+                        <select name="quotation_id" class="form-select bg-dark text-white border-secondary" required>
+                            {% for quo in quotations %}
+                            <option value="{{ quo.quotation_id }}">{{ quo.reference_number }} - {{ quo.client.client_name }} (MWK {{ "{:,.2f}".format(quo.total_amount) }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+                    <button type="submit" class="btn btn-primary react-button">GENERATE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -18,13 +18,18 @@ from documents.employees.employee_routes import employee_bp
 from payroll.payroll_routes import payroll_bp
 from attendance.attendance_routes import attendance_bp
 from quotations.quotation_routes import quotations_bp
-from finance.invoice_routes import finance_bp
-from finance.transaction_routes import transaction_bp
+from accounts.invoice_routes import finance_bp
+from accounts.transaction_routes import transaction_bp
 from quotations.rfq_routes import rfq_bp
 from clients.client_routes import clients_bp
 from inventory.inventory_routes import inventory_bp
 from farm.farm_routes import farm_bp
-from finance_dashboard.dashboard_routes import finance_dashboard_bp
+from accounts.dashboard_routes import accounts_bp
+from construction.construction_routes import construction_bp
+from rest_house.rest_house_routes import rest_house_bp
+from borehole.borehole_routes import borehole_bp
+from hr.hr_routes import hr_bp
+from ict.ict_routes import ict_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -51,7 +56,12 @@ app.register_blueprint(rfq_bp)
 app.register_blueprint(clients_bp)
 app.register_blueprint(inventory_bp)
 app.register_blueprint(farm_bp)
-app.register_blueprint(finance_dashboard_bp)
+app.register_blueprint(accounts_bp)
+app.register_blueprint(construction_bp)
+app.register_blueprint(rest_house_bp)
+app.register_blueprint(borehole_bp)
+app.register_blueprint(hr_bp)
+app.register_blueprint(ict_bp)
 
 def login_required(f):
     @wraps(f)
@@ -69,6 +79,10 @@ def admin_required(f):
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
+
+@app.context_processor
+def inject_now():
+    return {'datetime': datetime}
 
 @app.route('/')
 def index():
@@ -134,20 +148,31 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    from utils.auth_utils import apply_dept_filter
+    from models import PayrollOTP
     role = session.get('role')
     
     stats = {
         'total_employees': Employee.query.count(),
         'active_employees': Employee.query.filter_by(status='Active').count(),
-        'total_clients': Client.query.count(),
-        'pending_quotations': Quotation.query.filter_by(status='Pending').count(),
-        'approved_contracts': Contract.query.filter_by(status='Approved').count(),
-        'total_transactions': Transaction.query.count()
+        'total_clients': apply_dept_filter(Client.query, Client).count(),
+        'pending_quotations': apply_dept_filter(Quotation.query, Quotation).filter_by(status='Pending').count(),
+        'approved_contracts': apply_dept_filter(Contract.query, Contract).filter_by(status='Approved').count(),
+        'total_transactions': apply_dept_filter(Transaction.query, Transaction).count()
     }
+    
+    # MD Context: Pending OTPs
+    pending_otps = []
+    if role == 'Director':
+        # Simulating active requests for batches that need OTP
+        # In a real scenario, this would check PayrollOTP where is_used=False AND expires_at > now
+        # OR check PayrollBatch where status='Approved by SHR'
+        pending_otps = PayrollOTP.query.filter_by(is_used=False).filter(PayrollOTP.expires_at > datetime.utcnow()).all()
     
     return render_template('dashboard.html', 
                          role=role, 
-                         stats=stats)
+                         stats=stats,
+                         pending_otps=pending_otps)
 
 @app.route('/verify/<document_number>')
 def verify_document(document_number):
@@ -207,26 +232,26 @@ def submit_support_request():
     
     return redirect(request.referrer or url_for('dashboard'))
 
-# Initialize database and default admin on import (works with gunicorn)
-with app.app_context():
-    db.create_all()
-    init_db()
-    
-    # Start Email RFQ fetching background daemon
-    from utils.rfq_parser import start_background_task
-    start_background_task()
-    
-    default_admin = User.query.filter_by(username='Mphamvuwaterengineers').first()
-    if not default_admin:
-        default_admin = User(
-            username='Mphamvuwaterengineers',
-            password_hash=generate_password_hash('.org.ulandaduwe/2026/**?'),
-            role='Administrator',
-            password_change_required=True
-        )
-        db.session.add(default_admin)
-        db.session.commit()
-
 if __name__ == '__main__':
+    # Initialize database and default admin only on direct run
+    with app.app_context():
+        # db.create_all() is called within init_db()
+        init_db()
+        
+        # Start Email RFQ fetching background daemon
+        from utils.rfq_parser import start_background_task
+        start_background_task()
+        
+        default_admin = User.query.filter_by(username='Mphamvuwaterengineers').first()
+        if not default_admin:
+            default_admin = User(
+                username='Mphamvuwaterengineers',
+                password_hash=generate_password_hash('.org.ulandaduwe/2026/**?'),
+                role='Administrator',
+                password_change_required=True
+            )
+            db.session.add(default_admin)
+            db.session.commit()
+
     port = int(os.environ.get('PORT', 5001))
     app.run(debug=True, host='0.0.0.0', port=port)

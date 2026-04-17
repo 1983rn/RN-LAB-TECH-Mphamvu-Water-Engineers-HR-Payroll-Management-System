@@ -11,6 +11,19 @@ from utils.photo_cleaner import clean_employee_photo
 
 employee_bp = Blueprint('employees', __name__, url_prefix='/employees')
 
+@employee_bp.before_request
+def check_md_approval():
+    # Only enforce when hitting actual employee endpoints (not static files)
+    if 'md_access_employees' not in session or not session.get('md_access_employees'):
+        flash("Managing Director approval required to access the Employees module.", "error")
+        return redirect(url_for('hr.gateway', module='Employees'))
+        
+    expiry_str = session.get('md_access_employees_expiry')
+    if not expiry_str or datetime.fromisoformat(expiry_str) < datetime.utcnow():
+        session['md_access_employees'] = False
+        flash("Your MD approval token has expired. Please request a new OTP.", "warning")
+        return redirect(url_for('hr.gateway', module='Employees'))
+
 def generate_employment_number():
     year = datetime.now().year
     prefix = f"MWE/{year}/"

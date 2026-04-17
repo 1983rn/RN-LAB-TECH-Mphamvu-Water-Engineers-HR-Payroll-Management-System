@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Salaries & Payroll Management - Accounts{% endblock %}
+
+{% block extra_css %}
+<style>
+    .salaries-wrapper {
+        background: rgba(13, 110, 253, 0.03);
+        border-radius: 15px;
+        padding: 30px;
+        min-height: 80vh;
+    }
+
+    .dept-payroll-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+
+    .dept-payroll-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 12px 12px 0 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .otp-gate {
+        background: linear-gradient(135deg, #2c3e50, #000000);
+        color: white;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        max-width: 500px;
+        margin: 50px auto;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+
+    .otp-gate h2 {
+        color: #FFD700;
+        letter-spacing: 2px;
+        font-weight: 800;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-approved { background: #d4edda; color: #155724; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="salaries-wrapper fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 fw-bold text-primary">SALARIES & PAYROLL PROCESSING</h2>
+            <p class="text-muted">Monthly salary disbursements for Mphamvu Water Engineers staff.</p>
+        </div>
+        <div class="text-end">
+            <h5 class="mb-0">{{ current_month }} Batch</h5>
+            <span class="status-badge status-pending">Status: SHR Review Required</span>
+        </div>
+    </div>
+
+    <!-- Accounts Personnel Login / OTP Request -->
+    {% if not session.get('accounts_authorized') %}
+    <div class="otp-gate">
+        <i class="fas fa-lock fa-3x text-gold mb-3"></i>
+        <h2>SECURITY GATEWAY</h2>
+        <p class="text-white-50 mb-4">Accounts Personnel identity verification required to proceed with payments.</p>
+        
+        <form action="{{ url_for('accounts.request_otp') }}" method="POST">
+            <input type="hidden" name="batch_id" value="1"> <!-- Simulated Batch ID -->
+            <div class="mb-3 text-start">
+                <label class="form-label small text-uppercase text-white-50">Personnel Name</label>
+                <input type="text" name="personnel_name" class="form-control bg-dark text-white border-secondary" placeholder="Enter Full Name" required>
+            </div>
+            <div class="mb-4 text-start">
+                <label class="form-label small text-uppercase text-white-50">Security Request</label>
+                <button type="submit" class="btn btn-warning w-100 fw-bold py-2">
+                    <i class="fas fa-key me-2"></i>REQUEST OTP FROM MD
+                </button>
+            </div>
+        </form>
+        
+        <hr class="border-secondary opacity-25">
+        
+        <form action="{{ url_for('accounts.verify_otp') }}" method="POST">
+            <div class="mb-3 text-start">
+                <label class="form-label small text-uppercase text-white-50">Input OTP Code</label>
+                <input type="text" name="otp_code" class="form-control bg-transparent text-white border-warning" placeholder="6-Digit Code from MD" style="letter-spacing: 5px; text-align: center; font-size: 1.5rem;" required>
+            </div>
+            <button type="submit" class="btn btn-outline-warning w-100 fw-bold">
+                VERIFY & UNLOCK PAYROLL
+            </button>
+        </form>
+    </div>
+    {% else %}
+    
+    <!-- Categorized Payroll View -->
+    <div class="row">
+        {% for dept, records in categorized_payroll.items() %}
+        <div class="col-12">
+            <div class="dept-payroll-card">
+                <div class="dept-payroll-header">
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dark">{{ dept }}</h5>
+                        <small class="text-muted">{{ records|length }} Staff Members</small>
+                    </div>
+                    <div>
+                        <span class="status-badge status-approved me-2">Verified by SHR</span>
+                        <a href="{{ url_for('payroll.download_payroll_report', month=current_month) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-download me-1"></i> Dept PDF
+                        </a>
+                    </div>
+                </div>
+                <div class="table-responsive p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-muted">
+                                <th class="ps-4">Employee</th>
+                                <th>Position</th>
+                                <th>Gross (MWK)</th>
+                                <th>Deductions</th>
+                                <th>Net Pay (MWK)</th>
+                                <th class="text-end pe-4">Payment Status / Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ record.employee.first_name }} {{ record.employee.last_name }}</div>
+                                    <div class="small text-muted">{{ record.employee.employment_number }}</div>
+                                </td>
+                                <td>{{ record.employee.position }}</td>
+                                <td>{{ "{:,.2f}".format(record.basic_salary + record.allowances) }}</td>
+                                <td class="text-danger">-{{ "{:,.2f}".format(record.payee_tax + record.loan_deduction + record.absentee_deduction + record.deductions) }}</td>
+                                <td class="fw-bold text-success">{{ "{:,.2f}".format(record.net_salary) }}</td>
+                                <td class="text-end pe-4">
+                                    {% if 'Paid' in record.status %}
+                                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> {{ record.status }}</span>
+                                    {% else %}
+                                    <div class="btn-group">
+                                        <form action="{{ url_for('accounts.process_payment') }}" method="POST" style="display: inline;">
+                                            <input type="hidden" name="payroll_id" value="{{ record.payroll_id }}">
+                                            <input type="hidden" name="method" value="Bank">
+                                            <button type="submit" class="btn btn-sm btn-primary">Pay Bank</button>
+                                        </form>
+                                        <form action="{{ url_for('accounts.process_payment') }}" method="POST" style="display: inline;">
+                                            <input type="hidden" name="payroll_id" value="{{ record.payroll_id }}">
+                                            <input type="hidden" name="method" value="Airtel Money">
+                                            <button type="submit" class="btn btn-sm btn-info text-white">Airtel</button>
+                                        </form>
+                                        <form action="{{ url_for('accounts.process_payment') }}" method="POST" style="display: inline;">
+                                            <input type="hidden" name="payroll_id" value="{{ record.payroll_id }}">
+                                            <input type="hidden" name="method" value="Mpamba">
+                                            <button type="submit" class="btn btn-sm btn-danger">Mpamba</button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not records %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No payroll records found for this department in {{ current_month }}.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Final Approval Footer -->
+    <div class="card bg-dark text-white border-0 shadow mt-4">
+        <div class="card-body d-flex justify-content-between align-items-center p-4">
+            <div>
+                <h4 class="mb-1 text-gold">GRAND TOTAL PAYROLL: MWK {{ "{:,.2f}".format(total_net_all) if total_net_all else '0.00' }}</h4>
+                <p class="mb-0 small text-white-50">Authorized Personnel: {{ session.get('accounts_processing_name', 'N/A') }}</p>
+            </div>
+            <div>
+                <button class="btn btn-lg btn-warning fw-bold px-5 py-3 shadow-lg">
+                    <i class="fas fa-check-circle me-2"></i>FINALIZE ALL PAYMENTS
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

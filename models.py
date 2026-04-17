@@ -86,8 +86,14 @@ class Client(db.Model):
     quotation_amount = db.Column(db.Float, default=0)
     contract_status = db.Column(db.String(20), default='Pending')
     payment_status = db.Column(db.String(20), default='Pending')
+    total_transactions = db.Column(db.Integer, default=0)
+    completed_transactions = db.Column(db.Integer, default=0)
+    on_time_payments = db.Column(db.Integer, default=0)
+    defaults = db.Column(db.Integer, default=0)
+    credit_score = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('CLI'))
 
 class Quotation(db.Model):
@@ -112,6 +118,7 @@ class Quotation(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('QUO'))
+    department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
     
     client = db.relationship('Client', backref='quotations')
     quotation_items = db.relationship('QuotationItem', backref='quotation', cascade='all, delete-orphan')
@@ -132,6 +139,7 @@ class CustomProjectType(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     project_type = db.Column(db.String(200), unique=True, nullable=False)
+    department = db.Column(db.String(100), default='Borehole')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Contract(db.Model):
@@ -147,6 +155,7 @@ class Contract(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('CON'))
+    department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
     
     quotation = db.relationship('Quotation', backref='contracts')
 
@@ -169,9 +178,14 @@ class Invoice(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('INV'))
+    department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
     
     contract = db.relationship('Contract', backref='invoices')
     quotation = db.relationship('Quotation', backref='invoices_list')
+
+    @property
+    def latest_transaction(self):
+        return Transaction.query.filter_by(invoice_id=self.invoice_id).order_by(Transaction.payment_date.desc()).first()
 
 class DeliveryNote(db.Model):
     __tablename__ = 'delivery_notes'
@@ -187,6 +201,7 @@ class DeliveryNote(db.Model):
     status = db.Column(db.String(20), default='Delivered')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('DEL'))
     
     invoice = db.relationship('Invoice', backref='delivery_notes_list')
@@ -208,6 +223,7 @@ class Transaction(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('TRX'))
+    department = db.Column(db.String(100), default='Borehole Drilling')
     
     client = db.relationship('Client', backref='transactions')
     invoice = db.relationship('Invoice', backref='transactions')
@@ -315,6 +331,7 @@ class Inventory(db.Model):
     condition = db.Column(db.String(100), default='New/Excellent/Good')
     location = db.Column(db.String(200))
     description = db.Column(db.Text)
+    department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class FarmActivity(db.Model):
@@ -326,6 +343,7 @@ class FarmActivity(db.Model):
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     status = db.Column(db.String(50), default='Planned')
+    department = db.Column(db.String(100), default='Farm', nullable=False)
     profit = db.Column(db.Float, default=0.0)
     
     inputs = db.relationship('FarmInput', backref='activity_ref', lazy=True, cascade="all, delete-orphan")
@@ -337,38 +355,74 @@ class FarmActivity(db.Model):
         total_expense = sum(expense.amount for expense in self.expenses) if self.expenses else 0.0
         self.profit = total_income - total_expense
 
+class Livestock(db.Model):
+    __tablename__ = 'livestock'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    animal_type = db.Column(db.String(100), nullable=False) # Goat, Pig, Cattle, Poultry
+    tag_number = db.Column(db.String(50), unique=True)
+    gender = db.Column(db.String(20))
+    breed = db.Column(db.String(100))
+    birth_date = db.Column(db.Date)
+    death_date = db.Column(db.Date)
+    purchase_price = db.Column(db.Float, default=0.0)
+    status = db.Column(db.String(50), default='Alive') # Alive, Dead, Sold, Butchered
+    department = db.Column(db.String(100), default='Farm', nullable=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class CropCycle(db.Model):
+    __tablename__ = 'crop_cycles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    crop_name = db.Column(db.String(100), nullable=False) # Corn, Soybeans, etc.
+    variety = db.Column(db.String(100))
+    planting_date = db.Column(db.Date)
+    expected_harvest_date = db.Column(db.Date)
+    actual_harvest_date = db.Column(db.Date)
+    quantity_harvested = db.Column(db.Float, default=0.0)
+    unit = db.Column(db.String(50), default='Bags')
+    status = db.Column(db.String(50), default='Growing') # Growing, Harvested, Failed
+    department = db.Column(db.String(100), default='Farm', nullable=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class FarmInput(db.Model):
     __tablename__ = 'farm_inputs'
     
     id = db.Column(db.Integer, primary_key=True)
-    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=True) # Optional link to activity
     item_name = db.Column(db.String(200), nullable=False)
-    category = db.Column(db.String(100))
+    category = db.Column(db.String(100)) # Feed, Medicine, Fertilizer, Seeds, Pesticides
     quantity = db.Column(db.Float, default=0.0)
     unit = db.Column(db.String(50))
-    cost = db.Column(db.Float, default=0.0)
+    unit_price = db.Column(db.Float, default=0.0)
+    total_cost = db.Column(db.Float, default=0.0)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    department = db.Column(db.String(100), default='Farm')
 
 class FarmOutput(db.Model):
     __tablename__ = 'farm_outputs'
     
     id = db.Column(db.Integer, primary_key=True)
-    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=True)
     product_name = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Float, default=0.0)
     unit = db.Column(db.String(50))
     unit_price = db.Column(db.Float, default=0.0)
     total_value = db.Column(db.Float, default=0.0)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    department = db.Column(db.String(100), default='Farm')
 
 class FarmExpense(db.Model):
     __tablename__ = 'farm_expenses'
     
     id = db.Column(db.Integer, primary_key=True)
-    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey('farm_activities.id'), nullable=True)
     expense_category = db.Column(db.String(100))
     description = db.Column(db.Text)
     amount = db.Column(db.Float, default=0.0)
+    department = db.Column(db.String(100), default='Farm', nullable=False)
     expense_date = db.Column(db.Date)
 
 class CashBookEntry(db.Model):
@@ -384,3 +438,254 @@ class CashBookEntry(db.Model):
     department = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# ==========================================
+# CONSTRUCTION MODULE
+# ==========================================
+
+class ConstructionProject(db.Model):
+    __tablename__ = 'construction_projects'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_name = db.Column(db.String(200), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.client_id'), nullable=False)
+    location = db.Column(db.String(200))
+    description = db.Column(db.Text)
+    estimated_budget = db.Column(db.Float, default=0.0)
+    actual_cost = db.Column(db.Float, default=0.0)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    status = db.Column(db.String(50), default='Planning') # Planning, In Progress, Completed, Suspended
+    department = db.Column(db.String(100), default='Construction', nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    client = db.relationship('Client', backref='construction_projects')
+    costs = db.relationship('ConstructionCost', backref='project_ref', lazy=True, cascade="all, delete-orphan")
+
+    def update_actual_cost(self):
+        self.actual_cost = sum(cost.amount for cost in self.costs) if self.costs else 0.0
+
+class ConstructionCost(db.Model):
+    __tablename__ = 'construction_costs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('construction_projects.id'), nullable=False)
+    cost_type = db.Column(db.String(100)) # Labour, Transport, Raw Materials, Services
+    description = db.Column(db.Text)
+    amount = db.Column(db.Float, default=0.0)
+    date = db.Column(db.Date, default=datetime.utcnow)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ConstructionStock(db.Model):
+    __tablename__ = 'construction_stock'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(200), nullable=False) # Cement, Bricks, etc.
+    category = db.Column(db.String(100), default='Materials')
+    quantity = db.Column(db.Float, default=0.0)
+    unit = db.Column(db.String(50)) # Bags, Pieces, Loads
+    unit_price = db.Column(db.Float, default=0.0)
+    total_value = db.Column(db.Float, default=0.0)
+    last_restock_date = db.Column(db.DateTime)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    department = db.Column(db.String(100), default='Construction')
+
+# ==========================================
+# LODGE MODULE
+# ==========================================
+
+class LodgeRoom(db.Model):
+    __tablename__ = 'lodge_rooms'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_number = db.Column(db.String(20), unique=True, nullable=False)
+    room_type = db.Column(db.String(50), nullable=False, default='Single')  # Single, Double, Twin, Suite, Family
+    price_per_night = db.Column(db.Float, nullable=False, default=0.0)
+    status = db.Column(db.String(30), default='Available')  # Available, Occupied, Maintenance, Reserved
+    amenities = db.Column(db.Text)  # Comma-separated: AC, WiFi, TV, etc.
+    description = db.Column(db.Text)
+    floor = db.Column(db.String(20))
+    max_guests = db.Column(db.Integer, default=2)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    bookings = db.relationship('LodgeBooking', backref='room', lazy=True)
+
+class LodgeCustomer(db.Model):
+    __tablename__ = 'lodge_customers'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(200), nullable=False)
+    phone = db.Column(db.String(20))
+    email = db.Column(db.String(100))
+    id_number = db.Column(db.String(50))  # National ID or Passport
+    nationality = db.Column(db.String(100), default='Malawian')
+    address = db.Column(db.Text)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    bookings = db.relationship('LodgeBooking', backref='customer', lazy=True)
+
+class LodgeBooking(db.Model):
+    __tablename__ = 'lodge_bookings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('lodge_customers.id'), nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('lodge_rooms.id'), nullable=False)
+    check_in = db.Column(db.Date, nullable=False)
+    check_out = db.Column(db.Date, nullable=False)
+    num_guests = db.Column(db.Integer, default=1)
+    total_amount = db.Column(db.Float, default=0.0)
+    status = db.Column(db.String(30), default='Confirmed')  # Confirmed, Checked-In, Checked-Out, Cancelled
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    payments = db.relationship('LodgePayment', backref='booking', lazy=True)
+
+class LodgePayment(db.Model):
+    __tablename__ = 'lodge_payments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('lodge_bookings.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(50), default='Cash')  # Cash, Bank Transfer, Mobile Money
+    payment_date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    reference = db.Column(db.String(100))
+    status = db.Column(db.String(30), default='Completed')  # Completed, Pending, Refunded
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class LodgeExpense(db.Model):
+    __tablename__ = 'lodge_expenses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(255), nullable=False)
+    category = db.Column(db.String(100), default='Operations')  # Utilities, Maintenance, Supplies, Staff, Food, Other
+    amount = db.Column(db.Float, nullable=False, default=0.0)
+    expense_date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    reference = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class LodgeInventory(db.Model):
+    __tablename__ = 'lodge_inventory'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    item_name = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(100), nullable=False, default='Furniture')  # Beds, Furniture, Linen, Electronics, Kitchen, Toiletries
+    quantity = db.Column(db.Integer, nullable=False, default=0)
+    unit_value = db.Column(db.Float, default=0.0)
+    total_value = db.Column(db.Float, default=0.0)
+    condition = db.Column(db.String(50), default='Good')  # New, Good, Fair, Poor
+    location = db.Column(db.String(200))  # Which room or storage area
+    description = db.Column(db.Text)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# ==========================================
+# ACCOUNTS & PAYROLL WORKFLOW MODULES
+# ==========================================
+
+class PayrollBatch(db.Model):
+    __tablename__ = 'payroll_batches'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.String(20), nullable=False) # YYYY-MM
+    status = db.Column(db.String(50), default='Draft') # Draft, Sent to SHR, Approved by SHR, Processing, Paid
+    accounts_personnel = db.Column(db.String(100))
+    shr_approved_by = db.Column(db.String(100))
+    shr_approved_at = db.Column(db.DateTime)
+    chief_accounts_approved_by = db.Column(db.String(100))
+    chief_accounts_approved_at = db.Column(db.DateTime)
+    total_net_amount = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class PayrollOTP(db.Model):
+    __tablename__ = 'payroll_otps'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    otp_code = db.Column(db.String(10), nullable=False)
+    batch_id = db.Column(db.Integer, db.ForeignKey('payroll_batches.id'), nullable=False)
+    requested_by = db.Column(db.String(100))
+    approved_by = db.Column(db.String(100)) # MD
+    is_used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+
+    def is_valid(self):
+        return not self.is_used and datetime.utcnow() < self.expires_at
+
+class MDApprovalRequest(db.Model):
+    __tablename__ = 'md_approval_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    requester_name = db.Column(db.String(100), nullable=False)
+    module = db.Column(db.String(50), nullable=False) # 'Employees' or 'Payroll'
+    status = db.Column(db.String(20), default='Pending') # Pending, Approved, Rejected
+    otp_code = db.Column(db.String(10))
+    request_time = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)
+    is_used = db.Column(db.Boolean, default=False)
+
+# ==========================================
+# ICT DEPARTMENT MODULE
+# ==========================================
+
+class ICTProject(db.Model):
+    __tablename__ = 'ict_projects'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_name = db.Column(db.String(200), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.client_id'), nullable=True)
+    project_type = db.Column(db.String(100)) # Web App, Website, Software Update
+    description = db.Column(db.Text)
+    status = db.Column(db.String(50), default='Pending') # Pending, In Progress, Testing, Completed
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    client = db.relationship('Client', backref='ict_projects')
+    tasks = db.relationship('ICTTask', backref='project', lazy=True, cascade="all, delete-orphan")
+
+class ICTDeveloper(db.Model):
+    __tablename__ = 'ict_developers'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'), nullable=False)
+    skills = db.Column(db.String(200)) # Python, React, etc.
+    projects_completed = db.Column(db.Integer, default=0)
+    availability = db.Column(db.String(50), default='Available')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    employee = db.relationship('Employee', backref='ict_developer_profile')
+    tasks = db.relationship('ICTTask', backref='developer', lazy=True)
+
+class ICTTask(db.Model):
+    __tablename__ = 'ict_tasks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('ict_projects.id'), nullable=False)
+    developer_id = db.Column(db.Integer, db.ForeignKey('ict_developers.id'), nullable=True)
+    task_name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    status = db.Column(db.String(50), default='Pending') # Pending, In Progress, Testing, Completed
+    due_date = db.Column(db.Date)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ICTTraining(db.Model):
+    __tablename__ = 'ict_trainings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.client_id'), nullable=True)
+    training_name = db.Column(db.String(200), nullable=False)
+    trainer_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'), nullable=True)
+    schedule_date = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(50), default='Scheduled') # Scheduled, Completed, Cancelled
+    training_fee = db.Column(db.Float, default=0.0)
+    certificate_generated = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    client = db.relationship('Client', backref='ict_trainings')
+    trainer = db.relationship('Employee', backref='ict_trainings_conducted')

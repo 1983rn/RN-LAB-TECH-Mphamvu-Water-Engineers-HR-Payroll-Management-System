@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Lodge Department - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .lodge-dashboard-wrapper {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 80px);
+        overflow: hidden;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: row;
+    }
+
+    /* Background layer */
+    .lodge-dashboard-wrapper::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url('{{ url_for('static', filename='images/Tropical villa with pool at dusk.png') }}') no-repeat center center;
+        background-size: cover;
+        z-index: 0;
+    }
+
+    /* Left content area */
+    .lodge-content-area {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 25px;
+        overflow-y: auto;
+    }
+
+    /* Right MD Passport Area */
+    .md-image-area {
+        position: relative;
+        z-index: 10;
+        width: 320px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .md-passport-frame {
+        width: 220px;
+        height: 280px;
+        border: 4px solid #FFD700;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(255, 215, 0, 0.2);
+        background: #000;
+        margin-bottom: 20px;
+    }
+
+    .md-passport-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        filter: contrast(1.1) brightness(1.05);
+    }
+
+    .md-title-tag {
+        color: #FFD700;
+        font-weight: 900;
+        font-size: 1.1rem;
+        background: rgba(0, 0, 0, 0.82);
+        padding: 6px 20px;
+        border: 2px solid #FFD700;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+        white-space: nowrap;
+    }
+
+    /* Title area */
+    .lodge-title {
+        margin-bottom: 15px;
+    }
+    .lodge-title h1 {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #FFD700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+        text-shadow: 0 3px 10px rgba(0,0,0,0.8), 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+    .lodge-title h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #00E5FF;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-top: 2px;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+    }
+
+    /* Module cards grid */
+    .lodge-modules {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .lodge-module-card {
+        background: transparent;
+        border: 2px solid #ffffff;
+        border-radius: 12px;
+        padding: 14px 12px;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        text-decoration: none;
+        display: block;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .lodge-module-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        border-color: #FFD700;
+        text-decoration: none;
+    }
+
+    .lodge-module-card .module-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        font-size: 1.3rem;
+        background: rgba(0,0,0,0.3) !important;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .lodge-module-card .module-name {
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #fff;
+        margin-bottom: 3px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+    }
+
+    .lodge-module-card .module-stat {
+        font-size: 0.72rem;
+        color: #fff;
+        font-weight: 600;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+    }
+
+    /* Bottom summary stats */
+    .lodge-stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .lodge-stat-card {
+        background: transparent;
+        border: 2px solid #ffffff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .lodge-stat-card .stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #fff;
+        font-weight: 700;
+        margin-bottom: 4px;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+    }
+
+    .lodge-stat-card .stat-value {
+        font-size: 1.35rem;
+        font-weight: 900;
+        margin: 0;
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+        .md-image-area { width: 260px; }
+        .lodge-modules { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+        .lodge-dashboard-wrapper { flex-direction: column; height: auto; min-height: calc(100vh - 80px); }
+        .md-image-area { width: 100%; height: 250px; order: -1; }
+        .md-image-area img { object-position: top center; }
+        .lodge-modules { grid-template-columns: repeat(2, 1fr); }
+        .lodge-stats-row { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lodge-dashboard-wrapper">
+
+    <!-- LEFT: Content Area -->
+    <div class="lodge-content-area">
+        <div class="lodge-title">
+            <h1><i class="fas fa-hotel me-2"></i>MPHAMVU WATER ENGINEERS</h1>
+            <h2>Lodge Department</h2>
+        </div>
+
+        <!-- 7 Module Cards -->
+        <div class="lodge-modules">
+            <!-- Rooms -->
+            <a href="{{ url_for('rest_house.rooms') }}" class="lodge-module-card">
+                <div class="module-icon" style="background: rgba(0, 229, 255, 0.15); color: #00E5FF;">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <div class="module-name">Rooms</div>
+                <div class="module-stat">{{ total_rooms }} Total &bull; {{ available_rooms }} Available</div>
+            </a>
+
+            <!-- Bookings -->
+            <a href="{{ url_for('rest_house.bookings') }}" class="lodge-module-card">
+                <div class="module-icon" style="background: rgba(255, 215, 0, 0.15); color: #FFD700;">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="module-name">Bookings</div>
+                <div class="module-stat">{{ total_bookings }} Total &bull; {{ active_bookings }} Active</div>
+            </a>
+
+            <!-- Customers -->
+            <a href="{{ url_for('rest_house.customers') }}" class="lodge-module-card">
+                <div class="module-icon" style="background: rgba(76, 175, 80, 0.15); color: #4CAF50;">
+                    <i class="fas fa-user-friends"></i>
+                </div>
+                <div class="module-name">Customers</div>
+                <div class="module-stat">{{ total_customers }} Registered</div>
+            </a>
+
+            <!-- Payments -->
+            <a href="{{ url_for('rest_house.payments') }}" class="lodge-module-card">
+                <div class="module-icon" style="background: rgba(25, 135, 84, 0.15); color: #198754;">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="module-name">Payments</div>
+                <div class="module-stat">MWK {{ '{:,.0f}'.format(total_revenue) }}</div>
+            </a>
+
+            <!-- Expenses -->
+            <a href="{{ url_for('rest_house.expenses') }}" class="lodge-module-card">
+                <div class="module-icon" style="background: rgba(220, 53, 69, 0.15); color: #dc3545;">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="module-name">Expenses</div>
+                <div class="module-stat">MWK {{ '{:,.0f}'.format(total_expenses) }}</div>
+            </a>
+
+            <!-- Inventory -->
+            <a href="{{ url_for('rest_house.inventory') }}" class="lodge-module-card">
+                <div class="module-icon" style="background: rgba(156, 39, 176, 0.15); color: #9C27B0;">
+                    <i class="fas fa-bed"></i>
+                </div>
+                <div class="module-name">Inventory</div>
+                <div class="module-stat">MWK {{ '{:,.0f}'.format(inventory_value) }}</div>
+            </a>
+
+            <!-- Cash Book -->
+            <a href="{{ url_for('rest_house.cashbook') }}" class="lodge-module-card">
+                <div class="module-icon" style="background: rgba(255, 152, 0, 0.15); color: #FF9800;">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="module-name">Cash Book</div>
+                <div class="module-stat">Financial Records</div>
+            </a>
+        </div>
+
+        <!-- Bottom Stats Row -->
+        <div class="lodge-stats-row">
+            <div class="lodge-stat-card">
+                <div class="stat-label"><i class="fas fa-arrow-up me-1 text-success"></i>Total Revenue</div>
+                <div class="stat-value text-success">MWK {{ '{:,.0f}'.format(total_revenue) }}</div>
+            </div>
+            <div class="lodge-stat-card">
+                <div class="stat-label"><i class="fas fa-arrow-down me-1 text-danger"></i>Total Expenses</div>
+                <div class="stat-value text-danger">MWK {{ '{:,.0f}'.format(total_expenses) }}</div>
+            </div>
+            <div class="lodge-stat-card">
+                <div class="stat-label"><i class="fas fa-balance-scale me-1 text-warning"></i>Net Balance</div>
+                <div class="stat-value" style="color: #FFD700;">MWK {{ '{:,.0f}'.format(total_revenue - total_expenses) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Managing Director Passport Card -->
+    <div class="md-image-area">
+        <div class="md-passport-frame">
+            <img src="{{ url_for('static', filename='images/managing director.jpg') }}" alt="Managing Director - Mphamvu Water Engineers">
+        </div>
+        <div class="md-title-tag">MANAGING DIRECTOR</div>
+    </div>
+
+</div>
+{% endblock %}

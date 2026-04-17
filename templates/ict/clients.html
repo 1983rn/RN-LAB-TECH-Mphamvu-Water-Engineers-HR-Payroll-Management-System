@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}ICT Clients - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="ict-dashboard-bg"></div>
+<div class="ict-overlay"></div>
+
+<div class="container-fluid position-relative" style="z-index: 1;">
+    <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+        <div>
+            <h2 class="fw-bold text-white"><i class="fas fa-users text-info me-2"></i> Client Engagement</h2>
+            <p class="text-light opacity-75">Manage ICT department clients and requirements.</p>
+        </div>
+        <!-- Link to the main Client creation form, passing department context in URL or just a generic link if needed.
+             For now, we can link to the standard client add route but pass department via a query param if it supports it, 
+             or just use the standard route. -->
+        <a href="{{ url_for('clients.add_client') }}" class="react-button">
+            <i class="fas fa-plus"></i> Add Client
+        </a>
+    </div>
+
+    <div class="react-card">
+        <h3 class="mb-4">ICT Clients Directory</h3>
+        <div class="react-table-container mt-0">
+            <table class="react-table">
+                <thead>
+                    <tr>
+                        <th>Client ID</th>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th>Location</th>
+                        <th>Project Focus</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clients %}
+                    <tr>
+                        <td class="text-info">{{ c.reference_number }}</td>
+                        <td class="fw-bold">{{ c.client_name }}</td>
+                        <td>
+                            <div><i class="fas fa-phone-alt fa-xs"></i> {{ c.phone }}</div>
+                            {% if c.email %}<div class="text-muted small"><i class="fas fa-envelope fa-xs"></i> {{ c.email }}</div>{% endif %}
+                        </td>
+                        <td>{{ c.address }}</td>
+                        <td>{{ c.project_type }}</td>
+                        <td>
+                            <span class="react-badge 
+                                {% if c.contract_status == 'Approved' %}badge-completed
+                                {% else %}badge-pending{% endif %}">
+                                {{ c.contract_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No ICT clients found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

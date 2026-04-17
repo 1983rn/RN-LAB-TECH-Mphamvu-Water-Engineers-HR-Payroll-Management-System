@@ -32,180 +32,230 @@
 
         <!-- Navigation Menu -->
         <nav class="sidebar-nav">
-            <div class="nav-section-label">MAIN MENU</div>
-            <ul class="nav-menu" id="sidebarAccordion">
-                <li class="nav-menu-item">
-                    <a href="{{ url_for('dashboard') }}" class="nav-menu-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
-                        <i class="fas fa-th-large"></i>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </li>
+            {% if session.get('department_context') %}
+                <!-- Department Specific Menu -->
+                <div class="nav-section-label">{{ session.get('department_context') }}</div>
+                <ul class="nav-menu">
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for(session.get('department_dashboard', 'dashboard')) }}" class="nav-menu-link active">
+                            <i class="fas fa-th-large"></i>
+                            <span class="nav-text">Department Dashboard</span>
+                        </a>
+                    </li>
 
-                {% if session.role in ['Administrator', 'HR Manager'] %}
-                <li class="nav-menu-item">
-                    <a href="javascript:void(0)" data-bs-target="#hrSubmenu" class="nav-menu-link" data-bs-toggle="collapse" role="button" aria-expanded="{{ 'true' if request.endpoint and ('employees' in request.endpoint or 'payroll' in request.endpoint or 'attendance' in request.endpoint or 'disciplinary' in request.endpoint) else 'false' }}">
-                        <i class="fas fa-users-cog"></i>
-                        <span class="nav-text">HR Management</span>
-                        <i class="fas fa-chevron-down ms-auto nav-arrow"></i>
-                    </a>
-                    <div class="collapse {{ 'show' if request.endpoint and ('employees' in request.endpoint or 'payroll' in request.endpoint or 'attendance' in request.endpoint or 'disciplinary' in request.endpoint) else '' }}" id="hrSubmenu" data-bs-parent="#sidebarAccordion">
-                        <ul class="nav-submenu">
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('employees.list_employees') }}" class="nav-menu-link {% if request.endpoint and 'employees' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-user-tie"></i>
-                                    <span class="nav-text">Employees</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('payroll.payroll_list') }}" class="nav-menu-link {% if request.endpoint and 'payroll' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-money-check-alt"></i>
-                                    <span class="nav-text">Payroll</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('attendance.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'attendance' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-clock"></i>
-                                    <span class="nav-text">Attendance</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('employees.disciplinary_list') }}" class="nav-menu-link {% if request.endpoint and 'disciplinary' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-gavel"></i>
-                                    <span class="nav-text">Disciplinary</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-                
-                <li class="nav-menu-item">
-                    <a href="javascript:void(0)" data-bs-target="#clientSubmenu" class="nav-menu-link" data-bs-toggle="collapse" role="button" aria-expanded="{{ 'true' if request.endpoint and ('client' in request.endpoint or 'quotations' in request.endpoint or 'rfq' in request.endpoint or 'invoice' in request.endpoint or 'delivery' in request.endpoint or 'finance' in request.endpoint) else 'false' }}">
-                        <i class="fas fa-briefcase"></i>
-                        <span class="nav-text">Client Management</span>
-                        <i class="fas fa-chevron-down ms-auto nav-arrow"></i>
-                    </a>
-                    <div class="collapse {{ 'show' if request.endpoint and ('client' in request.endpoint or 'quotations' in request.endpoint or 'rfq' in request.endpoint or 'invoice' in request.endpoint or 'delivery' in request.endpoint or 'finance' in request.endpoint) else '' }}" id="clientSubmenu" data-bs-parent="#sidebarAccordion">
-                        <ul class="nav-submenu">
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('clients.list_clients') }}" class="nav-menu-link {% if request.endpoint == 'clients.list_clients' %}active{% endif %}">
-                                    <i class="fas fa-address-book"></i>
-                                    <span class="nav-text">Client Directory</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('quotations.list_quotations') }}" class="nav-menu-link {% if request.endpoint and 'quotations' in request.endpoint and 'rfq' not in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-file-invoice"></i>
-                                    <span class="nav-text">Quotations</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('finance.list_invoices') }}" class="nav-menu-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-file-invoice-dollar"></i>
-                                    <span class="nav-text">Invoices</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('finance.list_delivery_notes') }}" class="nav-menu-link {% if request.endpoint and 'delivery' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-truck"></i>
-                                    <span class="nav-text">Delivery Notes</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('rfq.list_pending') }}" class="nav-menu-link {% if request.endpoint and 'rfq' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-headset"></i>
-                                    <span class="nav-text">Help Center</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('clients.credit_scoring') }}" class="nav-menu-link {% if request.endpoint and 'credit_scoring' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-chart-line"></i>
-                                    <span class="nav-text">Credit Scoring</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-                
-                <li class="nav-menu-item mt-3">
-                    <a href="javascript:void(0)" data-bs-target="#assetsSubmenu" class="nav-menu-link" data-bs-toggle="collapse" role="button" aria-expanded="{{ 'true' if request.endpoint and ('inventory' in request.endpoint or 'farm' in request.endpoint) else 'false' }}">
-                        <i class="fas fa-boxes"></i>
-                        <span class="nav-text">Company Assets</span>
-                        <i class="fas fa-chevron-down ms-auto nav-arrow"></i>
-                    </a>
-                    <div class="collapse {{ 'show' if request.endpoint and ('inventory' in request.endpoint or 'farm' in request.endpoint) else '' }}" id="assetsSubmenu" data-bs-parent="#sidebarAccordion">
-                        <ul class="nav-submenu">
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('inventory.dashboard') }}" class="nav-menu-link {% if request.endpoint == 'inventory.dashboard' %}active{% endif %}">
-                                    <i class="fas fa-boxes"></i>
-                                    <span class="nav-text">Inventory</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('inventory.category_view', category='Borehole Drilling') }}" class="nav-menu-link {% if request.view_args and request.view_args.get('category') == 'Borehole Drilling' %}active{% endif %}">
-                                    <i class="fas fa-tools"></i>
-                                    <span class="nav-text">Borehole Drilling</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('inventory.category_view', category='Animal Farm') }}" class="nav-menu-link {% if request.view_args and request.view_args.get('category') == 'Animal Farm' %}active{% endif %}">
-                                    <i class="fas fa-paw"></i>
-                                    <span class="nav-text">Animal Farm</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('inventory.category_view', category='Crop Farming') }}" class="nav-menu-link {% if request.view_args and request.view_args.get('category') == 'Crop Farming' %}active{% endif %}">
-                                    <i class="fas fa-tractor"></i>
-                                    <span class="nav-text">Crop Farm</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('farm.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'farm' in request.endpoint %}active{% endif %}">
-                                    <i class="fas fa-seedling"></i>
-                                    <span class="nav-text">Farm Management</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('inventory.category_view', category='Office Equipment') }}" class="nav-menu-link {% if request.view_args and request.view_args.get('category') == 'Office Equipment' %}active{% endif %}">
-                                    <i class="fas fa-desktop"></i>
-                                    <span class="nav-text">Office Equipment</span>
-                                </a>
-                            </li>
+                    {% if session.get('department_context') == 'HR Department' %}
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('employees.list_employees') }}" class="nav-menu-link {% if request.endpoint and 'employees' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-user-tie"></i>
+                            <span class="nav-text">Employees</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('payroll.payroll_list') }}" class="nav-menu-link {% if request.endpoint == 'payroll.payroll_list' %}active{% endif %}">
+                            <i class="fas fa-money-check-alt"></i>
+                            <span class="nav-text">Individual Pay</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('payroll.list_batches') }}" class="nav-menu-link {% if request.endpoint == 'payroll.list_batches' %}active{% endif %}">
+                            <i class="fas fa-layer-group"></i>
+                            <span class="nav-text">Payroll Batches</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('attendance.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'attendance' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-clock"></i>
+                            <span class="nav-text">Attendance</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('employees.disciplinary_list') }}" class="nav-menu-link {% if request.endpoint and 'disciplinary' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-gavel"></i>
+                            <span class="nav-text">Discipline</span>
+                        </a>
+                    </li>
+                    {% endif %}
 
-                        </ul>
-                    </div>
-                </li>
-                
-                <li class="nav-menu-item">
-                    <a href="javascript:void(0)" data-bs-target="#financeSubmenu" class="nav-menu-link" data-bs-toggle="collapse" role="button" aria-expanded="{{ 'true' if request.endpoint and 'finance_dashboard' in request.endpoint else 'false' }}">
-                        <i class="fas fa-chart-pie"></i>
-                        <span class="nav-text">FINANCE</span>
-                        <i class="fas fa-chevron-down ms-auto nav-arrow"></i>
-                    </a>
-                    <div class="collapse {{ 'show' if request.endpoint and 'finance_dashboard' in request.endpoint else '' }}" id="financeSubmenu" data-bs-parent="#sidebarAccordion">
-                        <ul class="nav-submenu">
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('finance_dashboard.dashboard') }}" class="nav-menu-link {% if request.endpoint == 'finance_dashboard.dashboard' %}active{% endif %}">
-                                    <i class="fas fa-tachometer-alt"></i>
-                                    <span class="nav-text">Financial Dashboard</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('finance_dashboard.cashbook') }}" class="nav-menu-link {% if request.endpoint == 'finance_dashboard.cashbook' %}active{% endif %}">
-                                    <i class="fas fa-book"></i>
-                                    <span class="nav-text">Cash Book</span>
-                                </a>
-                            </li>
-                            <li class="nav-menu-item">
-                                <a href="{{ url_for('finance_dashboard.analysis') }}" class="nav-menu-link {% if request.endpoint == 'finance_dashboard.analysis' %}active{% endif %}">
-                                    <i class="fas fa-chart-line"></i>
-                                    <span class="nav-text">Financial Analysis</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-                {% endif %}
-            </ul>
+                    {% if session.get('department_context') == 'Lodge' %}
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('rest_house.rooms') }}" class="nav-menu-link {% if request.endpoint and 'rooms' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-door-open"></i>
+                            <span class="nav-text">Rooms</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('rest_house.bookings') }}" class="nav-menu-link {% if request.endpoint and 'booking' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-calendar-check"></i>
+                            <span class="nav-text">Bookings</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('rest_house.customers') }}" class="nav-menu-link {% if request.endpoint and 'customer' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-user-friends"></i>
+                            <span class="nav-text">Customers</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('rest_house.payments') }}" class="nav-menu-link {% if request.endpoint and 'payment' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span class="nav-text">Payments</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('rest_house.expenses') }}" class="nav-menu-link {% if request.endpoint and 'expense' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span class="nav-text">Expenses</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('rest_house.inventory') }}" class="nav-menu-link {% if request.endpoint and 'inventory' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-bed"></i>
+                            <span class="nav-text">Inventory</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('rest_house.cashbook') }}" class="nav-menu-link {% if request.endpoint and 'cashbook' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-book"></i>
+                            <span class="nav-text">Cash Book</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if session.get('department_context') == 'ICT Department' %}
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.projects') }}" class="nav-menu-link {% if request.endpoint and 'project' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-project-diagram"></i>
+                            <span class="nav-text">Projects</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.tasks') }}" class="nav-menu-link {% if request.endpoint and 'task' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-tasks"></i>
+                            <span class="nav-text">Tasks & Devs</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.developers') }}" class="nav-menu-link {% if request.endpoint and 'developer' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-users-cog"></i>
+                            <span class="nav-text">Developers</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.trainings') }}" class="nav-menu-link {% if request.endpoint and 'training' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span class="nav-text">Training</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.clients') }}" class="nav-menu-link {% if request.endpoint and 'client' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-users"></i>
+                            <span class="nav-text">Clients</span>
+                        </a>
+                    </li>
+                    <div class="nav-section-label small opacity-50">FINANCE & ASSETS</div>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.quotations') }}" class="nav-menu-link {% if 'quotation' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span class="nav-text">Quotations</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.invoices') }}" class="nav-menu-link {% if 'invoice' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-file-invoice"></i>
+                            <span class="nav-text">Invoices</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.delivery_notes') }}" class="nav-menu-link {% if 'delivery' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-truck-loading"></i>
+                            <span class="nav-text">Delivery & Receipts</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.inventory') }}" class="nav-menu-link {% if 'inventory' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-boxes"></i>
+                            <span class="nav-text">Inventory</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('ict.cashbook') }}" class="nav-menu-link {% if 'cashbook' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-book"></i>
+                            <span class="nav-text">Cash Book</span>
+                        </a>
+                    </li>
+                    {% endif %}
+
+
+                    <li class="nav-menu-item mt-4">
+                        <a href="{{ url_for('ict.exit_department') if session.get('department_context') == 'ICT Department' else (url_for('rest_house.exit_department') if session.get('department_context') == 'Lodge' else url_for('borehole.exit_department')) }}" class="nav-menu-link text-warning">
+                            <i class="fas fa-home"></i>
+                            <span class="nav-text">Back to Main Hub</span>
+                        </a>
+                    </li>
+                </ul>
+            {% else %}
+                <!-- Standard Main Menu — Mirrors Hub & Spoke Dashboard -->
+                <div class="nav-section-label">MAIN HUB</div>
+                <ul class="nav-menu">
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('dashboard') }}" class="nav-menu-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                            <i class="fas fa-th-large"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+
+                    {% if session.role in ['Administrator', 'HR Manager', 'Director'] %}
+                    <li class="nav-menu-item mt-2">
+                        <a href="{{ url_for('hr.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'hr' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-users-cog"></i>
+                            <span class="nav-text">HR Department</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-menu-item mt-2">
+                        <a href="{{ url_for('borehole.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'borehole' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-tools"></i>
+                            <span class="nav-text">Borehole Drilling</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-menu-item mt-2">
+                        <a href="{{ url_for('ict.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'ict' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-laptop-code"></i>
+                            <span class="nav-text">ICT Department</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-menu-item mt-2">
+                        <a href="{{ url_for('farm.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'farm' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-seedling"></i>
+                            <span class="nav-text">Farm</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-menu-item mt-2">
+                        <a href="{{ url_for('construction.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'construction' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-hard-hat"></i>
+                            <span class="nav-text">Construction</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-menu-item mt-2">
+                        <a href="{{ url_for('rest_house.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'rest_house' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-hotel"></i>
+                            <span class="nav-text">Lodge</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-menu-item mt-2">
+                        <a href="{{ url_for('accounts.dashboard') }}" class="nav-menu-link {% if request.endpoint and 'accounts' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-calculator"></i>
+                            <span class="nav-text">Accounts Department</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            {% endif %}
         </nav>
 
         <!-- Sidebar Footer: User Info -->

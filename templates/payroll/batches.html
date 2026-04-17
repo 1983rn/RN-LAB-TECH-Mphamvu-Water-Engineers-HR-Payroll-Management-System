@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Batches - HR Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .batch-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+    }
+    .batch-card:hover { transform: translateY(-3px); }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    
+    .status-draft { background: #e9ecef; color: #495057; }
+    .status-shr { background: #cff4fc; color: #055160; }
+    .status-paid { background: #d1e7dd; color: #0f5132; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1">PAYROLL BATCHES</h2>
+            <p class="text-muted">High-level approval and monitoring of monthly payroll cycles.</p>
+        </div>
+        <a href="{{ url_for('payroll.process_payroll') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>New Payroll Entry
+        </a>
+    </div>
+
+    <div class="row">
+        {% for batch in batches %}
+        <div class="col-md-4 mb-4">
+            <div class="card batch-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-0">{{ batch.month }}</h5>
+                            <small class="text-muted">ID: #PB-{{ batch.batch_id }}</small>
+                        </div>
+                        <span class="status-badge status-{{ 'paid' if batch.status == 'Processed' else ('shr' if 'Approved' in batch.status else 'draft') }}">
+                            {{ batch.status }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-muted">Approval Progress</span>
+                            <span class="small fw-bold">{{ '100' if batch.status == 'Processed' else ('50' if 'Approved' in batch.status else '10') }}%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ '100' if batch.status == 'Processed' else ('50' if 'Approved' in batch.status else '10') }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>Total Net Pay:</span>
+                            <span class="fw-bold text-dark">MWK {{ "{:,.2f}".format(batch.total_net or 0) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span>Employees:</span>
+                            <span class="fw-bold">{{ batch.employee_count or 0 }} Members</span>
+                        </div>
+                    </div>
+
+                    {% if batch.status == 'Draft' %}
+                    <form action="{{ url_for('payroll.approve_batch', batch_id=batch.batch_id) }}" method="POST">
+                        <button type="submit" class="btn btn-success w-100 fw-bold">
+                            <i class="fas fa-check-circle me-2"></i>SHR APPROVAL
+                        </button>
+                    </form>
+                    {% elif batch.status == 'Approved by SHR' %}
+                    <button class="btn btn-outline-info w-100 fw-bold" disabled>
+                        <i class="fas fa-hourglass-half me-2"></i>AWAITING ACCOUNTS
+                    </button>
+                    {% else %}
+                    <button class="btn btn-outline-secondary w-100 fw-bold" disabled>
+                        <i class="fas fa-check-double me-2"></i>COMPLETED
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white border-top-0 pb-3 text-center">
+                    <a href="{{ url_for('payroll.download_payroll_report', month=batch.month) }}" class="small text-decoration-none">
+                        <i class="fas fa-file-pdf me-1"></i>View Full Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-history fa-4x text-muted opacity-25 mb-3"></i>
+            <h4 class="text-muted">No payroll batches found.</h4>
+            <p>Start by processing individual employee payroll records.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

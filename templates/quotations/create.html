@@ -35,6 +35,49 @@
                             <span id="selectedProjectTypes">Select project types...</span>
                         </button>
                         <div class="dropdown-menu w-100 p-3" aria-labelledby="projectTypeDropdown" style="max-height: 300px; overflow-y: auto;">
+                            {% if department == 'Construction' %}
+                            <!-- Construction Specific Project Types -->
+                            <h6 class="dropdown-header text-primary">Bricks & Blocks</h6>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt1" value="Small bricks (190×90×40-90mm)">
+                                <label class="form-check-label" for="cpt1">Small bricks (190×90×40 – 190×90×90)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt2" value="Medium blocks (400×200×100-150mm)">
+                                <label class="form-check-label" for="cpt2">Medium blocks (400×200×100 – 150)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt3" value="Large blocks (400×200×200mm)">
+                                <label class="form-check-label" for="cpt3">Large blocks (400×200×200)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt4" value="Extra-large blocks (500mm+)">
+                                <label class="form-check-label" for="cpt4">Extra-large (500mm+)</label>
+                            </div>
+
+                            <h6 class="dropdown-header text-primary mt-3">Cement Categories</h6>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt5" value="Ordinary Portland Cement (52.5)">
+                                <label class="form-check-label" for="cpt5">Rank 1: Ordinary Portland Cement (52.5) [CEM I 52.5N/R]</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt6" value="Ordinary Portland Cement (42.5)">
+                                <label class="form-check-label" for="cpt6">Rank 2: Ordinary Portland Cement (42.5) [CEM I 42.5N/R]</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt7" value="Portland Composite Cement">
+                                <label class="form-check-label" for="cpt7">Rank 3: Portland Composite Cement [CEM II 42.5N]</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input project-type-checkbox" type="checkbox" id="cpt8" value="Portland Composite Cement (General Purpose)">
+                                <label class="form-check-label" for="cpt8">Rank 4: Portland Composite Cement (General Purpose) [CEM II 32.5N]</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="project-type-checkbox form-check-input" type="checkbox" id="cpt9" value="Masonry Cement">
+                                <label class="form-check-label" for="cpt9">Rank 5: Masonry Cement [Masonry (Non-structural)]</label>
+                            </div>
+                            {% else %}
+                            <!-- Borehole Drilling Specific Project Types (Default) -->
                             <div class="form-check">
                                 <input class="form-check-input project-type-checkbox" type="checkbox" id="pt1" value="Borehole Drilling">
                                 <label class="form-check-label" for="pt1">Borehole Drilling</label>
@@ -287,6 +330,7 @@
                                 <input class="form-check-input project-type-checkbox" type="checkbox" id="pt63" value="Borehole drilling 50m deep">
                                 <label class="form-check-label" for="pt63">Borehole drilling 50m deep</label>
                             </div>
+                            {% endif %}
                             
                             {% if custom_project_types %}
                             {% for pt in custom_project_types %}
@@ -514,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ project_type: newType })
+                    body: JSON.stringify({ project_type: newType, department: "{{ department }}" })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -568,42 +612,66 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const hasRfq = "{{ 'true' if rfq else 'false' }}" === "true";
     if (hasRfq) {
-    // Auto-fill RFQ project type and items
-    let matched = false;
-    const rfqItem = "{{ rfq.item|lower }}".trim();
-    if (rfqItem) {
-        document.querySelectorAll('.project-type-checkbox').forEach(cb => {
-            const val = cb.value.toLowerCase();
-            if (val.includes(rfqItem) || rfqItem.includes(val)) {
-                if (!cb.checked) {
-                    cb.checked = true;
-                    if (!selectedOrder.includes(cb.value)) {
-                        selectedOrder.push(cb.value);
+        // Auto-fill RFQ project type and items
+        let matched = false;
+        const rfqItem = "{{ rfq.item|lower }}".trim();
+        if (rfqItem) {
+            document.querySelectorAll('.project-type-checkbox').forEach(cb => {
+                const val = cb.value.toLowerCase();
+                if (val.includes(rfqItem) || rfqItem.includes(val)) {
+                    if (!cb.checked) {
+                        cb.checked = true;
+                        if (!selectedOrder.includes(cb.value)) {
+                            selectedOrder.push(cb.value);
+                        }
+                        matched = true;
                     }
-                    matched = true;
                 }
-            }
-        });
-        
-        if (matched) {
-            updateSelectedProjectTypes();
+            });
             
-            // Wait slightly for DOM to render the new inputs
-            setTimeout(() => {
-                const unitInputs = document.querySelectorAll('input[name^="project_unit_"]');
-                if (unitInputs.length > 0) unitInputs[0].value = "{{ rfq.unit if rfq and rfq.unit else '' }}";
+            if (matched) {
+                updateSelectedProjectTypes();
                 
-                const qtyInputs = document.querySelectorAll('input[name^="project_quantity_"]');
-                if (qtyInputs.length > 0) qtyInputs[0].value = "{{ rfq.qty if rfq and rfq.qty else '' }}";
-                
-                const rateInputs = document.querySelectorAll('input[name^="project_unit_rate_"]');
-                if (rateInputs.length > 0) rateInputs[0].value = "{{ rfq.unit_rate if rfq and rfq.unit_rate else '' }}";
-                
-                // Trigger calculation
-                if (qtyInputs.length > 0) qtyInputs[0].dispatchEvent(new Event('input'));
-            }, 100);
+                // Wait slightly for DOM to render the new inputs
+                setTimeout(() => {
+                    const unitInputs = document.querySelectorAll('input[name^="project_unit_"]');
+                    if (unitInputs.length > 0) unitInputs[0].value = "{{ rfq.unit if rfq and rfq.unit else '' }}";
+                    
+                    const qtyInputs = document.querySelectorAll('input[name^="project_quantity_"]');
+                    if (qtyInputs.length > 0) qtyInputs[0].value = "{{ rfq.qty if rfq and rfq.qty else '' }}";
+                    
+                    const rateInputs = document.querySelectorAll('input[name^="project_unit_rate_"]');
+                    if (rateInputs.length > 0) rateInputs[0].value = "{{ rfq.unit_rate if rfq and rfq.unit_rate else '' }}";
+                    
+                    // Trigger calculation
+                    if (qtyInputs.length > 0) qtyInputs[0].dispatchEvent(new Event('input'));
+                }, 100);
+            }
         }
     }
+
+    // Logic for Department Context (Construction)
+    const urlParams = new URLSearchParams(window.location.search);
+    const department = urlParams.get('department');
+    if (department === 'Construction') {
+        const constructionCheckboxes = [
+            'Construction', 
+            'Construction Materials', 
+            'Tank Stand with blocks', 
+            'Site Preparation'
+        ];
+        
+        // Auto-check the first one and highlight others
+        const mainConstruction = document.getElementById('pt5'); // Construction
+        if (mainConstruction && !mainConstruction.checked) {
+            mainConstruction.checked = true;
+            selectedOrder.push(mainConstruction.value);
+            updateSelectedProjectTypes();
+        }
+        
+        // Make sure the dropdown opens to help the user
+        const dropdownBtn = document.getElementById('projectTypeDropdown');
+        if (dropdownBtn) dropdownBtn.click();
     }
 });
 </script>

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}ICT Department - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block extra_css %}
+<!-- React UI styles are in style.css -->
+{% endblock %}
+
+
+{% block content %}
+<div class="ict-dashboard-bg"></div>
+<div class="ict-overlay"></div>
+
+<div class="container-fluid position-relative" style="z-index: 1;">
+    <div class="d-flex justify-content-between align-items-center mb-4 text-white">
+        <div>
+            <h1 class="fw-bold" style="color: #f8fafc;"><i class="fas fa-laptop-code text-info me-2"></i> ICT Department Hub</h1>
+            <p class="mb-0 text-light" style="opacity: 0.8;">Software Solutions, Client Engagement, and Technical Support</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('ict.projects') }}" class="react-button"><i class="fas fa-plus"></i> New Project</a>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="react-card text-center">
+                <i class="fas fa-project-diagram fa-2x mb-3" style="color: #8b5cf6;"></i>
+                <div class="react-stat-value">{{ stats.active_projects }}</div>
+                <p class="mb-0 text-uppercase fw-semibold" style="font-size: 0.85rem; letter-spacing: 1px;">Active Projects</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="react-card text-center">
+                <i class="fas fa-tasks fa-2x mb-3" style="color: #ec4899;"></i>
+                <div class="react-stat-value">{{ stats.pending_tasks }}</div>
+                <p class="mb-0 text-uppercase fw-semibold" style="font-size: 0.85rem; letter-spacing: 1px;">Pending Tasks</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="react-card text-center">
+                <i class="fas fa-users fa-2x mb-3" style="color: #10b981;"></i>
+                <div class="react-stat-value">{{ stats.total_clients }}</div>
+                <p class="mb-0 text-uppercase fw-semibold" style="font-size: 0.85rem; letter-spacing: 1px;">ICT Clients</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="react-card text-center">
+                <i class="fas fa-chalkboard-teacher fa-2x mb-3" style="color: #f59e0b;"></i>
+                <div class="react-stat-value">{{ stats.upcoming_trainings }}</div>
+                <p class="mb-0 text-uppercase fw-semibold" style="font-size: 0.85rem; letter-spacing: 1px;">Upcoming Trainings</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent Projects -->
+        <div class="col-md-8">
+            <div class="react-card h-100 p-0" style="padding: 0 !important;">
+                <div class="p-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-code-branch"></i> Active Projects</h3>
+                    <a href="{{ url_for('ict.projects') }}" class="text-info text-decoration-none" style="font-size: 0.9rem;">View All <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="react-table-container m-4 mt-3">
+                    <table class="react-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Type</th>
+                                <th>Client</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td class="fw-semibold">{{ project.project_name }}</td>
+                                <td>{{ project.project_type }}</td>
+                                <td>{{ project.client.client_name if project.client else 'Internal' }}</td>
+                                <td>
+                                    <span class="react-badge 
+                                        {% if project.status == 'Pending' %}badge-pending
+                                        {% elif project.status == 'In Progress' %}badge-progress
+                                        {% else %}badge-completed{% endif %}">
+                                        {{ project.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No projects found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Tasks -->
+        <div class="col-md-4">
+            <div class="react-card h-100">
+                <h3><i class="fas fa-clipboard-list"></i> Critical Tasks</h3>
+                <div class="d-flex flex-column gap-3 mt-3">
+                    {% for task in tasks %}
+                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.05); border-left: 4px solid #38bdf8;">
+                        <h6 class="mb-1 text-white fw-bold">{{ task.task_name }}</h6>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="text-muted" style="font-size: 0.8rem;">
+                                <i class="fas fa-user-circle"></i> {{ task.developer.employee.first_name if task.developer else 'Unassigned' }}
+                            </span>
+                            <span class="react-badge badge-pending">{{ task.status }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mt-4">No pending tasks.</p>
+                    {% endfor %}
+                    <div class="text-center mt-2">
+                        <a href="{{ url_for('ict.tasks') }}" class="react-button w-100" style="padding: 8px;">Manage Tasks</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <!-- Finance & Assets Grid -->
+        <div class="col-md-12">
+            <div class="react-card p-4">
+                <h3 class="mb-4"><i class="fas fa-wallet"></i> Financial & Asset Management</h3>
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ict.quotations') }}" class="text-decoration-none">
+                            <div class="p-3 rounded text-center hover-scale" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2);">
+                                <i class="fas fa-file-invoice-dollar fa-2x mb-2 text-info"></i>
+                                <h6 class="text-white mb-0">Quotations</h6>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ict.invoices') }}" class="text-decoration-none">
+                            <div class="p-3 rounded text-center hover-scale" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);">
+                                <i class="fas fa-file-invoice fa-2x mb-2" style="color: #8b5cf6;"></i>
+                                <h6 class="text-white mb-0">Invoices</h6>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ict.delivery_notes') }}" class="text-decoration-none">
+                            <div class="p-3 rounded text-center hover-scale" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);">
+                                <i class="fas fa-truck-loading fa-2x mb-2 text-success"></i>
+                                <h6 class="text-white mb-0">Delivery & Receipts</h6>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ict.inventory') }}" class="text-decoration-none">
+                            <div class="p-3 rounded text-center hover-scale" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2);">
+                                <i class="fas fa-boxes fa-2x mb-2 text-warning"></i>
+                                <h6 class="text-white mb-0">Inventory & Assets</h6>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}ICT Inventory - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-white fw-bold"><i class="fas fa-boxes me-2"></i>ICT INVENTORY</h2>
+            <p class="text-white-50">Manage hardware, software licenses, and tech assets.</p>
+        </div>
+        <div class="col-auto">
+            <div class="d-flex gap-3 align-items-center">
+                <div class="text-end">
+                    <div class="text-white-50 small">ESTIMATED ASSET VALUE</div>
+                    <div class="text-info h4 fw-bold mb-0">MWK {{ "{:,.2f}".format(total_value) }}</div>
+                </div>
+                <button class="btn btn-primary react-button" data-bs-toggle="modal" data-bs-target="#addInventoryModal">
+                    <i class="fas fa-plus me-2"></i>ADD ITEM
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card react-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table react-table">
+                    <thead>
+                        <tr>
+                            <th>ASSET NAME</th>
+                            <th>CATEGORY</th>
+                            <th>QTY</th>
+                            <th>UNIT VALUE (MWK)</th>
+                            <th>TOTAL VALUE (MWK)</th>
+                            <th>CONDITION</th>
+                            <th>LAST UPDATED</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td class="fw-bold">{{ item.asset_name }}</td>
+                            <td><span class="badge bg-secondary">{{ item.category }}</span></td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ "{:,.2f}".format(item.unit_value) }}</td>
+                            <td class="text-info fw-bold">{{ "{:,.2f}".format(item.total_value) }}</td>
+                            <td>
+                                <span class="badge {% if item.condition == 'New' or item.condition == 'Excellent' %}bg-success{% elif item.condition == 'Good' %}bg-info{% else %}bg-warning text-dark{% endif %}">
+                                    {{ item.condition }}
+                                </span>
+                            </td>
+                            <td class="text-white-50 small">{{ item.last_updated.strftime('%d %b %Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Inventory Modal -->
+<div class="modal fade" id="addInventoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content react-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">ADD ICT ASSET</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('ict.add_inventory') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-white-50">ASSET NAME</label>
+                        <input type="text" name="asset_name" class="form-control bg-dark text-white border-secondary" placeholder="e.g. Dell PowerEdge Server, React License" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">CATEGORY</label>
+                            <select name="category" class="form-select bg-dark text-white border-secondary">
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="Networking">Networking</option>
+                                <option value="Peripheral">Peripheral</option>
+                                <option value="License">License</option>
+                                <option value="Office Equipment">Office Equipment</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">CONDITION</label>
+                            <select name="condition" class="form-select bg-dark text-white border-secondary">
+                                <option value="New">New</option>
+                                <option value="Excellent">Excellent</option>
+                                <option value="Good">Good</option>
+                                <option value="Fair">Fair</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">QUANTITY</label>
+                            <input type="number" name="quantity" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">UNIT VALUE (MWK)</label>
+                            <input type="number" step="0.01" name="unit_value" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label text-white-50">ITEM DESCRIPTION</label>
+                        <textarea name="description" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="Provide additional details about this asset..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+                    <button type="submit" class="btn btn-primary react-button">ADD TO INVENTORY</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

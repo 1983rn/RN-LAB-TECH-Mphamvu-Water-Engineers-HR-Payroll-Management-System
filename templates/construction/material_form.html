@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Restock Material - Construction Division{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: url("{{ url_for('static', filename='images/construction_bg.png') }}") no-repeat center center fixed;
+        background-size: cover;
+    }
+    
+    .form-glass {
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        color: white;
+        max-width: 600px;
+        margin: 50px auto;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #28a745;
+        color: white;
+        box-shadow: 0 0 15px rgba(40, 167, 69, 0.3);
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #FFD700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .btn-apply {
+        background: #28a745;
+        border: none;
+        padding: 12px 30px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+
+    .btn-apply:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+
+    .list-container-glass {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+        max-height: 350px;
+        overflow-y: auto;
+    }
+
+    .list-container-glass select {
+        background: transparent !important;
+        border: none !important;
+        color: white !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    .list-container-glass select option {
+        background: #222;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+
+    .list-container-glass select option:checked {
+        background: #28a745 !important;
+        color: white !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-glass fade-in">
+        <h2 class="text-center mb-4"><i class="fas fa-cubes text-success me-2"></i>Restock Material</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label>Item Name / Category (Scroll to select)</label>
+                <div class="list-container-glass">
+                    <select name="item_name_select" id="itemSelector" class="form-select" size="20" onchange="handleItemChange()" style="height: auto; overflow: hidden;">
+                        <option value="" disabled>-- Choose Material Type --</option>
+                        <optgroup label="Cement Bricks / Blocks">
+                            <option value="Small bricks (190×90×40-90mm, 3-10 N/mm²)">Small bricks (190×90×40-90mm, 3-10 N/mm²)</option>
+                            <option value="Medium blocks (400×200×100-150mm, 5-12 N/mm²)">Medium blocks (400×200×100-150mm, 5-12 N/mm²)</option>
+                            <option value="Large blocks (400×200×200mm, 7-20 N/mm²)">Large blocks (400×200×200mm, 7-20 N/mm²)</option>
+                            <option value="Extra-large blocks (500mm+, 12-25+ N/mm²)">Extra-large blocks (500mm+, 12-25+ N/mm²)</option>
+                        </optgroup>
+                        <optgroup label="Cement Types">
+                            <option value="Ordinary Portland Cement (CEM I 52.5N/R, ≥ 52.5 N/mm²)">Ordinary Portland Cement (52.5)</option>
+                            <option value="Ordinary Portland Cement (CEM I 42.5N/R, ≥ 42.5 N/mm²)">Ordinary Portland Cement (42.5)</option>
+                            <option value="Portland Composite Cement (CEM II 42.5N, ≥ 42.5 N/mm²)">Portland Composite Cement</option>
+                            <option value="Portland Composite Cement (CEM II 32.5N, ≥ 32.5 N/mm²)">Portland Composite Cement (General Purpose)</option>
+                            <option value="Masonry Cement (Non-structural, < 32.5 N/mm²)">Masonry Cement</option>
+                        </optgroup>
+                        
+                        {% if custom_types %}
+                        <optgroup label="Custom / New Types">
+                            {% for ct in custom_types %}
+                            <option value="{{ ct }}">{{ ct }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endif %}
+                        
+                        <option value="OTHER">-- Add New Material / Project Type --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3 d-none" id="customItemDiv">
+                <label>Add New Project / Material Type</label>
+                <div class="input-group">
+                    <input type="text" id="customItemInput" class="form-control" placeholder="Enter new type name...">
+                    <button type="button" class="btn btn-outline-warning" onclick="saveNewType()">Save Globally</button>
+                </div>
+                <small class="text-white-50 mt-1 d-block">This will be saved for future use in both Restock and Quotations.</small>
+            </div>
+            
+            <!-- Hidden input to store the actual value to be submitted -->
+            <input type="hidden" name="item_name" id="finalItemName">
+
+            <script>
+                function handleItemChange() {
+                    const selector = document.getElementById('itemSelector');
+                    const customDiv = document.getElementById('customItemDiv');
+                    const finalInput = document.getElementById('finalItemName');
+
+                    if (selector.value === 'OTHER') {
+                        customDiv.classList.remove('d-none');
+                        finalInput.value = ""; // Wait for custom input
+                    } else {
+                        customDiv.classList.add('d-none');
+                        finalInput.value = selector.value;
+                    }
+                }
+
+                function saveNewType() {
+                    const newType = document.getElementById('customItemInput').value.trim();
+                    if (!newType) return;
+
+                    fetch('/quotations/api/custom_project_types', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ project_type: newType, department: 'Construction' })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Add to selector
+                            const selector = document.getElementById('itemSelector');
+                            const opt = document.createElement('option');
+                            opt.value = newType;
+                            opt.text = newType;
+                            
+                            // Insert before "OTHER"
+                            selector.add(opt, selector.options[selector.options.length - 1]);
+                            selector.value = newType;
+                            handleItemChange();
+                            document.getElementById('customItemInput').value = '';
+                            alert('New type saved successfully!');
+                        } else {
+                            alert(data.message || 'Error saving type');
+                        }
+                    });
+                }
+
+                // Set initial value
+                handleItemChange();
+            </script>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label>Quantity</label>
+                    <input type="number" step="0.01" name="quantity" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Unit</label>
+                    <select name="unit" class="form-select">
+                        <option value="Bags">Bags</option>
+                        <option value="Pieces">Pieces</option>
+                        <option value="Loads">Loads</option>
+                        <option value="Tons">Tons</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label>Unit Price (MWK)</label>
+                <input type="number" step="0.01" name="unit_price" class="form-control" required>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-apply text-white">Save Material & Update Stock</button>
+                <a href="{{ url_for('construction.dashboard') }}" class="btn btn-link text-white-50">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

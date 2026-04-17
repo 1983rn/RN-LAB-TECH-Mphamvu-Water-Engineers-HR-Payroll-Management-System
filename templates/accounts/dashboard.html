@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts Department Dashboard - MWE{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Accounts Theme */
+    .accounts-dashboard-wrapper {
+        position: relative;
+        min-height: calc(100vh - 100px);
+        background: url('{{ url_for('static', filename='images/accounts dashboard.png') }}') center/cover no-repeat;
+        border-radius: 20px;
+        padding: 25px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        color: #FFFFFF;
+    }
+
+    /* Glassmorphism Overlay */
+    .accounts-dashboard-wrapper::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 5, 20, 0.45); /* High-tech blue tint */
+        backdrop-filter: blur(2px);
+    }
+
+    .content-layer {
+        position: relative;
+        z-index: 5;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Unified Typography & Shadows */
+    .text-gold { color: #FFD700 !important; }
+    .premium-text {
+        text-shadow: 2px 2px 8px rgba(0,0,0,1), 0 0 15px rgba(255,215,0,0.3);
+    }
+
+    .accounts-title h1 {
+        font-size: 2.2rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        margin: 0;
+    }
+
+    .accounts-title h2 {
+        font-size: 1rem;
+        letter-spacing: 6px;
+        color: rgba(255, 215, 0, 0.82);
+        margin-top: 5px;
+    }
+
+    /* Wealth Card */
+    .wealth-hub {
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid #FFD700;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        margin-bottom: 25px;
+    }
+
+    .wealth-stat-label {
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #FFD700;
+    }
+
+    /* Performance Tables */
+    .glass-table-card {
+        background: rgba(0, 0, 0, 0.65);
+        border: 1.5px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        height: 100%;
+        padding: 15px;
+    }
+
+    .table-premium {
+        width: 100%;
+        color: #FFFFFF;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+    .table-premium th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: rgba(255, 215, 0, 0.9);
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255,215,0,0.3);
+    }
+
+    .table-premium td {
+        padding: 10px 5px;
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 0.9rem;
+    }
+
+    .table-premium tr td:first-child { border-radius: 8px 0 0 8px; padding-left: 15px; }
+    .table-premium tr td:last-child { border-radius: 0 8px 8px 0; padding-right: 15px; text-align: right; }
+
+    .trend-indicator {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+    }
+
+    .rank-badge {
+        width: 28px;
+        height: 28px;
+        background: #FFD700;
+        color: #000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 0.8rem;
+    }
+
+    /* Scrollbar for tables if needed */
+    .table-scroll {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .table-scroll::-webkit-scrollbar { width: 5px; }
+    .table-scroll::-webkit-scrollbar-track { background: transparent; }
+    .table-scroll::-webkit-scrollbar-thumb { background: #FFD700; border-radius: 10px; }
+    /* MD Portal */
+    .md-passport-area {
+        width: 180px;
+        text-align: center;
+        margin-left: 20px;
+    }
+
+    .md-passport-frame {
+        width: 140px;
+        height: 180px;
+        border: 3px solid #FFD700;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 0 auto 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .md-passport-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="accounts-dashboard-wrapper fade-in">
+    <div class="content-layer">
+        
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div class="accounts-title premium-text">
+                <h1>MPHAMVU WATER ENGINEERS</h1>
+                <h2>ACCOUNTS DEPARTMENT</h2>
+            </div>
+            <div class="d-flex align-items-start">
+                <div class="text-end">
+                    <p class="mb-0 text-white-50 small">System Time: {{ datetime.now().strftime('%Y-%m-%d %H:%M') }}</p>
+                    <div class="mt-2">
+                        <a href="{{ url_for('accounts.cashbook') }}" class="btn btn-outline-light btn-sm px-3 me-2">
+                            <i class="fas fa-book-open me-2"></i>Global Cashbook
+                        </a>
+                        <a href="{{ url_for('accounts.salaries') }}" class="btn btn-warning btn-sm px-3 fw-bold">
+                            <i class="fas fa-hand-holding-usd me-2"></i>Process Salaries
+                        </a>
+                    </div>
+                </div>
+                <div class="md-passport-area">
+                    <div class="md-passport-frame">
+                        <img src="{{ url_for('static', filename='images/managing director.jpg') }}" alt="MD">
+                    </div>
+                    <div class="small fw-bold text-gold">MANAGING DIRECTOR</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wealth Tracker -->
+        <div class="wealth-hub">
+            <div class="row align-items-center">
+                <div class="col-md-5 border-end border-secondary border-opacity-50">
+                    <div class="premium-text">
+                        <span class="wealth-stat-label">Total Company Wealth Projection</span>
+                        <h1 class="text-gold display-4 fw-bold mb-0">MWK {{ "{:,.2f}".format(company_wealth) }}</h1>
+                        <p class="small text-white-50 mt-1 mb-0">
+                            Available Income + Net Assets (Excl. Poor Condition)
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <span class="wealth-stat-label d-block mb-1">Total Income</span>
+                            <h4 class="fw-bold text-success mb-0">+{{ "{:,.0f}".format(total_company_income) }}</h4>
+                        </div>
+                        <div class="col-4 border-start border-secondary border-opacity-25">
+                            <span class="wealth-stat-label d-block mb-1">Total Expense</span>
+                            <h4 class="fw-bold text-danger mb-0">-{{ "{:,.0f}".format(total_company_expense) }}</h4>
+                        </div>
+                        <div class="col-4 border-start border-secondary border-opacity-25">
+                            <span class="wealth-stat-label d-block mb-1">Net Assets</span>
+                            <h4 class="fw-bold text-info mb-0">{{ "{:,.0f}".format(total_inventory_wealth) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 flex-grow-1">
+            <!-- Department Performance Analysis -->
+            <div class="col-lg-8">
+                <div class="glass-table-card">
+                    <h5 class="premium-text text-gold mb-3">
+                        <i class="fas fa-chart-line me-2"></i>Departmental Financial Analysis
+                    </h5>
+                    <div class="table-scroll">
+                        <table class="table-premium">
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Total Generated (Income)</th>
+                                    <th>Total Used (Expense)</th>
+                                    <th>Profit / Loss</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dept in dept_stats %}
+                                <tr>
+                                    <td class="fw-bold text-white">{{ dept.name }}</td>
+                                    <td>MWK {{ "{:,.2f}".format(dept.income) }}</td>
+                                    <td>MWK {{ "{:,.2f}".format(dept.expense) }}</td>
+                                    <td class="fw-bold {{ 'text-success' if dept.net >= 0 else 'text-danger' }}">
+                                        {{ 'MWK {:,.2f}'.format(dept.net) if dept.net >= 0 else '(-MWK {:,.2f})'.format(dept.net|abs) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Ranking -->
+            <div class="col-lg-4">
+                <div class="glass-table-card">
+                    <h5 class="premium-text text-gold mb-3">
+                        <i class="fas fa-award me-2"></i>Performance Ranking
+                    </h5>
+                    <div class="table-scroll">
+                        <table class="table-premium">
+                            <thead>
+                                <tr>
+                                    <th width="50">Pos</th>
+                                    <th>Department</th>
+                                    <th class="text-end">Efficiency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in performance_ranking %}
+                                <tr>
+                                    <td>
+                                        <div class="rank-badge">{{ loop.index }}</div>
+                                    </td>
+                                    <td class="fw-bold">{{ entry.name }}</td>
+                                    <td class="text-end text-gold fw-bold">
+                                        {% if entry.income > 0 %}
+                                            {{ "{:.1f}%".format((entry.net / entry.income) * 100) }}
+                                        {% else %}
+                                            0.0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4 p-3 bg-dark bg-opacity-50 rounded border border-secondary">
+                        <span class="wealth-stat-label d-block text-center border-bottom border-secondary mb-2 pb-1">Accounting Action Summary</span>
+                        <div class="d-flex justify-content-between x-small">
+                            <span>Pending Invoices:</span>
+                            <span class="text-warning fw-bold">Update Required</span>
+                        </div>
+                        <div class="d-flex justify-content-between x-small mt-1">
+                            <span>Cashbook Reconciliation:</span>
+                            <span class="text-success fw-bold">Verified</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}MD Approval Dashboard - Mphamvu Water Engineers{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-warning pb-2">
+        <h2 class="text-warning text-uppercase fw-bold m-0"><i class="fas fa-shield-alt me-2"></i> Managing Director Control Center</h2>
+        <div>
+            <a href="{{ url_for('hr.dashboard') }}" class="btn btn-outline-light me-2">HR Dashboard</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <ul class="nav nav-tabs nav-justified border-warning mb-4" id="mdTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link bg-dark text-white active border-warning border-bottom-0" id="employees-tab" data-bs-toggle="tab" data-bs-target="#employees" type="button" role="tab">
+                <i class="fas fa-users me-2"></i> EMPLOYEES ACCESS REQUESTS
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link bg-dark text-white border-warning border-bottom-0" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll" type="button" role="tab">
+                <i class="fas fa-money-check-alt me-2"></i> PAYROLL ACCESS REQUESTS
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="mdTabContent">
+        <!-- Employees Tab -->
+        <div class="tab-pane fade show active" id="employees" role="tabpanel">
+            <div class="card bg-dark text-white border-secondary mb-4 shadow">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead class="text-warning text-uppercase" style="border-bottom: 2px solid #ffc107;">
+                                <tr>
+                                    <th>Time Logged</th>
+                                    <th>Authorized Personnel</th>
+                                    <th>Status</th>
+                                    <th>Generated OTP</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in employees_reqs %}
+                                <tr>
+                                    <td class="align-middle text-white-50">{{ req.request_time.strftime('%d %b %Y, %H:%M:%S') }}</td>
+                                    <td class="align-middle fw-bold">{{ req.requester_name }}</td>
+                                    <td class="align-middle">
+                                        {% if req.status == 'Pending' %}
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Pending</span>
+                                        {% elif req.status == 'Approved' %}
+                                            <span class="badge bg-success"><i class="fas fa-check"></i> Approved</span>
+                                        {% else %}
+                                            <span class="badge bg-danger"><i class="fas fa-times"></i> Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        {% if req.otp_code %}
+                                            <code class="fs-4 text-info user-select-all px-2 bg-black rounded border border-info">{{ req.otp_code }}</code>
+                                            {% if req.is_used %}
+                                                <br><small class="text-success"><i class="fas fa-lock-open"></i> Consumed</small>
+                                            {% else %}
+                                                <br><small class="text-white-50">Expires: {{ req.expires_at.strftime('%H:%M') }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-white-50 fst-italic">Pending Generation</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle text-end">
+                                        {% if req.status == 'Pending' %}
+                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="approve">
+                                                <button type="submit" class="btn btn-sm btn-success fw-bold text-uppercase">Approve</button>
+                                            </form>
+                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline ms-1">
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                            </form>
+                                        {% else %}
+                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="delete">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger text-uppercase fw-bold" onclick="return confirm('Remove this request log?');"><i class="fas fa-trash-alt me-1"></i> Delete</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-white-50">No pending requests for Employees module.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payroll Tab -->
+        <div class="tab-pane fade" id="payroll" role="tabpanel">
+            <div class="card bg-dark text-white border-secondary mb-4 shadow">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead class="text-success text-uppercase" style="border-bottom: 2px solid #198754;">
+                                <tr>
+                                    <th>Time Logged</th>
+                                    <th>Authorized Personnel</th>
+                                    <th>Status</th>
+                                    <th>Generated OTP</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in payroll_reqs %}
+                                <tr>
+                                    <td class="align-middle text-white-50">{{ req.request_time.strftime('%d %b %Y, %H:%M:%S') }}</td>
+                                    <td class="align-middle fw-bold">{{ req.requester_name }}</td>
+                                    <td class="align-middle">
+                                        {% if req.status == 'Pending' %}
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Pending</span>
+                                        {% elif req.status == 'Approved' %}
+                                            <span class="badge bg-success"><i class="fas fa-check"></i> Approved</span>
+                                        {% else %}
+                                            <span class="badge bg-danger"><i class="fas fa-times"></i> Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        {% if req.otp_code %}
+                                            <code class="fs-4 text-warning user-select-all px-2 bg-black rounded border border-warning">{{ req.otp_code }}</code>
+                                            {% if req.is_used %}
+                                                <br><small class="text-success"><i class="fas fa-lock-open"></i> Consumed</small>
+                                            {% else %}
+                                                <br><small class="text-white-50">Expires: {{ req.expires_at.strftime('%H:%M') }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-white-50 fst-italic">Pending Generation</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle text-end">
+                                        {% if req.status == 'Pending' %}
+                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="approve">
+                                                <button type="submit" class="btn btn-sm btn-success fw-bold text-uppercase">Approve</button>
+                                            </form>
+                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline ms-1">
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                            </form>
+                                        {% else %}
+                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="delete">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger text-uppercase fw-bold" onclick="return confirm('Remove this request log?');"><i class="fas fa-trash-alt me-1"></i> Delete</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-white-50">No pending requests for Payroll module.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-refresh script for Real-time Updates -->
+<script>
+    // Refresh the page every 15 seconds to check for new requests
+    setTimeout(function() {
+        window.location.reload(1);
+    }, 15000);
+</script>
+{% endblock %}

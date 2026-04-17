@@ -188,8 +188,14 @@
             <h2>Inventory Dashboard</h2>
             <p>Mphamvu Water Engineers &mdash; Asset Overview</p>
         </div>
-        <div class="last-updated">
-            Last updated: {{ now().strftime('%d %b %Y') if now else 'Today' }}
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('inventory.add_item') }}" class="btn btn-primary d-flex align-items-center gap-2">
+                <i class="fas fa-plus"></i>
+                <span>Add New Item</span>
+            </a>
+            <div class="last-updated">
+                Last updated: {{ now().strftime('%d %b %Y') if now else 'Today' }}
+            </div>
         </div>
     </div>
 

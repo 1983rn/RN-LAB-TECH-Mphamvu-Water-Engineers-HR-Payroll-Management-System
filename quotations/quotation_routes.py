@@ -13,6 +13,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_signature_block, build_pdf_with_numbering, create_numbered_doc, generate_document_number, generate_qr_code, add_signature_stamp_qr, add_stamp_and_qr, generate_document_hash, secure_pdf, add_hash_to_story
 
 from utils.credit_scoring import update_client_credit_score
+from utils.auth_utils import apply_dept_filter, get_current_dept
 
 quotations_bp = Blueprint('quotations', __name__, url_prefix='/quotations')
 
@@ -36,7 +37,8 @@ def admin_required(f):
 @quotations_bp.route('/')
 @login_required
 def list_quotations():
-    quotations = Quotation.query.order_by(Quotation.created_at.desc()).all()
+    query = Quotation.query
+    quotations = apply_dept_filter(query, Quotation).order_by(Quotation.created_at.desc()).all()
     return render_template('quotations/list.html', quotations=quotations, timedelta=timedelta)
 
 @quotations_bp.route('/create', methods=['GET', 'POST'])
@@ -80,7 +82,8 @@ def create_quotation():
                     phone=client_phone or None,
                     email=client_email or None,
                     address=client_address,
-                    project_type=project_type
+                    project_type=project_type,
+                    department=get_current_dept()
                 )
                 db.session.add(client)
                 db.session.flush()  # Get client_id without committing
@@ -97,7 +100,8 @@ def create_quotation():
                 total_amount=0,  # Will be calculated below
                 validity_days=validity_days,
                 description=request.form.get('description', 'We have pleasure in quoting our prices for borehole development as follows;'),
-                status='Pending'
+                status='Pending',
+                department=get_current_dept()
             )
             
             db.session.add(quotation)
@@ -148,8 +152,9 @@ def create_quotation():
             flash(f'Error creating quotation: {str(e)}', 'error')
             return redirect(url_for('quotations.create_quotation', rfq_id=rfq_id))
     
-    custom_project_types = CustomProjectType.query.all()
-    return render_template('quotations/create.html', rfq=rfq, custom_project_types=[t.project_type for t in custom_project_types])
+    department = request.args.get('department', 'Borehole')
+    custom_project_types = CustomProjectType.query.filter_by(department=department).all()
+    return render_template('quotations/create.html', rfq=rfq, custom_project_types=[t.project_type for t in custom_project_types], department=department)
 
 @quotations_bp.route('/view/<int:quotation_id>')
 @login_required
@@ -229,15 +234,17 @@ def add_custom_project_type():
     try:
         data = request.get_json()
         project_type = data.get('project_type')
+        department = data.get('department', 'Borehole')
+        
         if not project_type:
             return jsonify({'success': False, 'message': 'Project type is required'}), 400
             
-        # Check if already exists
-        existing = CustomProjectType.query.filter_by(project_type=project_type).first()
+        # Check if already exists in this department
+        existing = CustomProjectType.query.filter_by(project_type=project_type, department=department).first()
         if existing:
-            return jsonify({'success': False, 'message': 'Project type already exists'}), 400
+            return jsonify({'success': False, 'message': 'Project type already exists in this department'}), 400
             
-        new_type = CustomProjectType(project_type=project_type)
+        new_type = CustomProjectType(project_type=project_type, department=department)
         db.session.add(new_type)
         db.session.commit()
         
@@ -306,7 +313,7 @@ def download_quotation_pdf(quotation_id):
     )
     
     # ── 1. Company Header Image ──
-    story = add_company_header_to_story(story, layout_mode=layout_mode)
+    story = add_company_header_to_story(story, layout_mode=layout_mode, department=quotation.department)
     
     # ── Horizontal separator line ──
     line_data = [['', '']]
@@ -513,7 +520,8 @@ def approve_quotation(quotation_id):
             start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date(),
             end_date=datetime.strptime(request.form['end_date'], '%Y-%m-%d').date(),
             status='Approved',
-            notes=request.form.get('notes')
+            notes=request.form.get('notes'),
+            department=quotation.department
         )
         
         db.session.add(contract)

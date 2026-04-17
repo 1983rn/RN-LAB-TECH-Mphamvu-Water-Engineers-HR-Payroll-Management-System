@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Material - Construction Division{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: url("{{ url_for('static', filename='images/construction_bg.png') }}") no-repeat center center fixed;
+        background-size: cover;
+    }
+    
+    .form-glass {
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        color: white;
+        max-width: 600px;
+        margin: 40px auto;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: #0dcaf0 !important;
+        box-shadow: 0 0 15px rgba(13, 202, 240, 0.3) !important;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #FFD700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .btn-apply {
+        background: #0dcaf0;
+        color: black;
+        border: none;
+        padding: 12px 30px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+
+    .btn-apply:hover {
+        background: #0baccc;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(13, 202, 240, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-glass fade-in">
+        <h2 class="text-center mb-4 text-info"><i class="fas fa-hand-holding-box me-2"></i>Issue Material to Project</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label>Select Material</label>
+                <select name="stock_id" class="form-select" required>
+                    <option value="">Select Stock Item</option>
+                    {% for item in materials %}
+                    <option value="{{ item.id }}">{{ item.item_name }} (Available: {{ item.quantity }} {{ item.unit }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label>Target Project</label>
+                <select name="project_id" class="form-select" required>
+                    <option value="">Select Project</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}">{{ project.project_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label>Quantity to Use</label>
+                <input type="number" step="0.01" name="quantity" class="form-control" placeholder="0.00" required>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-apply">Record Consumption & Update Costs</button>
+                <a href="{{ url_for('construction.dashboard') }}" class="btn btn-link text-white-50">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

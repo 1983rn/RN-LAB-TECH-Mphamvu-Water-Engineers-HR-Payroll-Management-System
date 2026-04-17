@@ -148,9 +148,11 @@
         <div class="d-flex justify-content-between align-items-center">
             <h2><i class="fas fa-handshake me-2"></i>Client Directory</h2>
             <div>
-                <a href="{{ url_for('clients.credit_scoring') }}" class="btn btn-info text-white me-2">
-                    <i class="fas fa-chart-line me-2"></i>Credit Scoring
-                </a>
+                <form method="POST" action="{{ url_for('clients.recalculate_all_scores') }}" style="display:inline;">
+                    <button type="submit" class="btn btn-info text-white me-2">
+                        <i class="fas fa-sync-alt me-2"></i>Recalculate All
+                    </button>
+                </form>
                 <a href="{{ url_for('clients.add_client') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Add Client
                 </a>
@@ -165,41 +167,75 @@
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
-                    <tr>
-                        <th style="width: 12%;">Ref</th>
-                        <th style="width: 22%;">Client Name</th>
-                        <th style="width: 22%;">Contact</th>
-                        <th style="width: 18%;">Project Type</th>
-                        <th style="width: 14%;">Credit Rating</th>
-                        <th style="width: 12%;">Actions</th>
+                        <th style="width: 25%;">Client Name & Contact</th>
+                        <th style="width: 15%;">Transactions</th>
+                        <th style="width: 12%;">Defaults</th>
+                        <th style="width: 18%;">Score & Rating</th>
+                        <th style="width: 10%;">Rank</th>
+                        <th style="width: 15%;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% set ns = namespace(max_raw=1) %}
+                    {% for c in clients %}
+                        {% if (c.credit_score or 0) > ns.max_raw %}
+                            {% set ns.max_raw = c.credit_score %}
+                        {% endif %}
+                    {% endfor %}
                     {% for client in clients %}
+                        {% set raw_val = client.credit_score or 0 %}
+                        {% set calc_val = ((raw_val / ns.max_raw) * 100) | round | int %}
+                        {% set calc_val = 0 if calc_val < 0 else calc_val %}
+                        {% set score = 100 if calc_val > 100 else calc_val %}
+                        {% if score >= 90 %}
+                            {% set rating_text = 'Excellent' %}
+                            {% set r_color = '#0c6b3e' %}
+                        {% elif score >= 75 %}
+                            {% set rating_text = 'Very Reliable' %}
+                            {% set r_color = '#198754' %}
+                        {% elif score >= 60 %}
+                            {% set rating_text = 'Reliable' %}
+                            {% set r_color = '#20c997' %}
+                        {% elif score >= 40 %}
+                            {% set rating_text = 'Moderate' %}
+                            {% set r_color = '#0dcaf0' %}
+                        {% elif score >= 20 %}
+                            {% set rating_text = 'Risk' %}
+                            {% set r_color = '#fd7e14' %}
+                        {% else %}
+                            {% set rating_text = 'High Risk' %}
+                            {% set r_color = '#dc3545' %}
+                        {% endif %}
                     <tr>
-                        <td class="fw-bold">{{ client.reference_number }}</td>
-                        <td>{{ client.client_name }}</td>
-                        <td>
-                            <div class="contact-line"><i class="fas fa-phone me-1"></i>{{ client.phone }}</div>
-                            <div class="contact-line email"><i class="fas fa-envelope me-1"></i>{{ client.email or 'N/A' }}</div>
+                        <td style="border-left: 5px solid {{ r_color }} !important;">
+                            <div class="fw-bold mb-1">{{ client.client_name }}</div>
+                            <div class="contact-line small"><i class="fas fa-phone me-1"></i>{{ client.phone }}</div>
                         </td>
-                        <td><span class="project-type-label" title="{{ client.project_type }}">{{ client.project_type }}</span></td>
+                        <td class="text-center fw-medium">{{ client.completed_transactions or 0 }}</td>
+                        <td class="text-center fw-medium text-danger">{{ client.defaults or 0 }}</td>
                         <td>
-                            {% if client.credit_scores %}
-                                {% set score = client.credit_scores[0] %}
-                                {% set badge_class = 'success' if score.score <= 2 else ('warning' if score.score <= 4 else 'danger') %}
-                                <span class="badge bg-{{ badge_class }}">
-                                    {{ score.rating }} ({{ score.score }}/6)
-                                </span>
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="fw-bold fs-5 me-2" style="color: {{ r_color }};">{{ score }}%</div>
+                                <span class="badge text-uppercase text-white" style="background-color: {{ r_color }}; letter-spacing: 0.5px; font-size: 0.75rem;">{{ rating_text }}</span>
+                            </div>
+                            <div class="progress shadow-sm" style="height: 6px; width: 100%; border-radius: 3px; background-color: rgba(0,0,0,0.05);">
+                                <div class="progress-bar" role="progressbar" style="width: {{ score }}%; background-color: {{ r_color }};" aria-valuenow="{{ score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% if loop.index == 1 %}
+                                <span style="font-size: 1.5rem;" title="1st Place">🥇</span>
+                            {% elif loop.index == 2 %}
+                                <span style="font-size: 1.5rem;" title="2nd Place">🥈</span>
+                            {% elif loop.index == 3 %}
+                                <span style="font-size: 1.5rem;" title="3rd Place">🥉</span>
                             {% else %}
-                                <span class="badge bg-secondary">No Rating</span>
+                                <span class="fw-bold text-muted">#{{ loop.index }}</span>
                             {% endif %}
                         </td>
                         <td>
                             <div class="d-flex gap-1">
-                                <a href="{{ url_for('clients.credit_scoring') }}" class="btn btn-sm btn-outline-primary action-btn" title="Credit Profile">
-                                    <i class="fas fa-user-check"></i>
-                                </a>
+
                                 <form method="POST" action="{{ url_for('clients.delete_client', client_id=client.client_id) }}" onsubmit="return confirm('Are you sure you want to delete this client?');" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-outline-danger action-btn" title="Delete">
                                         <i class="fas fa-trash"></i>

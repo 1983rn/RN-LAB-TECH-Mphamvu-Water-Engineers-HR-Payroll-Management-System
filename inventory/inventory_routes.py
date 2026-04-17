@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, Response
 from functools import wraps
+from utils.auth_utils import apply_dept_filter, get_current_dept
 from models import Inventory
 from db_utils import db
 import csv
@@ -30,7 +31,8 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
-    items = Inventory.query.all()
+    query = Inventory.query
+    items = apply_dept_filter(query, Inventory).all()
     
     total_value = sum(item.total_value for item in items)
     total_items = sum(item.quantity for item in items)
@@ -60,7 +62,8 @@ def dashboard():
 @login_required
 @admin_required
 def category_view(category):
-    items = Inventory.query.filter_by(category=category).order_by(Inventory.subcategory, Inventory.asset_name).all()
+    query = Inventory.query.filter_by(category=category)
+    items = apply_dept_filter(query, Inventory).order_by(Inventory.subcategory, Inventory.asset_name).all()
     
     total_value = sum(item.total_value for item in items)
     line_items = len(items)
@@ -105,7 +108,8 @@ def add_item():
                 quantity=quantity,
                 unit_value=unit_value,
                 total_value=total_value,
-                description=description
+                description=description,
+                department=get_current_dept()
             )
             
             db.session.add(new_item)
@@ -168,7 +172,8 @@ def delete_item(item_id):
 @login_required
 @admin_required
 def export_csv(category):
-    items = Inventory.query.filter_by(category=category).all()
+    query = Inventory.query.filter_by(category=category)
+    items = apply_dept_filter(query, Inventory).all()
     
     output = io.StringIO()
     writer = csv.writer(output)
