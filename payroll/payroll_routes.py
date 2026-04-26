@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, make_response
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, make_response, jsonify
 from models import db, Employee, Payroll, EmployeeLoan, Attendance
 from datetime import datetime, date
 from functools import wraps
 import io
+import os
 import re
 from collections import defaultdict
 from reportlab.lib.pagesizes import letter, A4
@@ -19,17 +20,26 @@ payroll_bp = Blueprint('payroll', __name__, url_prefix='/payroll')
 @payroll_bp.before_request
 def check_md_approval():
     # Only enforce when hitting actual payroll endpoints
-    if 'md_access_payroll' not in session or not session.get('md_access_payroll'):
-        flash("Managing Director approval required to access the Payroll module.", "error")
-        return redirect(url_for('hr.gateway', module='Payroll'))
+    # MD (Director) bypasses this
+    if session.get('role') == 'Director':
+        return
+
+    # Determine if this is a payslip route or a general payroll route
+    is_payslip_route = request.endpoint and ('payslip' in request.endpoint or 'download_payslip' in request.endpoint)
+    module = 'Payslip' if is_payslip_route else 'Payroll'
+    session_key = f'md_access_{module.lower()}'
+    expiry_key = f'{session_key}_expiry'
+
+    if session_key not in session or not session.get(session_key):
+        flash(f"Managing Director approval required to access the {module} module.", "error")
+        return redirect(url_for('hr.gateway', module=module))
         
     # Check expiry
-    expiry_str = session.get('md_access_payroll_expiry')
-    from datetime import datetime
+    expiry_str = session.get(expiry_key)
     if not expiry_str or datetime.fromisoformat(expiry_str) < datetime.utcnow():
-        session['md_access_payroll'] = False
-        flash("Your MD approval token has expired. Please request a new OTP.", "warning")
-        return redirect(url_for('hr.gateway', module='Payroll'))
+        session[session_key] = False
+        flash(f"Your MD approval token for {module} has expired. Please request a new OTP.", "warning")
+        return redirect(url_for('hr.gateway', module=module))
 
 def clean_filename(text):
     """Sanitize text for safe use in filenames."""
@@ -149,12 +159,6 @@ def process_payroll():
             allowances = float(request.form.get('allowances', 0))
             
             # Fetch automatic deductions
-            
-            # Absentee check for the given month
-            absentee_deduction, absent_records_count = get_absentee_deduction(employee, payroll_month)
-            
-            if absent_records_count > 0:
-                flash(f'Employee had {absent_records_count} absent day(s) detected. Deducting MK {"{:,.2f}".format(absentee_deduction)}', 'warning')
 
             loan_deduction = get_employee_loan_deductions(employee_id)
             
@@ -235,36 +239,58 @@ def process_payroll():
 @login_required
 @hr_required
 def get_employee_deductions(employee_id, month):
-    """API endpoint to fetch real-time deduction data for frontend."""
+    """API endpoint to fetch real-time deduction data for frontend.
+    Note: Absenteeism penalty is now manual — HR enters the amount if needed.
+    """
     from flask import jsonify
     employee = Employee.query.get_or_404(employee_id)
     
-    # Allowances might be passed optionally if we want real-time Gross based penalty
-    allowances = float(request.args.get('allowances', 0))
-    gross_salary = employee.salary + allowances
-    
     loan_deduction = get_employee_loan_deductions(employee_id)
-    absent_penalty, absent_count = get_absentee_deduction(employee, month, gross_salary=gross_salary)
     
     return jsonify({
         'loan_deduction': loan_deduction,
-        'absentee_deduction': absent_penalty,
-        'absentee_count': absent_count,
         'basic_salary': employee.salary
     })
+
+@payroll_bp.route('/payslip-center')
+@login_required
+@hr_required
+def payslip_center():
+    """Payslip center — select an employee and month to view/generate payslips."""
+    employees = Employee.query.filter_by(status='Active').order_by(Employee.first_name).all()
+    
+    # Optional filters from query parameters
+    selected_employee = request.args.get('employee_id', '', type=str)
+    selected_month = request.args.get('month', '', type=str)
+    
+    # Build query for payroll records
+    query = Payroll.query
+    if selected_employee:
+        query = query.filter_by(employee_id=int(selected_employee))
+    if selected_month:
+        query = query.filter_by(payroll_month=selected_month)
+    
+    payroll_records = query.order_by(Payroll.created_at.desc()).all()
+    
+    return render_template('payroll/payslip_center.html',
+                           employees=employees,
+                           payroll_records=payroll_records,
+                           selected_employee=selected_employee,
+                           selected_month=selected_month)
 
 @payroll_bp.route('/payslip/<int:payroll_id>')
 @login_required
 def view_payslip(payroll_id):
     payroll = Payroll.query.get_or_404(payroll_id)
     
-    # Check if employee is viewing their own payslip or if user has HR access
-    if session.get('role') not in ['Administrator', 'HR Manager']:
-        # Need to check if this employee owns this payslip
-        # This would require linking users to employees in a real system
-        pass
-    
-    return render_template('payroll/payslip.html', payroll=payroll)
+    # Pre-format month for display
+    try:
+        month_date = datetime.strptime(payroll.payroll_month, '%Y-%m')
+        month_display = month_date.strftime('%B - %Y').upper()
+    except:
+        month_display = payroll.payroll_month
+
+    return render_template('payroll/payslip.html', payroll=payroll, month_display=month_display)
 
 @payroll_bp.route('/payslip/pdf/<int:payroll_id>')
 @login_required
@@ -283,14 +309,14 @@ def download_payslip_pdf(payroll_id):
     col_padding = 4 if layout_mode == 'normal' else (2 if layout_mode == 'compact' else 1)
     font_size = 12 if layout_mode == 'normal' else (11.5 if layout_mode == 'compact' else 11)
     
-    # Generate official payslip number
-    payslip_number = generate_document_number('PAY', payroll.payroll_id, payroll.created_at)
+    # Generate official payslip number (e.g., PAY-SLIP-2026-04-009)
+    payslip_number = generate_document_number('PAY-SLIP', payroll.payroll_id, payroll.created_at)
     
     # Generate document hash
     doc_hash = generate_document_hash(payslip_number, f"{employee.first_name} {employee.last_name}", payroll.net_salary)
     
     # Generate QR code
-    qr_path = generate_qr_code('Payslip', payslip_number, f"{employee.first_name} {employee.last_name}", payroll.net_salary)
+    qr_path = generate_qr_code('Payslip', payslip_number, f"{employee.first_name} {employee.last_name}", payroll.net_salary, month=payroll.payroll_month)
     
     # Add company header
     story = add_company_header_to_story(story, layout_mode=layout_mode, department=employee.department)
@@ -306,8 +332,14 @@ def download_payslip_pdf(payroll_id):
         textColor=colors.darkblue
     )
     
-    # Payslip Title with number
-    story.append(Paragraph(f"PAYSLIP - {payslip_number}", title_style))
+    # Payslip Title with Month and Year
+    try:
+        month_date = datetime.strptime(payroll.payroll_month, '%Y-%m')
+        month_display = month_date.strftime('%B - %Y').upper()
+    except:
+        month_display = payroll.payroll_month
+    
+    story.append(Paragraph(f"PAYSLIP - {month_display}", title_style))
     story.append(Spacer(1, 8))
     
     # Employee Information
@@ -379,8 +411,8 @@ def download_payslip_pdf(payroll_id):
     # Add developer footer
     story = add_pdf_footer(story, layout_mode=layout_mode)
     
-    # Build PDF with numbering
-    build_pdf_with_numbering(doc, story)
+    # Build PDF with numbering and QR code
+    build_pdf_with_numbering(doc, story, qr_path=qr_path)
     
     # Secure the PDF
     buffer.seek(0)
@@ -658,8 +690,28 @@ def download_payroll_report(month):
     story = add_signature_block(story, layout_mode='normal')
     story = add_pdf_footer(story, layout_mode='normal')
     
-    # Build PDF
-    build_pdf_with_numbering(doc, story)
+    # Generate QR code for the report summary
+    qr_dir = os.path.join('static', 'qrcodes')
+    os.makedirs(qr_dir, exist_ok=True)
+    report_ref = f"PAYROLL-{month_file}"
+    verification_data = (
+        f"MPHAMVU WATER ENGINEERS\n"
+        f"Document: Payroll Report\n"
+        f"Month: {month_display}\n"
+        f"Employees: {grand_total_employees}\n"
+        f"Total Net: MWK {grand_total_net:,.2f}\n"
+        f"Status: Official Report"
+    )
+    import qrcode
+    qr = qrcode.QRCode(version=1, box_size=10, border=2)
+    qr.add_data(verification_data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#003366", back_color="white")
+    qr_path = os.path.join(qr_dir, f"{report_ref}.png")
+    img.save(qr_path)
+    
+    # Build PDF with QR code
+    build_pdf_with_numbering(doc, story, qr_path=qr_path)
     
     buffer.seek(0)
     secured_buffer = secure_pdf(buffer)
@@ -696,3 +748,180 @@ def list_batches():
     from models import PayrollBatch
     batches = PayrollBatch.query.order_by(PayrollBatch.created_at.desc()).all()
     return render_template('payroll/batches.html', batches=batches)
+
+@payroll_bp.route('/qr/<int:payroll_id>')
+@login_required
+def payroll_qr_code(payroll_id):
+    """Generate and serve a QR code image for a payroll record.
+    The QR contains verification data: employee info, payroll month, net salary, and a hash.
+    """
+    import qrcode
+    import hashlib
+
+    payroll = Payroll.query.get_or_404(payroll_id)
+    employee = payroll.employee
+    gross = payroll.basic_salary + payroll.allowances
+
+    # Build the payslip reference number (PAY-SLIP-YYYY-MM-ID)
+    month_num = payroll.created_at.strftime('%m')
+    payslip_ref = f"PAY-SLIP-{payroll.created_at.year}-{month_num}-{payroll.payroll_id:03d}"
+
+    # Verification hash for anti-forgery
+    hash_input = f"{payslip_ref}{employee.employment_number}{payroll.net_salary}"
+    doc_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:16].upper()
+
+    # QR data payload
+    qr_data = (
+        f"══════════════════════════\n"
+        f"  MPHAMVU WATER ENGINEERS\n"
+        f"     PAYSLIP VERIFICATION\n"
+        f"══════════════════════════\n"
+        f"Ref: {payslip_ref}\n"
+        f"Employee: {employee.first_name} {employee.last_name}\n"
+        f"Emp No: {employee.employment_number}\n"
+        f"Department: {employee.department or 'N/A'}\n"
+        f"Position: {employee.position or 'N/A'}\n"
+        f"Month: {payroll.payroll_month}\n"
+        f"──────────────────────────\n"
+        f"Gross Salary: MWK {gross:,.2f}\n"
+        f"Allowances: MWK {payroll.allowances:,.2f}\n"
+        f"PAYEE Tax: MWK {payroll.payee_tax:,.2f}\n"
+        f"Net Salary: MWK {payroll.net_salary:,.2f}\n"
+        f"──────────────────────────\n"
+        f"Status: {payroll.status}\n"
+        f"Hash: {doc_hash}\n"
+        f"══════════════════════════\n"
+        f"This is a verified payslip.\n"
+    )
+
+    # Generate QR image
+    qr = qrcode.QRCode(version=None, box_size=10, border=3, error_correction=qrcode.constants.ERROR_CORRECT_M)
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0d47a1", back_color="white")
+
+    # Serve as PNG
+    buffer = io.BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'image/png'
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+@payroll_bp.route('/bank-schedule/<month>')
+@login_required
+@hr_required
+def download_bank_schedule(month):
+    """Generate a bank payment schedule PDF for a given month."""
+    from reportlab.lib.pagesizes import landscape, A4
+    from reportlab.platypus import Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER
+    import io
+
+    payroll_records = Payroll.query.filter_by(payroll_month=month).all()
+    
+    if not payroll_records:
+        flash(f'No payroll records found for {month}', 'warning')
+        return redirect(url_for('payroll.payroll_list'))
+        
+    try:
+        month_date = datetime.strptime(month, '%Y-%m')
+        month_display = month_date.strftime('%B %Y')
+        month_file = month_date.strftime('%B_%Y')
+    except:
+        month_display = month
+        month_file = month
+        
+    buffer = io.BytesIO()
+    doc = create_numbered_doc(buffer, pagesize=landscape(A4), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=40)
+    story = []
+    
+    styles = getSampleStyleSheet()
+    
+    story = add_company_header_to_story(story, layout_mode='normal', department='Accounts & Finance Department')
+    
+    title_style = ParagraphStyle(
+        'ReportTitle', parent=styles['Heading1'],
+        fontSize=14, spaceAfter=15, alignment=TA_CENTER,
+        textColor=colors.darkblue
+    )
+    story.append(Paragraph(f"BANK & MOBILE MONEY PAYMENT SCHEDULE — {month_display.upper()}", title_style))
+    
+    table_data = [
+        ['Employee Name', 'Emp No.', 'Department', 'Bank Name', 'Account / Mobile No.', 'Net Salary (MWK)']
+    ]
+    
+    total_net = 0
+    
+    for record in sorted(payroll_records, key=lambda x: (x.employee.department or '', x.employee.first_name)):
+        emp = record.employee
+        
+        # Determine payment details
+        payment_info = []
+        if emp.bank_name and emp.account_number:
+            payment_info.append(f"{emp.account_number}")
+        if emp.airtel_number:
+            payment_info.append(f"Airtel: {emp.airtel_number}")
+        if emp.tnm_mpamba_number:
+            payment_info.append(f"Mpamba: {emp.tnm_mpamba_number}")
+            
+        payment_str = "\n".join(payment_info) if payment_info else "NO PAYMENT DETAILS"
+        bank_name = emp.bank_name or "N/A"
+        
+        table_data.append([
+            f"{emp.first_name} {emp.last_name}",
+            emp.employment_number,
+            emp.department or 'N/A',
+            bank_name,
+            payment_str,
+            f"{record.net_salary:,.2f}"
+        ])
+        total_net += record.net_salary
+        
+    # Add Total Row
+    table_data.append([
+        'GRAND TOTAL', '', '', '', '', f"{total_net:,.2f}"
+    ])
+    
+    col_widths = [140, 80, 100, 120, 140, 100]
+    schedule_table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    
+    schedule_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003366')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('ALIGN', (5, 1), (5, -1), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#D6E4F0')),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    story.append(schedule_table)
+    story.append(Spacer(1, 20))
+    
+    story.append(Paragraph("Authorized Signatory 1: ______________________      Authorized Signatory 2: ______________________", styles['Normal']))
+    
+    story = add_pdf_footer(story, layout_mode='normal')
+    
+    build_pdf_with_numbering(doc, story)
+    
+    buffer.seek(0)
+    secured_buffer = secure_pdf(buffer)
+    
+    secured_buffer.seek(0)
+    response = make_response(secured_buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Payment_Schedule_{month_file}.pdf'
+    
+    return response

@@ -2,6 +2,39 @@
 
 {% block title %}MD Approval Dashboard - Mphamvu Water Engineers{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ── Bright LED Green Bulb ── */
+    .led-green {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #b0ffb0, #00ff00 40%, #00cc00 70%, #009900);
+        box-shadow:
+            0 0 6px 2px #00ff00,
+            0 0 14px 4px rgba(0, 255, 0, 0.6),
+            0 0 28px 8px rgba(0, 255, 0, 0.3),
+            inset 0 -2px 4px rgba(0, 100, 0, 0.4);
+        animation: led-blink 1.4s ease-in-out infinite;
+        vertical-align: middle;
+    }
+    @keyframes led-blink {
+        0%, 100% { opacity: 1; box-shadow: 0 0 6px 2px #00ff00, 0 0 14px 4px rgba(0,255,0,0.6), 0 0 28px 8px rgba(0,255,0,0.3), inset 0 -2px 4px rgba(0,100,0,0.4); }
+        50%       { opacity: 0.45; box-shadow: 0 0 3px 1px #00ff00, 0 0 6px 2px rgba(0,255,0,0.3), inset 0 -2px 4px rgba(0,100,0,0.4); }
+    }
+    .led-off {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #666, #444 60%, #333);
+        box-shadow: inset 0 -1px 3px rgba(0,0,0,0.5);
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-warning pb-2">
@@ -24,155 +57,161 @@
 
     <ul class="nav nav-tabs nav-justified border-warning mb-4" id="mdTab" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link bg-dark text-white active border-warning border-bottom-0" id="employees-tab" data-bs-toggle="tab" data-bs-target="#employees" type="button" role="tab">
-                <i class="fas fa-users me-2"></i> EMPLOYEES ACCESS REQUESTS
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link bg-dark text-white border-warning border-bottom-0" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll" type="button" role="tab">
-                <i class="fas fa-money-check-alt me-2"></i> PAYROLL ACCESS REQUESTS
+            <button class="nav-link active bg-dark text-warning border-warning border-bottom-0 fw-bold" id="acl-tab" data-bs-toggle="tab" data-bs-target="#acl" type="button" role="tab">
+                <i class="fas fa-user-shield me-2"></i> ACCESS CONTROL (ACL)
             </button>
         </li>
     </ul>
 
     <div class="tab-content" id="mdTabContent">
-        <!-- Employees Tab -->
-        <div class="tab-pane fade show active" id="employees" role="tabpanel">
-            <div class="card bg-dark text-white border-secondary mb-4 shadow">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-dark table-hover mb-0">
-                            <thead class="text-warning text-uppercase" style="border-bottom: 2px solid #ffc107;">
-                                <tr>
-                                    <th>Time Logged</th>
-                                    <th>Authorized Personnel</th>
-                                    <th>Status</th>
-                                    <th>Generated OTP</th>
-                                    <th class="text-end">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for req in employees_reqs %}
-                                <tr>
-                                    <td class="align-middle text-white-50">{{ req.request_time.strftime('%d %b %Y, %H:%M:%S') }}</td>
-                                    <td class="align-middle fw-bold">{{ req.requester_name }}</td>
-                                    <td class="align-middle">
-                                        {% if req.status == 'Pending' %}
-                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Pending</span>
-                                        {% elif req.status == 'Approved' %}
-                                            <span class="badge bg-success"><i class="fas fa-check"></i> Approved</span>
+        <!-- ACL Management Tab -->
+        <div class="tab-pane fade show active" id="acl" role="tabpanel">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-dark text-white border-warning shadow mb-4">
+                        <div class="card-header border-warning">
+                            <h5 class="m-0 text-warning"><i class="fas fa-user-plus me-2"></i> Add Authorization</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('hr.manage_authorizations') }}" method="POST">
+                                <input type="hidden" name="action" value="add">
+                                <div class="mb-3">
+                                    <label class="form-label text-white-50">Select Employee</label>
+                                    <select name="employee_id" class="form-select bg-black text-white border-secondary" required>
+                                        <option value="">-- Choose Employee --</option>
+                                        {% for emp in all_employees %}
+                                        <option value="{{ emp.employee_id }}">{{ emp.first_name }} {{ emp.last_name }} ({{ emp.employment_number }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-white-50">Authorized Page</label>
+                                    <select name="page_name" class="form-select bg-black text-white border-secondary" required>
+                                        <option value="Employees">Employees Page</option>
+                                        <option value="Payroll">Payroll Page</option>
+                                        <option value="Payslip">Payslip Page</option>
+                                        <option value="Accounts">Accounts Page</option>
+                                        <option value="Salary_OTP">Salary Payments Page</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100 fw-bold">GRANT PERMISSION</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card bg-dark text-white border-secondary shadow mb-4">
+                        <div class="card-header border-secondary">
+                            <h5 class="m-0"><i class="fas fa-list-check me-2"></i> Authorized Personnel List</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover mb-0">
+                                    <thead class="text-white-50 text-uppercase small">
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Dept</th>
+                                            <th>Authorized Page</th>
+                                            <th>Secret Code</th>
+                                            <th>Date Granted</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for auth in authorizations %}
+                                        <tr>
+                                            <td class="align-middle fw-bold text-warning">{{ auth.employee.first_name }} {{ auth.employee.last_name }}</td>
+                                            <td class="align-middle text-white-50 small">{{ auth.employee.department }}</td>
+                                            <td class="align-middle">
+                                                <span class="badge border border-info text-info">{{ auth.page_name }}</span>
+                                            </td>
+                                            <td class="align-middle fw-bold text-info">
+                                                <span class="px-2 py-1 bg-black rounded border border-info">{{ auth.secret_code }}</span>
+                                            </td>
+                                            <td class="align-middle text-white-50 small">{{ auth.created_at.strftime('%d/%m/%Y') }}</td>
+                                            <td class="align-middle text-end">
+                                                <form action="{{ url_for('hr.manage_authorizations') }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="action" value="remove">
+                                                    <input type="hidden" name="auth_id" value="{{ auth.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Revoke this access?');"><i class="fas fa-user-minus"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
                                         {% else %}
-                                            <span class="badge bg-danger"><i class="fas fa-times"></i> Rejected</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="align-middle">
-                                        {% if req.otp_code %}
-                                            <code class="fs-4 text-info user-select-all px-2 bg-black rounded border border-info">{{ req.otp_code }}</code>
-                                            {% if req.is_used %}
-                                                <br><small class="text-success"><i class="fas fa-lock-open"></i> Consumed</small>
-                                            {% else %}
-                                                <br><small class="text-white-50">Expires: {{ req.expires_at.strftime('%H:%M') }}</small>
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="text-white-50 fst-italic">Pending Generation</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="align-middle text-end">
-                                        {% if req.status == 'Pending' %}
-                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
-                                                <input type="hidden" name="action" value="approve">
-                                                <button type="submit" class="btn btn-sm btn-success fw-bold text-uppercase">Approve</button>
-                                            </form>
-                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline ms-1">
-                                                <input type="hidden" name="action" value="reject">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
-                                            </form>
-                                        {% else %}
-                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
-                                                <input type="hidden" name="action" value="delete">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger text-uppercase fw-bold" onclick="return confirm('Remove this request log?');"><i class="fas fa-trash-alt me-1"></i> Delete</button>
-                                            </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-white-50">No pending requests for Employees module.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        <tr>
+                                            <td colspan="5" class="text-center py-5 text-white-50 fst-italic">No employees currently in the Access Control List.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Payroll Tab -->
-        <div class="tab-pane fade" id="payroll" role="tabpanel">
-            <div class="card bg-dark text-white border-secondary mb-4 shadow">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-dark table-hover mb-0">
-                            <thead class="text-success text-uppercase" style="border-bottom: 2px solid #198754;">
-                                <tr>
-                                    <th>Time Logged</th>
-                                    <th>Authorized Personnel</th>
-                                    <th>Status</th>
-                                    <th>Generated OTP</th>
-                                    <th class="text-end">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for req in payroll_reqs %}
-                                <tr>
-                                    <td class="align-middle text-white-50">{{ req.request_time.strftime('%d %b %Y, %H:%M:%S') }}</td>
-                                    <td class="align-middle fw-bold">{{ req.requester_name }}</td>
-                                    <td class="align-middle">
-                                        {% if req.status == 'Pending' %}
-                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Pending</span>
-                                        {% elif req.status == 'Approved' %}
-                                            <span class="badge bg-success"><i class="fas fa-check"></i> Approved</span>
-                                        {% else %}
-                                            <span class="badge bg-danger"><i class="fas fa-times"></i> Rejected</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="align-middle">
-                                        {% if req.otp_code %}
-                                            <code class="fs-4 text-warning user-select-all px-2 bg-black rounded border border-warning">{{ req.otp_code }}</code>
-                                            {% if req.is_used %}
-                                                <br><small class="text-success"><i class="fas fa-lock-open"></i> Consumed</small>
+        <!-- System Access Logs Row -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-dark text-white border-info shadow mb-4">
+                    <div class="card-header border-info d-flex justify-content-between align-items-center">
+                        <h5 class="m-0 text-info"><i class="fas fa-satellite-dish me-2"></i> System Access Logs (Real-Time)</h5>
+                        {% if access_logs %}
+                        <form action="{{ url_for('hr.clear_all_access_logs') }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Clear ALL access logs? This cannot be undone.');"><i class="fas fa-trash-alt me-1"></i> Clear All Logs</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0">
+                                <thead class="text-white-50 text-uppercase small" style="border-bottom: 2px solid #0dcaf0;">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Personnel Name</th>
+                                        <th>Module Accessed</th>
+                                        <th>Time In</th>
+                                        <th>Time Out</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in access_logs %}
+                                    <tr>
+                                        <td class="align-middle text-center" style="width: 100px;">
+                                            {% if log.is_active %}
+                                                <span class="led-green"></span>
+                                                <span class="text-success small fw-bold ms-1">Online</span>
                                             {% else %}
-                                                <br><small class="text-white-50">Expires: {{ req.expires_at.strftime('%H:%M') }}</small>
+                                                <span class="led-off"></span>
+                                                <span class="text-secondary small ms-1">Offline</span>
                                             {% endif %}
-                                        {% else %}
-                                            <span class="text-white-50 fst-italic">Pending Generation</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="align-middle text-end">
-                                        {% if req.status == 'Pending' %}
-                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
-                                                <input type="hidden" name="action" value="approve">
-                                                <button type="submit" class="btn btn-sm btn-success fw-bold text-uppercase">Approve</button>
+                                        </td>
+                                        <td class="align-middle fw-bold text-white">{{ log.personnel_name }}</td>
+                                        <td class="align-middle"><span class="badge border border-info text-info">{{ log.module }}</span></td>
+                                        <td class="align-middle text-white-50">{{ log.time_in.strftime('%d %b %Y, %H:%M:%S') }}</td>
+                                        <td class="align-middle text-white-50">
+                                            {% if log.time_out %}
+                                                {{ log.time_out.strftime('%d %b %Y, %H:%M:%S') }}
+                                            {% else %}
+                                                <span class="fst-italic text-success">Active Session</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle text-end">
+                                            <form action="{{ url_for('hr.delete_access_log', log_id=log.id) }}" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this log entry?');"><i class="fas fa-trash-alt"></i></button>
                                             </form>
-                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline ms-1">
-                                                <input type="hidden" name="action" value="reject">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
-                                            </form>
-                                        {% else %}
-                                            <form action="{{ url_for('hr.approve_md_request', req_id=req.id) }}" method="POST" class="d-inline">
-                                                <input type="hidden" name="action" value="delete">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger text-uppercase fw-bold" onclick="return confirm('Remove this request log?');"><i class="fas fa-trash-alt me-1"></i> Delete</button>
-                                            </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-white-50">No pending requests for Payroll module.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-white-50 fst-italic">No access logs available.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,6 +221,25 @@
 
 <!-- Auto-refresh script for Real-time Updates -->
 <script>
+    // Restore the active tab from localStorage if it exists
+    document.addEventListener("DOMContentLoaded", function() {
+        var activeTabId = localStorage.getItem('mdDashboardActiveTab');
+        if (activeTabId) {
+            var tabToActivate = new bootstrap.Tab(document.querySelector('#' + activeTabId));
+            if (tabToActivate) {
+                tabToActivate.show();
+            }
+        }
+        
+        // Listen for tab changes and save the new active tab's ID to localStorage
+        var tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabEls.forEach(function(tabEl) {
+            tabEl.addEventListener('shown.bs.tab', function (event) {
+                localStorage.setItem('mdDashboardActiveTab', event.target.id);
+            });
+        });
+    });
+
     // Refresh the page every 15 seconds to check for new requests
     setTimeout(function() {
         window.location.reload(1);

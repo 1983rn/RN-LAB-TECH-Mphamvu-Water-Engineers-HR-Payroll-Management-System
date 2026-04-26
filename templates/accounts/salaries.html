@@ -72,39 +72,65 @@
         </div>
     </div>
 
-    <!-- Accounts Personnel Login / OTP Request -->
+    <!-- Always-visible actions (no auth required) -->
+    <div class="d-flex justify-content-end gap-2 mb-3">
+        <a href="{{ url_for('payroll.download_payroll_report', month=current_month) }}" class="btn btn-outline-primary">
+            <i class="fas fa-download me-1"></i> Dept PDF
+        </a>
+        {% if session.get('accounts_authorized') %}
+        <a href="{{ url_for('accounts.lock_payroll') }}" class="btn btn-outline-danger">
+            <i class="fas fa-lock me-1"></i> Lock Payroll
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Accounts Personnel Login -->
     {% if not session.get('accounts_authorized') %}
     <div class="otp-gate">
         <i class="fas fa-lock fa-3x text-gold mb-3"></i>
         <h2>SECURITY GATEWAY</h2>
-        <p class="text-white-50 mb-4">Accounts Personnel identity verification required to proceed with payments.</p>
+        <p class="text-white-50 mb-4" id="acct-hint">Accounts Personnel identity verification required to proceed with payments.</p>
         
         <form action="{{ url_for('accounts.request_otp') }}" method="POST">
-            <input type="hidden" name="batch_id" value="1"> <!-- Simulated Batch ID -->
+            <input type="hidden" name="batch_id" value="1">
             <div class="mb-3 text-start">
                 <label class="form-label small text-uppercase text-white-50">Personnel Name</label>
-                <input type="text" name="personnel_name" class="form-control bg-dark text-white border-secondary" placeholder="Enter Full Name" required>
+                <input type="text" id="acct_name" name="personnel_name" class="form-control bg-dark text-white border-secondary" placeholder="Enter Full Name" required>
+            </div>
+            <div class="mb-3 text-start">
+                <label class="form-label small text-uppercase text-white-50" id="acct_code_label">4-Digit Secret Code</label>
+                <input type="password" id="acct_code" name="secret_code" class="form-control bg-dark text-white border-secondary" placeholder="****" maxlength="4" required>
             </div>
             <div class="mb-4 text-start">
-                <label class="form-label small text-uppercase text-white-50">Security Request</label>
-                <button type="submit" class="btn btn-warning w-100 fw-bold py-2">
-                    <i class="fas fa-key me-2"></i>REQUEST OTP FROM MD
+                <button type="submit" class="btn btn-warning w-100 fw-bold py-2 mt-2 fs-5">
+                    <i class="fas fa-unlock me-2"></i>VERIFY & UNLOCK PAYROLL
                 </button>
             </div>
         </form>
-        
-        <hr class="border-secondary opacity-25">
-        
-        <form action="{{ url_for('accounts.verify_otp') }}" method="POST">
-            <div class="mb-3 text-start">
-                <label class="form-label small text-uppercase text-white-50">Input OTP Code</label>
-                <input type="text" name="otp_code" class="form-control bg-transparent text-white border-warning" placeholder="6-Digit Code from MD" style="letter-spacing: 5px; text-align: center; font-size: 1.5rem;" required>
-            </div>
-            <button type="submit" class="btn btn-outline-warning w-100 fw-bold">
-                VERIFY & UNLOCK PAYROLL
-            </button>
-        </form>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('acct_name');
+        const codeInput = document.getElementById('acct_code');
+        const codeLabel = document.getElementById('acct_code_label');
+        const hint = document.getElementById('acct-hint');
+        if (nameInput && codeInput) {
+            nameInput.addEventListener('input', function() {
+                if (this.value.trim().toUpperCase() === 'ULANDA DUWE') {
+                    codeInput.removeAttribute('maxlength');
+                    codeInput.setAttribute('placeholder', 'Enter MD Authentication Key');
+                    codeLabel.textContent = 'MD Authentication Key';
+                    hint.innerHTML = '<i class="fas fa-shield-alt me-1"></i> MD identified. Enter your authentication key to proceed.';
+                } else {
+                    codeInput.setAttribute('maxlength', '4');
+                    codeInput.setAttribute('placeholder', '****');
+                    codeLabel.textContent = '4-Digit Secret Code';
+                    hint.textContent = 'Accounts Personnel identity verification required to proceed with payments.';
+                }
+            });
+        }
+    });
+    </script>
     {% else %}
     
     <!-- Categorized Payroll View -->
@@ -118,10 +144,7 @@
                         <small class="text-muted">{{ records|length }} Staff Members</small>
                     </div>
                     <div>
-                        <span class="status-badge status-approved me-2">Verified by SHR</span>
-                        <a href="{{ url_for('payroll.download_payroll_report', month=current_month) }}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-download me-1"></i> Dept PDF
-                        </a>
+                        <span class="status-badge status-approved">Verified by SHR</span>
                     </div>
                 </div>
                 <div class="table-responsive p-0">

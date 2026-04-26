@@ -77,8 +77,8 @@
 
             <div class="row justify-content-center">
                 <div class="col-md-10 mb-3">
-                    <label for="absentee_deduction" class="form-label">Absenteeism Penalty (MWK)</label>
-                    <input type="number" class="form-control currency-input" id="absentee_deduction" name="absentee_deduction" min="0" step="0.01" value="0" readonly style="background-color: #f8f9fa;">
+                    <label for="absentee_deduction" class="form-label">Absenteeism Penalty (MWK) <small class="text-muted">— Enter manually if applicable</small></label>
+                    <input type="number" class="form-control currency-input" id="absentee_deduction" name="absentee_deduction" min="0" step="0.01" value="0" placeholder="Enter penalty amount if any">
                 </div>
             </div>
 
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     basicSalaryInput.value = data.basic_salary;
                     loanDeductionInput.value = data.loan_deduction;
-                    absenteeDeductionInput.value = data.absentee_deduction;
+                    // Absenteeism penalty is now manual — do NOT auto-populate
                     calculateSalaries();
                 })
                 .catch(err => console.error("Error fetching deductions:", err));
@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
     allowancesInput.addEventListener('input', fetchDeductions);
     basicSalaryInput.addEventListener('input', calculateSalaries);
     taxesInput.addEventListener('input', calculateSalaries);
+    absenteeDeductionInput.addEventListener('input', calculateSalaries);
     payeeOverride.addEventListener('change', function() {
         taxesInput.readOnly = !this.checked;
         if (!this.checked) calculateSalaries();

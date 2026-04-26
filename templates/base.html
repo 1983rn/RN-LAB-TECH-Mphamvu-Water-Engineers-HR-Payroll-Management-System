@@ -51,15 +51,15 @@
                         </a>
                     </li>
                     <li class="nav-menu-item">
-                        <a href="{{ url_for('payroll.payroll_list') }}" class="nav-menu-link {% if request.endpoint == 'payroll.payroll_list' %}active{% endif %}">
+                        <a href="{{ url_for('payroll.payroll_list') }}" class="nav-menu-link {% if request.endpoint == 'payroll.payroll_list' or request.endpoint == 'payroll.process_payroll' %}active{% endif %}">
                             <i class="fas fa-money-check-alt"></i>
-                            <span class="nav-text">Individual Pay</span>
+                            <span class="nav-text">Payroll</span>
                         </a>
                     </li>
                     <li class="nav-menu-item">
-                        <a href="{{ url_for('payroll.list_batches') }}" class="nav-menu-link {% if request.endpoint == 'payroll.list_batches' %}active{% endif %}">
-                            <i class="fas fa-layer-group"></i>
-                            <span class="nav-text">Payroll Batches</span>
+                        <a href="{{ url_for('payroll.payslip_center') }}" class="nav-menu-link {% if request.endpoint == 'payroll.payslip_center' or request.endpoint == 'payroll.view_payslip' %}active{% endif %}">
+                            <i class="fas fa-file-invoice"></i>
+                            <span class="nav-text">Payslip</span>
                         </a>
                     </li>
                     <li class="nav-menu-item">

@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Payslip Center - MPHAMVU WATER ENGINEERS{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa !important;
+    }
+    .main-wrapper, .main-content {
+        background: transparent !important;
+    }
+
+    /* ── Filter Card ── */
+    .filter-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(21, 101, 192, 0.12);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        padding: 24px 28px;
+        margin-bottom: 20px;
+    }
+    .filter-card .form-label {
+        font-weight: 600;
+        color: #1a237e;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Page Title ── */
+    .page-title {
+        color: #1a237e !important;
+        font-weight: 800;
+        font-family: 'Georgia', serif;
+        font-size: 1.6rem !important;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+    }
+
+    /* ── Payslip Result Cards ── */
+    .payslip-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid rgba(21, 101, 192, 0.08);
+        box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+    }
+    .payslip-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(21, 101, 192, 0.12);
+    }
+    .payslip-card .card-header-strip {
+        background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+        padding: 12px 18px;
+        color: #fff;
+    }
+    .payslip-card .card-header-strip h6 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .payslip-card .card-header-strip small {
+        opacity: 0.85;
+    }
+    .payslip-card .card-body {
+        padding: 16px 18px !important;
+        background: #fff !important;
+        border: none !important;
+    }
+    .payslip-detail {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px dashed rgba(0,0,0,0.08);
+        font-size: 0.85rem;
+    }
+    .payslip-detail:last-child {
+        border-bottom: none;
+    }
+    .payslip-detail .label {
+        color: #546e7a;
+        font-weight: 500;
+    }
+    .payslip-detail .value {
+        color: #1a237e;
+        font-weight: 700;
+    }
+    .payslip-detail .value.net {
+        color: #2e7d32;
+        font-size: 1rem;
+    }
+    .payslip-detail .value.deduction {
+        color: #c62828;
+    }
+
+    .payslip-actions {
+        display: flex;
+        gap: 8px;
+        padding: 12px 18px;
+        background: #f8f9ff;
+        border-top: 1px solid rgba(21, 101, 192, 0.06);
+    }
+    .payslip-actions .btn {
+        flex: 1;
+        font-weight: 600;
+        font-size: 0.82rem;
+        border-radius: 8px;
+        padding: 8px 12px;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        color: #b0bec5;
+        margin-bottom: 16px;
+    }
+    .empty-state h4 {
+        color: #546e7a;
+        font-weight: 600;
+    }
+    .empty-state p {
+        color: #78909c;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* ── Status badge ── */
+    .status-pill {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .status-processed { background: #d1e7dd; color: #0f5132; }
+    .status-pending { background: #fff3cd; color: #664d03; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="page-title mb-0"><i class="fas fa-file-invoice me-2"></i>Payslip Center</h2>
+            <p class="text-muted mb-0 small">Select an employee and month to view or download their payslip.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('payroll.payroll_list') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-arrow-left me-1"></i>Back to Payroll
+            </a>
+            <a href="{{ url_for('hr.gateway_logout', module='Payslip') }}" class="btn btn-outline-danger">
+                <i class="fas fa-sign-out-alt me-1"></i>Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- ═══ Filter Section ═══ -->
+    <div class="filter-card">
+        <form method="GET" action="{{ url_for('payroll.payslip_center') }}" id="filterForm">
+            <div class="row align-items-end">
+                <div class="col-md-5 mb-2">
+                    <label for="employee_id" class="form-label"><i class="fas fa-user me-1"></i>Employee</label>
+                    <select class="form-select" id="employee_id" name="employee_id">
+                        <option value="">— All Employees —</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.employee_id }}" {% if selected_employee == emp.employee_id|string %}selected{% endif %}>
+                            {{ emp.first_name }} {{ emp.last_name }} — {{ emp.employment_number }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label for="month" class="form-label"><i class="fas fa-calendar-alt me-1"></i>Payroll Month</label>
+                    <input type="month" class="form-control" id="month" name="month" value="{{ selected_month }}">
+                </div>
+                <div class="col-md-3 mb-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="fas fa-search me-1"></i>Find Payslips
+                    </button>
+                    <a href="{{ url_for('payroll.payslip_center') }}" class="btn btn-outline-secondary" title="Clear filters">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ═══ Results Count ═══ -->
+    {% if payroll_records %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0">
+            <i class="fas fa-list me-1"></i>
+            <strong>{{ payroll_records|length }}</strong> payslip{{ 's' if payroll_records|length != 1 else '' }} found
+            {% if selected_employee or selected_month %}
+                <span class="ms-2 badge bg-info text-dark">Filtered</span>
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Payslip Cards Grid ═══ -->
+    {% if payroll_records %}
+    <div class="row">
+        {% for payroll in payroll_records %}
+        <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+            <div class="payslip-card">
+                <!-- Card Header -->
+                <div class="card-header-strip d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</h6>
+                        <small>{{ payroll.employee.employment_number }} · {{ payroll.employee.department or 'N/A' }}</small>
+                    </div>
+                    <span class="status-pill status-{{ 'processed' if payroll.status == 'Processed' else 'pending' }}">
+                        {{ payroll.status }}
+                    </span>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body">
+                    <div class="payslip-detail">
+                        <span class="label">Payroll Month</span>
+                        <span class="value">{{ payroll.payroll_month }}</span>
+                    </div>
+                    <div class="payslip-detail">
+                        <span class="label">Gross Salary</span>
+                        <span class="value">MK {{ "{:,.2f}".format(payroll.basic_salary + payroll.allowances) }}</span>
+                    </div>
+                    {% if payroll.allowances > 0 %}
+                    <div class="payslip-detail">
+                        <span class="label">Allowances</span>
+                        <span class="value" style="color: #2e7d32;">+MK {{ "{:,.2f}".format(payroll.allowances) }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="payslip-detail">
+                        <span class="label">PAYEE Tax</span>
+                        <span class="value deduction">-MK {{ "{:,.2f}".format(payroll.payee_tax) }}</span>
+                    </div>
+                    <div class="payslip-detail">
+                        <span class="label">Loan Deductions</span>
+                        <span class="value deduction">-MK {{ "{:,.2f}".format(payroll.loan_deduction) }}</span>
+                    </div>
+                    {% if payroll.absentee_deduction > 0 %}
+                    <div class="payslip-detail">
+                        <span class="label">Absenteeism</span>
+                        <span class="value deduction">-MK {{ "{:,.2f}".format(payroll.absentee_deduction) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if payroll.deductions > 0 %}
+                    <div class="payslip-detail">
+                        <span class="label">Other Deductions</span>
+                        <span class="value deduction">-MK {{ "{:,.2f}".format(payroll.deductions) }}</span>
+                    </div>
+                    {% endif %}
+                    <hr class="my-2">
+                    <div class="payslip-detail">
+                        <span class="label" style="font-size: 0.95rem;"><strong>NET SALARY</strong></span>
+                        <span class="value net"><strong>MK {{ "{:,.2f}".format(payroll.net_salary) }}</strong></span>
+                    </div>
+                </div>
+
+                <!-- Card Actions -->
+                <div class="payslip-actions">
+                    <a href="{{ url_for('payroll.view_payslip', payroll_id=payroll.payroll_id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View
+                    </a>
+                    <a href="{{ url_for('payroll.download_payslip_pdf', payroll_id=payroll.payroll_id) }}" class="btn btn-success">
+                        <i class="fas fa-file-pdf me-1"></i>Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- ═══ Empty State ═══ -->
+    <div class="empty-state">
+        {% if selected_employee or selected_month %}
+            <i class="fas fa-search"></i>
+            <h4>No payslips found</h4>
+            <p>No payroll records match the selected filters. Try selecting a different employee or month.</p>
+            <a href="{{ url_for('payroll.payslip_center') }}" class="btn btn-outline-primary mt-3">
+                <i class="fas fa-undo me-1"></i>Clear Filters
+            </a>
+        {% else %}
+            <i class="fas fa-file-invoice"></i>
+            <h4>Select an Employee</h4>
+            <p>Use the filters above to find an employee's payslip, or browse all processed payroll records.</p>
+            <button type="button" class="btn btn-primary mt-3" onclick="document.getElementById('employee_id').focus();">
+                <i class="fas fa-search me-1"></i>Start Searching
+            </button>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -28,6 +28,7 @@ class NumberedCanvas(canvas.Canvas):
     def __init__(self, *args, **kwargs):
         canvas.Canvas.__init__(self, *args, **kwargs)
         self._saved_page_states = []
+        self.qr_path = None
 
     def showPage(self):
         self._saved_page_states.append(dict(self.__dict__))
@@ -39,6 +40,7 @@ class NumberedCanvas(canvas.Canvas):
             self.__dict__.update(state)
             self.draw_page_number(num_pages)
             self.draw_watermark()
+            self.draw_qr_code_fixed()
             canvas.Canvas.showPage(self)
         canvas.Canvas.save(self)
 
@@ -47,6 +49,15 @@ class NumberedCanvas(canvas.Canvas):
         self.setFillColor(colors.grey)
         page_num = f"Page {self._pageNumber} of {page_count}"
         self.drawRightString(A4[0] - 50, 30, page_num)
+
+    def draw_qr_code_fixed(self):
+        if self.qr_path and os.path.exists(self.qr_path):
+            qr_size = 0.8 * inch
+            # Draw at bottom right, slightly above the footer
+            self.drawImage(self.qr_path, A4[0] - qr_size - 40, 45, width=qr_size, height=qr_size)
+            self.setFont("Helvetica-Bold", 6)
+            self.setFillColor(colors.darkblue)
+            self.drawCentredString(A4[0] - (qr_size/2) - 40, 40, "SCAN TO VERIFY")
 
     def draw_watermark(self):
         self.saveState()
@@ -61,9 +72,13 @@ def create_numbered_doc(buffer, pagesize=A4, **kwargs):
     """Create a document with page numbering and watermark"""
     return SimpleDocTemplate(buffer, pagesize=pagesize, **kwargs)
 
-def build_pdf_with_numbering(doc, story):
-    """Build PDF with custom canvas for numbering"""
-    doc.build(story, canvasmaker=NumberedCanvas)
+def build_pdf_with_numbering(doc, story, qr_path=None):
+    """Build PDF with custom canvas for numbering and optional QR code"""
+    def canvas_wrapper(*args, **kwargs):
+        c = NumberedCanvas(*args, **kwargs)
+        c.qr_path = qr_path
+        return c
+    doc.build(story, canvasmaker=canvas_wrapper)
 
 def create_company_header(layout_mode='normal'):
     """Create a company header with the exact image"""
@@ -194,12 +209,14 @@ def add_signature_block(story, signer_name="Ulanda Duwe", signer_title="Managing
     story.append(Paragraph(f"({signer_title})", ParagraphStyle('SignerTitle', parent=styles['Normal'], fontSize=8.5 if layout_mode == 'dense' else 9.5, leading=10 if layout_mode == 'dense' else 13)))
     return story
 
-def generate_qr_code(doc_type, doc_number, client_name, amount=None):
+def generate_qr_code(doc_type, doc_number, client_name, amount=None, month=None):
     """Generate QR code for document verification"""
     qr_dir = os.path.join('static', 'qrcodes')
     os.makedirs(qr_dir, exist_ok=True)
     
     verification_data = f"MPHAMVU WATER ENGINEERS\nDocument: {doc_type}\nNumber: {doc_number}\nClient: {client_name}"
+    if month:
+        verification_data += f"\nMonth: {month}"
     if amount:
         verification_data += f"\nAmount: MWK {amount:,.2f}"
     verification_data += "\nStatus: Valid"
@@ -322,9 +339,10 @@ def add_hash_to_story(story, doc_hash):
     return story
 
 def generate_document_number(doc_type, doc_id, created_date):
-    """Generate official document number: DOC-YYYY-NNN"""
+    """Generate official document number: DOC-YYYY-MM-NNN"""
     year = created_date.year
-    return f"{doc_type}-{year}-{doc_id:03d}"
+    month = created_date.strftime('%m')
+    return f"{doc_type}-{year}-{month}-{doc_id:03d}"
 
 def add_pdf_footer(story, layout_mode='normal'):
     """Add developer footer to PDF"""

@@ -24,48 +24,24 @@
                 {% endif %}
             {% endwith %}
 
-            <ul class="nav nav-tabs nav-justified mb-4 border-secondary" id="gatewayTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link bg-dark text-white border-secondary active" id="request-tab" data-bs-toggle="tab" data-bs-target="#request" type="button" role="tab">1. Request Access</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link bg-dark text-white border-secondary" id="verify-tab" data-bs-toggle="tab" data-bs-target="#verify" type="button" role="tab">2. Enter OTP</button>
-                </li>
-            </ul>
-            
-            <div class="tab-content" id="gatewayTabContent">
-                <!-- Request Access Tab -->
-                <div class="tab-pane fade show active" id="request" role="tabpanel">
-                    <form action="{{ url_for('hr.request_access') }}" method="POST">
-                        <input type="hidden" name="module" value="{{ module }}">
-                        <div class="mb-4">
-                            <label class="form-label text-white-50">Authorized Personnel Name</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" name="requester_name" placeholder="E.g. John Doe, HR Manager" required autocomplete="off">
-                            <div class="form-text text-white-50">Specify your name for MD approval.</div>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-info text-dark fw-bold text-uppercase"><i class="fas fa-paper-plane me-2"></i> Send Request to MD</button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Enter OTP Tab -->
-                <div class="tab-pane fade" id="verify" role="tabpanel">
-                    <div class="alert alert-warning text-dark mb-4">
-                        <i class="fas fa-info-circle me-1"></i> Ensure you have received the 6-character OTP from the Managing Director.
-                    </div>
-                    <form action="{{ url_for('hr.verify_otp') }}" method="POST">
-                        <input type="hidden" name="module" value="{{ module }}">
-                        <div class="mb-4 text-center">
-                            <label class="form-label text-warning mb-3 fw-bold">ENTER OTP PASSCODE</label>
-                            <input type="text" class="form-control form-control-lg bg-black text-warning border-warning text-center fw-bold fs-3 mx-auto" style="max-width: 200px; letter-spacing: 5px;" name="otp_code" required autocomplete="off" maxlength="10">
-                        </div>
-                        <div class="d-grid mt-4">
-                            <button type="submit" class="btn btn-warning text-dark fw-bold text-uppercase fs-5"><i class="fas fa-unlock me-2"></i> Verify & Unlock</button>
-                        </div>
-                    </form>
-                </div>
+            <div class="alert alert-info text-dark mb-4" id="gateway-hint">
+                <i class="fas fa-info-circle me-1"></i> Enter your authorized name and your permanent 4-digit Secret Code to access this module.
             </div>
+
+            <form action="{{ url_for('hr.request_access') }}" method="POST">
+                <input type="hidden" name="module" value="{{ module }}">
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Authorized Personnel Name</label>
+                    <input type="text" class="form-control bg-dark text-white border-secondary" id="gateway_name" name="requester_name" placeholder="E.g. John Doe" required autocomplete="off">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-info" id="code_label">4-Digit Secret Code</label>
+                    <input type="password" class="form-control bg-dark text-info border-info text-center fw-bold" id="gateway_code" name="secret_code" placeholder="XXXX" maxlength="4" required autocomplete="off">
+                </div>
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-info text-dark fw-bold text-uppercase fs-5"><i class="fas fa-unlock me-2"></i> Verify Identity & Enter</button>
+                </div>
+            </form>
             
             <div class="text-center mt-5">
                 <a href="{{ url_for('hr.dashboard') }}" class="btn btn-link text-white-50 text-decoration-none border-bottom border-secondary pb-1">Return to HR Dashboard</a>
@@ -73,4 +49,30 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('gateway_name');
+    const codeInput = document.getElementById('gateway_code');
+    const codeLabel = document.getElementById('code_label');
+    const hint = document.getElementById('gateway-hint');
+
+    nameInput.addEventListener('input', function() {
+        const val = this.value.trim().toUpperCase();
+        if (val === 'ULANDA DUWE') {
+            codeInput.removeAttribute('maxlength');
+            codeInput.setAttribute('placeholder', 'Enter MD Authentication Key');
+            codeLabel.textContent = 'MD Authentication Key';
+            hint.innerHTML = '<i class="fas fa-shield-alt me-1"></i> MD identified. Enter your authentication key to proceed.';
+            hint.className = 'alert alert-warning text-dark mb-4';
+        } else {
+            codeInput.setAttribute('maxlength', '4');
+            codeInput.setAttribute('placeholder', 'XXXX');
+            codeLabel.textContent = '4-Digit Secret Code';
+            hint.innerHTML = '<i class="fas fa-info-circle me-1"></i> Enter your authorized name and your permanent 4-digit Secret Code to access this module.';
+            hint.className = 'alert alert-info text-dark mb-4';
+        }
+    });
+});
+</script>
 {% endblock %}

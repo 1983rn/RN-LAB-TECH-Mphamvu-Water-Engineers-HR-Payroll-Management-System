@@ -127,10 +127,13 @@
         <div class="d-flex justify-content-between align-items-center">
             <h2><i class="fas fa-money-check me-2"></i>Payroll Management</h2>
             <div class="d-flex align-items-center gap-2">
-                <div class="input-group" style="width: 300px;">
+                <div class="input-group" style="width: 400px;">
                     <input type="month" class="form-control" id="report_month">
                     <button class="btn btn-outline-success" onclick="downloadReport()" title="Download Payroll Report">
                         <i class="fas fa-file-pdf me-1"></i>Report
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="downloadBankSchedule()" title="Download Bank Payment Schedule">
+                        <i class="fas fa-university me-1"></i>Bank Schedule
                     </button>
                 </div>
                 <a href="{{ url_for('payroll.loan_management') }}" class="btn btn-outline-primary">
@@ -138,6 +141,9 @@
                 </a>
                 <a href="{{ url_for('payroll.process_payroll') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Process Payroll
+                </a>
+                <a href="{{ url_for('hr.gateway_logout', module='Payroll') }}" class="btn btn-danger ms-2">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
         </div>
@@ -155,6 +161,7 @@
                         <th>Employee</th>
                         <th>Emp. No.</th>
                         <th>Month</th>
+                        <th>Allowances (MK)</th>
                         <th>Gross (MK)</th>
                         <th>PAYEE (MK)</th>
                         <th>Loans (MK)</th>
@@ -175,6 +182,7 @@
                         </td>
                         <td class="text-nowrap">{{ payroll.employee.employment_number }}</td>
                         <td>{{ payroll.payroll_month }}</td>
+                        <td class="text-nowrap">{{ "{:,.2f}".format(payroll.allowances) }}</td>
                         <td class="text-nowrap">{{ "{:,.2f}".format(payroll.basic_salary + payroll.allowances) }}</td>
                         <td class="text-danger text-nowrap">{{ "{:,.2f}".format(payroll.payee_tax) }}</td>
                         <td class="text-danger text-nowrap">{{ "{:,.2f}".format(payroll.loan_deduction) }}</td>
@@ -222,6 +230,15 @@ function downloadReport() {
         return;
     }
     window.location.href = '/payroll/report/' + month;
+}
+
+function downloadBankSchedule() {
+    const month = document.getElementById('report_month').value;
+    if (!month) {
+        alert('Please select a payroll month first');
+        return;
+    }
+    window.location.href = '/payroll/bank-schedule/' + month;
 }
 </script>
 {% endblock %}

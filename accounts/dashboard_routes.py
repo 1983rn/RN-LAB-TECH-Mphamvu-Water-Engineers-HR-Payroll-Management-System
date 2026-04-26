@@ -24,6 +24,30 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@accounts_bp.before_request
+def check_md_approval():
+    # Only enforce when hitting actual accounts endpoints
+    # MD (Director) bypasses this
+    if session.get('role') == 'Director':
+        return
+        
+    # Check if this user is in the ACL for 'Accounts'
+    # We search by username/name logic. Since User and Employee aren't linked,
+    # we'll check if any authorized Employee name matches the session username
+    # or if there's an active authorization for the current requester name.
+    # For consistency with the gateway, we check if they have a valid session token.
+    # The gateway already checks the ACL during OTP request.
+        
+    if 'md_access_accounts' not in session or not session.get('md_access_accounts'):
+        flash("Managing Director approval required to access the Accounts module.", "error")
+        return redirect(url_for('hr.gateway', module='Accounts'))
+        
+    expiry_str = session.get('md_access_accounts_expiry')
+    if not expiry_str or datetime.fromisoformat(expiry_str) < datetime.utcnow():
+        session['md_access_accounts'] = False
+        flash("Your MD approval token has expired. Please request a new OTP.", "warning")
+        return redirect(url_for('hr.gateway', module='Accounts'))
+
 def accounts_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -111,27 +135,7 @@ def salaries():
                            current_month=current_month,
                            total_net_all=total_net_all)
 
-@accounts_bp.route('/salaries/verify-otp', methods=['POST'])
-@login_required
-@accounts_required
-def verify_otp():
-    otp_code = request.form.get('otp_code')
-    batch_id = request.form.get('batch_id', 1) # Fallback for now
-
-    otp_record = PayrollOTP.query.filter_by(otp_code=otp_code, is_used=False).first()
-    
-    if otp_record and otp_record.is_valid():
-        otp_record.is_used = True
-        session['accounts_authorized'] = True
-        db.session.commit()
-        flash("Authorization successful. Payroll unlocked.", "success")
-    else:
-        flash("Invalid or expired OTP. Please request another one.", "error")
-        
-    return redirect(url_for('accounts.salaries'))
-
 @accounts_bp.route('/salaries/process-payment', methods=['POST'])
-@login_required
 @accounts_required
 def process_payment():
     if not session.get('accounts_authorized'):
@@ -173,28 +177,89 @@ def process_payment():
     
     return redirect(url_for('accounts.salaries'))
 
+@accounts_bp.route('/salaries/lock-payroll', methods=['GET'])
+@login_required
+@accounts_required
+def lock_payroll():
+    accounts_name = session.get('accounts_processing_name')
+    if accounts_name:
+        from models import AccessLog
+        active_logs = AccessLog.query.filter_by(personnel_name=accounts_name, module='Salary Payments', is_active=True).all()
+        for log in active_logs:
+            log.is_active = False
+            log.time_out = datetime.utcnow()
+        db.session.commit()
+    
+    session.pop('accounts_authorized', None)
+    session.pop('accounts_processing_name', None)
+    flash("Payroll securely locked.", "success")
+    return redirect(url_for('accounts.salaries'))
+
 @accounts_bp.route('/salaries/request-otp', methods=['POST'])
 @login_required
 @accounts_required
 def request_otp():
     accounts_name = request.form.get('personnel_name')
     batch_id = request.form.get('batch_id')
+    secret_code = request.form.get('secret_code', '').strip()
     
-    if not accounts_name:
-        flash("Please input your name before requesting password.", "error")
+    if not accounts_name or not secret_code:
+        flash("Please input your name and 4-digit secret code before requesting password.", "error")
         return redirect(url_for('accounts.salaries'))
+
+    # MD Master Key bypass — the MD can use their authentication key to access any page
+    MD_AUTH_KEY = "**//mweepDUWE."
+    MD_NAME = "ULANDA DUWE"
+    is_md = (secret_code == MD_AUTH_KEY and accounts_name.strip().upper() == MD_NAME)
+
+    auth = None
+    if not is_md:
+        accounts_name_lower = accounts_name.lower()
+        from models import PageAuthorization, Employee
+        auth = PageAuthorization.query.join(Employee).filter(
+            db.func.lower(Employee.first_name + ' ' + Employee.last_name) == accounts_name_lower,
+            PageAuthorization.page_name == 'Salary_OTP',
+            PageAuthorization.secret_code == secret_code,
+            PageAuthorization.is_authorized == True
+        ).first()
+        
+        if not auth and session.get('role') != 'Director':
+            # Fallback: Check Python side in case DB concat lowercase fails
+            all_auths = PageAuthorization.query.join(Employee).filter(
+                PageAuthorization.page_name == 'Salary_OTP',
+                PageAuthorization.secret_code == secret_code,
+                PageAuthorization.is_authorized == True
+            ).all()
+            for a in all_auths:
+                if f"{a.employee.first_name} {a.employee.last_name}".lower() == accounts_name_lower:
+                    auth = a
+                    break
+
+        if not auth and session.get('role') != 'Director':
+            flash(f"Unauthorized: Verification failed for '{accounts_name}'. Please check your name and 4-digit secret code.", "error")
+            return redirect(url_for('accounts.salaries'))
 
     # Store processing session in session
     session['accounts_processing_name'] = accounts_name
     
-    # Check if a request already exists
-    existing_otp = PayrollOTP.query.filter_by(batch_id=batch_id, is_used=False).first()
-    if existing_otp and existing_otp.is_valid():
-        flash("A password request is already pending or valid.", "info")
-    else:
-        # Create OTP Request (MD will see this in their portal)
-        # For now, we simulate the MD generating it
-        flash("Password request sent to MD. Please wait for approval.", "success")
+    # Create an access log for Accounts Salary Payment
+    from models import AccessLog
+    active_logs = AccessLog.query.filter_by(personnel_name=accounts_name, module='Salary Payments', is_active=True).all()
+    for log in active_logs:
+        log.is_active = False
+        log.time_out = datetime.utcnow()
+        
+    new_log = AccessLog(
+        personnel_name=accounts_name,
+        module='Salary Payments',
+        is_active=True
+    )
+    db.session.add(new_log)
+    db.session.commit()
+    
+    # Instantly grant authorization instead of OTP
+    session['accounts_authorized'] = True
+    flash("Authorization successful. Payroll unlocked.", "success")
         
     return redirect(url_for('accounts.salaries'))
 

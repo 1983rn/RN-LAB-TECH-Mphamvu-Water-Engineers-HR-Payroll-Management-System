@@ -6,7 +6,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
-            <h2><i class="fas fa-file-invoice me-2"></i>Payslip</h2>
+            <h2><i class="fas fa-file-invoice me-2"></i>PAYSLIP - {{ month_display }}</h2>
             <div>
                 <a href="{{ url_for('payroll.download_payslip_pdf', payroll_id=payroll.payroll_id) }}" class="btn btn-success">
                     <i class="fas fa-download me-2"></i>Download PDF
@@ -23,7 +23,7 @@
     <div class="card-header bg-primary text-white">
         <h5 class="mb-0">Payslip Details</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body" style="position: relative; min-height: 500px;">
         <!-- Company Header -->
         <div class="text-center mb-4">
             <h3>MPHAMVU WATER ENGINEERS</h3>
@@ -132,9 +132,15 @@
             </div>
         </div>
         
+        <!-- QR Code - Bottom Right -->
+        <div style="position: absolute; bottom: 20px; right: 20px; text-align: center;">
+            <img src="{{ url_for('payroll.payroll_qr_code', payroll_id=payroll.payroll_id) }}" alt="QR Verification" style="width: 100px; height: 100px; border: 1px solid #eee; padding: 5px; background: white;">
+            <p class="small text-muted mt-1" style="font-size: 0.7rem; margin-bottom: 0;">SCAN TO VERIFY</p>
+        </div>
+
         <!-- Footer -->
-        <div class="text-center mt-4">
-            <p class="small text-muted">This is a computer-generated payslip and does not require a signature.</p>
+        <div class="mt-5">
+            <p class="small text-muted mb-1">This is a computer-generated payslip and does not require a signature.</p>
             <p class="small text-muted">Generated on: {{ payroll.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</p>
         </div>
     </div>

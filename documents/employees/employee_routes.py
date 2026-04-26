@@ -14,6 +14,10 @@ employee_bp = Blueprint('employees', __name__, url_prefix='/employees')
 @employee_bp.before_request
 def check_md_approval():
     # Only enforce when hitting actual employee endpoints (not static files)
+    # MD (Director) bypasses this
+    if session.get('role') == 'Director':
+        return
+        
     if 'md_access_employees' not in session or not session.get('md_access_employees'):
         flash("Managing Director approval required to access the Employees module.", "error")
         return redirect(url_for('hr.gateway', module='Employees'))
@@ -86,7 +90,11 @@ def add_employee():
                 date_hired=datetime.strptime(request.form['date_hired'], '%Y-%m-%d').date(),
                 phone=request.form.get('phone'),
                 email=request.form.get('email'),
-                address=request.form.get('address')
+                address=request.form.get('address'),
+                bank_name=request.form.get('bank_name'),
+                account_number=request.form.get('account_number'),
+                airtel_number=request.form.get('airtel_number'),
+                tnm_mpamba_number=request.form.get('tnm_mpamba_number')
             )
             
             # Handle photo upload (Check Base64 camera first, then fallback to File)
@@ -160,6 +168,10 @@ def edit_employee(employee_id):
             employee.email = request.form.get('email')
             employee.address = request.form.get('address')
             employee.status = request.form.get('status', 'Active')
+            employee.bank_name = request.form.get('bank_name')
+            employee.account_number = request.form.get('account_number')
+            employee.airtel_number = request.form.get('airtel_number')
+            employee.tnm_mpamba_number = request.form.get('tnm_mpamba_number')
             
             # Handle photo upload (Check Base64 camera first, then fallback to File)
             photo_path = None
@@ -223,6 +235,15 @@ def delete_employee(employee_id):
         if hasattr(employee, 'date_dismissed'):
             employee.date_dismissed = date.today()
             
+        # Close any active access logs for this employee
+        from models import AccessLog
+        from datetime import datetime
+        emp_name = f"{employee.first_name} {employee.last_name}"
+        active_logs = AccessLog.query.filter_by(personnel_name=emp_name, is_active=True).all()
+        for log in active_logs:
+            log.is_active = False
+            log.time_out = datetime.utcnow()
+
         record = DisciplinaryRecord(
             employee_id=employee_id,
             action_type='Deleted'
@@ -244,7 +265,14 @@ def hard_delete_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
     
     try:
-        from models import EmployeeLoan, Notification, DisciplinaryRecord, Payroll, Attendance
+        from models import EmployeeLoan, Notification, DisciplinaryRecord, Payroll, Attendance, AccessLog
+        
+        # Close any active access logs for this employee
+        emp_name = f"{employee.first_name} {employee.last_name}"
+        active_logs = AccessLog.query.filter_by(personnel_name=emp_name, is_active=True).all()
+        for log in active_logs:
+            log.is_active = False
+            log.time_out = datetime.utcnow()
         
         # Delete related records
         Payroll.query.filter_by(employee_id=employee_id).delete()

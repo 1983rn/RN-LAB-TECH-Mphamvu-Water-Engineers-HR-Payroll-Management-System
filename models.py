@@ -31,6 +31,10 @@ class Employee(db.Model):
     email = db.Column(db.String(100))
     address = db.Column(db.Text)
     photo_path = db.Column(db.String(255))
+    bank_name = db.Column(db.String(100))
+    account_number = db.Column(db.String(50))
+    airtel_number = db.Column(db.String(20))
+    tnm_mpamba_number = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('EMP'))
@@ -622,12 +626,34 @@ class MDApprovalRequest(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     requester_name = db.Column(db.String(100), nullable=False)
-    module = db.Column(db.String(50), nullable=False) # 'Employees' or 'Payroll'
+    module = db.Column(db.String(50), nullable=False) # 'Employees', 'Payroll', 'Payslip', 'Accounts'
     status = db.Column(db.String(20), default='Pending') # Pending, Approved, Rejected
     otp_code = db.Column(db.String(10))
     request_time = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime)
     is_used = db.Column(db.Boolean, default=False)
+
+class AccessLog(db.Model):
+    __tablename__ = 'access_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    personnel_name = db.Column(db.String(100), nullable=False)
+    module = db.Column(db.String(50), nullable=False)
+    time_in = db.Column(db.DateTime, default=datetime.utcnow)
+    time_out = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+
+class PageAuthorization(db.Model):
+    __tablename__ = 'page_authorizations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'), nullable=False)
+    page_name = db.Column(db.String(100), nullable=False) # 'Employees', 'Payroll', 'Payslip', 'Accounts'
+    secret_code = db.Column(db.String(4), nullable=True) # 4-digit secret code
+    is_authorized = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    employee = db.relationship('Employee', backref=db.backref('authorizations', cascade='all, delete-orphan'))
 
 # ==========================================
 # ICT DEPARTMENT MODULE

@@ -85,13 +85,13 @@
                     <label for="department" class="form-label">Department *</label>
                     <select class="form-select" id="department" name="department" required>
                         <option value="">Select Department</option>
-                        <option value="Management" {{ 'selected' if employee.department == 'Management' }}>Management</option>
-                        <option value="Drilling" {{ 'selected' if employee.department == 'Drilling' }}>Drilling</option>
-                        <option value="Engineering" {{ 'selected' if employee.department == 'Engineering' }}>Engineering</option>
-                        <option value="Administration" {{ 'selected' if employee.department == 'Administration' }}>Administration</option>
-                        <option value="Finance" {{ 'selected' if employee.department == 'Finance' }}>Finance</option>
+                        <option value="Borehole Drilling" {{ 'selected' if employee.department == 'Borehole Drilling' }}>Borehole Drilling</option>
+                        <option value="Farm" {{ 'selected' if employee.department == 'Farm' }}>Farm</option>
+                        <option value="Construction" {{ 'selected' if employee.department == 'Construction' }}>Construction</option>
+                        <option value="ICT" {{ 'selected' if employee.department == 'ICT' }}>ICT</option>
+                        <option value="Lodge" {{ 'selected' if employee.department == 'Lodge' }}>Lodge</option>
                         <option value="HR" {{ 'selected' if employee.department == 'HR' }}>HR</option>
-                        <option value="Operations" {{ 'selected' if employee.department == 'Operations' }}>Operations</option>
+                        <option value="Accounts" {{ 'selected' if employee.department == 'Accounts' }}>Accounts</option>
                     </select>
                 </div>
                 <div class="col-md-6 mb-3">
@@ -123,6 +123,28 @@
                 <div class="col-md-6 mb-3">
                     <label for="email" class="form-label">Email Address</label>
                     <input type="email" class="form-control" id="email" name="email" value="{{ employee.email or '' }}">
+                </div>
+            </div>
+            
+            <h6 class="mt-4 mb-3 text-primary border-bottom pb-2"><i class="fas fa-money-check-alt me-2"></i>Payment Details</h6>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="bank_name" class="form-label">Bank Name</label>
+                    <input type="text" class="form-control" id="bank_name" name="bank_name" value="{{ employee.bank_name or '' }}" placeholder="e.g. National Bank of Malawi">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="account_number" class="form-label">Account Number</label>
+                    <input type="text" class="form-control" id="account_number" name="account_number" value="{{ employee.account_number or '' }}">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="airtel_number" class="form-label">Airtel Money Number</label>
+                    <input type="tel" class="form-control phone-input" id="airtel_number" name="airtel_number" value="{{ employee.airtel_number or '' }}" placeholder="e.g. 099...">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="tnm_mpamba_number" class="form-label">TNM Mpamba Number</label>
+                    <input type="tel" class="form-control phone-input" id="tnm_mpamba_number" name="tnm_mpamba_number" value="{{ employee.tnm_mpamba_number or '' }}" placeholder="e.g. 088...">
                 </div>
             </div>
             

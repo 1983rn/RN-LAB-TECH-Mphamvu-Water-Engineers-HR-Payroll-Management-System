@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, make_response
 from functools import wraps
 from models import Employee, Payroll, Attendance
 from datetime import datetime, date
@@ -59,7 +59,7 @@ def dashboard():
 # ==================================================
 
 from db_utils import db
-from models import MDApprovalRequest
+from models import MDApprovalRequest, PageAuthorization, Employee
 from datetime import timedelta
 import string
 import random
@@ -82,7 +82,7 @@ def md_login():
             flash("Unauthorized: Invalid MD authentication key.", "error")
     return render_template('hr/md_login.html')
 
-from flask import make_response
+from models import MDApprovalRequest, PageAuthorization, Employee, PayrollOTP, PayrollBatch
 
 @hr_bp.route('/md_dashboard', methods=['GET'])
 @login_required
@@ -91,100 +91,201 @@ def md_dashboard():
         flash("You must be logged in as the Managing Director to view this page.", "error")
         return redirect(url_for('hr.md_login'))
     
-    employees_reqs = MDApprovalRequest.query.filter_by(module='Employees').order_by(MDApprovalRequest.request_time.desc()).all()
-    payroll_reqs = MDApprovalRequest.query.filter_by(module='Payroll').order_by(MDApprovalRequest.request_time.desc()).all()
+    # Access Control List & Active Logs
+    from models import AccessLog
+    authorizations = PageAuthorization.query.all()
+    all_employees = Employee.query.filter_by(status='Active').all()
     
-    response = make_response(render_template('hr/md_dashboard.html', employees_reqs=employees_reqs, payroll_reqs=payroll_reqs))
+    # Get the 50 most recent access logs
+    access_logs = AccessLog.query.order_by(AccessLog.time_in.desc()).limit(50).all()
+    
+    response = make_response(render_template('hr/md_dashboard.html', 
+                                            authorizations=authorizations,
+                                            access_logs=access_logs,
+                                            all_employees=all_employees))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '-1'
     return response
 
-@hr_bp.route('/md_dashboard/approve/<int:req_id>', methods=['POST'])
+@hr_bp.route('/md_dashboard/manage_auth', methods=['POST'])
 @login_required
-def approve_md_request(req_id):
+def manage_authorizations():
     if not session.get('md_logged_in'):
         return redirect(url_for('hr.md_login'))
     
     action = request.form.get('action')
-    req_obj = MDApprovalRequest.query.get_or_404(req_id)
-    
-    if action == 'approve':
-        req_obj.status = 'Approved'
-        req_obj.otp_code = generate_otp()
-        req_obj.expires_at = datetime.utcnow() + timedelta(hours=2, minutes=30)
-        flash(f"Approved {req_obj.requester_name}'s request. Give them the OTP code displayed.", "success")
-    elif action == 'reject':
-        req_obj.status = 'Rejected'
-        flash(f"Rejected {req_obj.requester_name}'s request.", "info")
-    elif action == 'delete':
-        db.session.delete(req_obj)
-        db.session.commit()
-        flash(f"Removed log entry for {req_obj.requester_name}.", "info")
-        return redirect(url_for('hr.md_dashboard'))
+    if action == 'add':
+        employee_id = request.form.get('employee_id')
+        page_name = request.form.get('page_name')
         
-    db.session.commit()
+        # Check if already exists
+        exists = PageAuthorization.query.filter_by(employee_id=employee_id, page_name=page_name).first()
+        if exists:
+            flash("Authorization already exists for this employee and page.", "warning")
+        else:
+            # Check if the employee already has a secret code assigned
+            existing_auth = PageAuthorization.query.filter_by(employee_id=employee_id).first()
+            if existing_auth and existing_auth.secret_code:
+                secret_code = existing_auth.secret_code
+            else:
+                # Generate a unique 4-digit numeric secret code
+                while True:
+                    secret_code = ''.join(random.choices(string.digits, k=4))
+                    if not PageAuthorization.query.filter_by(secret_code=secret_code).first():
+                        break
+                        
+            new_auth = PageAuthorization(employee_id=employee_id, page_name=page_name, secret_code=secret_code)
+            db.session.add(new_auth)
+            db.session.commit()
+            flash(f"Employee added to ACL. Secret Code: {secret_code}", "success")
+    elif action == 'remove':
+        auth_id = request.form.get('auth_id')
+        auth_obj = PageAuthorization.query.get_or_404(auth_id)
+        db.session.delete(auth_obj)
+        db.session.commit()
+        flash("Authorization removed.", "info")
+        
     return redirect(url_for('hr.md_dashboard'))
 
 @hr_bp.route('/gateway/<module>', methods=['GET'])
 @login_required
 def gateway(module):
-    if module not in ['Employees', 'Payroll']:
+    valid_modules = ['Employees', 'Payroll', 'Payslip', 'Accounts']
+    if module not in valid_modules:
         flash("Invalid module.", "error")
         return redirect(url_for('hr.dashboard'))
     response = make_response(render_template('hr/gateway.html', module=module))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return response
 
+@hr_bp.route('/delete_access_log/<int:log_id>', methods=['POST'])
+@login_required
+def delete_access_log(log_id):
+    if not session.get('md_logged_in'):
+        flash("MD access required.", "error")
+        return redirect(url_for('hr.md_login'))
+    
+    from models import AccessLog
+    log = AccessLog.query.get_or_404(log_id)
+    db.session.delete(log)
+    db.session.commit()
+    flash(f"Access log for '{log.personnel_name}' removed.", "info")
+    return redirect(url_for('hr.md_dashboard'))
+
+@hr_bp.route('/clear_all_access_logs', methods=['POST'])
+@login_required
+def clear_all_access_logs():
+    if not session.get('md_logged_in'):
+        flash("MD access required.", "error")
+        return redirect(url_for('hr.md_login'))
+    
+    from models import AccessLog
+    AccessLog.query.delete()
+    db.session.commit()
+    flash("All access logs cleared.", "info")
+    return redirect(url_for('hr.md_dashboard'))
+
+@hr_bp.route('/gateway_logout', methods=['GET'])
+@login_required
+def gateway_logout():
+    module = request.args.get('module')
+    name = session.get('authorized_personnel_name')
+    
+    if module and name:
+        from models import AccessLog
+        active_logs = AccessLog.query.filter_by(personnel_name=name, module=module, is_active=True).all()
+        for log in active_logs:
+            log.is_active = False
+            log.time_out = datetime.utcnow()
+        db.session.commit()
+        
+        session_key = f"md_access_{module.lower()}"
+        expiry_key = f"md_access_{module.lower()}_expiry"
+        session.pop(session_key, None)
+        session.pop(expiry_key, None)
+        
+        flash(f"Successfully logged out of {module}.", "success")
+    return redirect(url_for('hr.dashboard'))
+
 @hr_bp.route('/request_access', methods=['POST'])
 @login_required
 def request_access():
     module = request.form.get('module')
     name = request.form.get('requester_name')
+    secret_code = request.form.get('secret_code', '').strip()
     
-    if not name or not module:
-        flash("All fields are required.", "error")
+    if not name or not module or not secret_code:
+        flash("All fields including the 4-digit secret code are required.", "error")
         return redirect(url_for('hr.gateway', module=module))
+    
+    # MD Master Key bypass — the MD can use their authentication key to access any page
+    MD_AUTH_KEY = "**//mweepDUWE."
+    MD_NAME = "ULANDA DUWE"
+    is_md = (secret_code == MD_AUTH_KEY and name.strip().upper() == MD_NAME)
+    
+    auth = None
+    if not is_md:
+        # Check if this person is authorized by MD in ACL AND has the correct secret code
+        name_lower = name.lower()
+        auth = PageAuthorization.query.join(Employee).filter(
+            db.func.lower(Employee.first_name + ' ' + Employee.last_name) == name_lower,
+            PageAuthorization.page_name == module,
+            PageAuthorization.secret_code == secret_code,
+            PageAuthorization.is_authorized == True
+        ).first()
         
-    # Create the request
-    new_req = MDApprovalRequest(requester_name=name, module=module)
-    db.session.add(new_req)
+        if not auth and session.get('role') != 'Director':
+            # Fallback: Check Python side in case DB concat lowercase fails on some SQLite drivers
+            all_auths = PageAuthorization.query.join(Employee).filter(
+                PageAuthorization.page_name == module,
+                PageAuthorization.secret_code == secret_code,
+                PageAuthorization.is_authorized == True
+            ).all()
+            for a in all_auths:
+                if f"{a.employee.first_name} {a.employee.last_name}".lower() == name_lower:
+                    auth = a
+                    break
+                    
+        if not auth and session.get('role') != 'Director':
+            flash(f"Unauthorized: Verification failed for '{name}'. Please check your name and 4-digit secret code.", "error")
+            return redirect(url_for('hr.gateway', module=module))
+        
+    # Grant session access directly via Secret Code
+    session_key = f"md_access_{module.lower()}"
+    expiry_key = f"md_access_{module.lower()}_expiry"
+    from datetime import timedelta
+    session[session_key] = True
+    session[expiry_key] = (datetime.utcnow() + timedelta(hours=2, minutes=30)).isoformat()
+    
+    # Store personnel name in session to log them out later if needed
+    session['authorized_personnel_name'] = name
+    
+    # Create an access log
+    from models import AccessLog
+    # First, close any active logs for this person and module
+    active_logs = AccessLog.query.filter_by(personnel_name=name, module=module, is_active=True).all()
+    for log in active_logs:
+        log.is_active = False
+        log.time_out = datetime.utcnow()
+        
+    new_log = AccessLog(
+        personnel_name=name,
+        module=module,
+        is_active=True
+    )
+    db.session.add(new_log)
     db.session.commit()
     
-    flash("Request sent to Managing Director. Please await approval and your distinct OTP.", "success")
-    return redirect(url_for('hr.gateway', module=module))
-
-@hr_bp.route('/verify_otp', methods=['POST'])
-@login_required
-def verify_otp():
-    module = request.form.get('module')
-    otp_code = request.form.get('otp_code', '').strip().upper()
+    flash(f"Access to {module} granted for 2h 30m.", "success")
     
-    # Verify OTP against DB
-    req_obj = MDApprovalRequest.query.filter_by(
-        module=module,
-        otp_code=otp_code,
-        status='Approved',
-        is_used=False
-    ).first()
-    
-    if req_obj and req_obj.expires_at > datetime.utcnow():
-        # Valid OTP
-        req_obj.is_used = True
-        db.session.commit()
+    if module == 'Employees':
+        return redirect(url_for('employees.list_employees'))
+    elif module == 'Payroll':
+        return redirect(url_for('payroll.payroll_list'))
+    elif module == 'Payslip':
+        return redirect(url_for('payroll.payslip_center'))
+    elif module == 'Accounts':
+        return redirect(url_for('accounts.dashboard'))
         
-        # Grant session access
-        session_key = f"md_access_{module.lower()}"
-        expiry_key = f"md_access_{module.lower()}_expiry"
-        session[session_key] = True
-        session[expiry_key] = (datetime.utcnow() + timedelta(hours=2, minutes=30)).isoformat()
-        
-        flash(f"Validation successful! Access to {module} granted for 2h 30m.", "success")
-        
-        if module == 'Employees':
-            return redirect(url_for('employees.list_employees'))
-        else:
-            return redirect(url_for('payroll.payroll_list'))
-            
-    flash("Invalid, expired, or already-used OTP code. Please try again or request a new one.", "error")
-    return redirect(url_for('hr.gateway', module=module))
+    return redirect(url_for('hr.dashboard'))
