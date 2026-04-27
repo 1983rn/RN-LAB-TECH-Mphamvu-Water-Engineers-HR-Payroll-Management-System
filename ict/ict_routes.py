@@ -352,7 +352,7 @@ def cashbook():
 @ict_context_required
 def inventory():
     items = Inventory.query.filter_by(department='ICT Department').all()
-    total_value = sum(item.total_value for item in items)
+    total_value = sum((item.total_value or 0.0) for item in items)
     return render_template('ict/inventory.html', items=items, total_value=total_value)
 
 @ict_bp.route('/inventory/add', methods=['POST'])

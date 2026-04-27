@@ -13,7 +13,7 @@
             <div class="d-flex gap-3 align-items-center">
                 <div class="text-end">
                     <div class="text-white-50 small">ESTIMATED ASSET VALUE</div>
-                    <div class="text-info h4 fw-bold mb-0">MWK {{ "{:,.2f}".format(total_value) }}</div>
+                    <div class="text-info h4 fw-bold mb-0">MWK {{ "{:,.2f}".format(total_value or 0) }}</div>
                 </div>
                 <button class="btn btn-primary react-button" data-bs-toggle="modal" data-bs-target="#addInventoryModal">
                     <i class="fas fa-plus me-2"></i>ADD ITEM
@@ -43,14 +43,14 @@
                             <td class="fw-bold">{{ item.asset_name }}</td>
                             <td><span class="badge bg-secondary">{{ item.category }}</span></td>
                             <td>{{ item.quantity }}</td>
-                            <td>{{ "{:,.2f}".format(item.unit_value) }}</td>
-                            <td class="text-info fw-bold">{{ "{:,.2f}".format(item.total_value) }}</td>
+                            <td>{{ "{:,.2f}".format(item.unit_value or 0) }}</td>
+                            <td class="text-info fw-bold">{{ "{:,.2f}".format(item.total_value or 0) }}</td>
                             <td>
                                 <span class="badge {% if item.condition == 'New' or item.condition == 'Excellent' %}bg-success{% elif item.condition == 'Good' %}bg-info{% else %}bg-warning text-dark{% endif %}">
                                     {{ item.condition }}
                                 </span>
                             </td>
-                            <td class="text-white-50 small">{{ item.last_updated.strftime('%d %b %Y') }}</td>
+                            <td class="text-white-50 small">{{ item.last_updated.strftime('%d %b %Y') if item.last_updated else '-' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

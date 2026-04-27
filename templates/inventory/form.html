@@ -5,12 +5,18 @@
 {% block content %}
 <div class="row justify-content-center fade-in">
     <div class="col-md-8">
+        <div class="alert alert-info border-3 text-center">
+            <h4 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i>MPHAMVU INVENTORY SYSTEM v2.1</h4>
+            <p class="mb-0">All 8 Farm Categories (1-8) are implemented in the dropdown below.</p>
+        </div>
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
                 <h5 class="mb-0 fw-bold">
                     <i class="fas {{ 'fa-edit' if item else 'fa-plus-circle' }} me-2 text-primary"></i>
                     {{ 'Edit Asset' if item else 'Add New Asset' }}
+                    <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">v2.1 (Farm Categories Enabled)</span>
                 </h5>
+                <p class="small text-muted mb-0">Note: All Farm categories (1-8) are now listed below for easy access.</p>
                 <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Back to Inventory
                 </a>
@@ -25,17 +31,35 @@
                     <div class="mb-3">
                         <label for="category" class="form-label fw-bold">Category <span class="text-danger">*</span></label>
                         {% set selected_cat = request.args.get('cat') or (item.category if item else '') %}
-                        <select class="form-select" id="category" name="category" required>
+                        <select class="form-select" id="category" name="category" required onchange="updateSubcategories()">
                             <option value="" disabled {% if not selected_cat %}selected{% endif %}>Select Category</option>
-                            <option value="Borehole Drilling" {% if selected_cat == 'Borehole Drilling' %}selected{% endif %}>Borehole Drilling</option>
-                            <option value="Office Equipment" {% if selected_cat == 'Office Equipment' %}selected{% endif %}>Office Equipment</option>
+
+                            <optgroup label="Farm Inventory Categories">
+                                <option value="1. Crop Production Inventory" {% if selected_cat == '1. Crop Production Inventory' or selected_cat == 'Crop Production Inventory' %}selected{% endif %}>1. Crop Production Inventory</option>
+                                <option value="2. Livestock Inventory" {% if selected_cat == '2. Livestock Inventory' or selected_cat == 'Livestock Inventory' %}selected{% endif %}>2. Livestock Inventory</option>
+                                <option value="3. Farm Equipment & Tools" {% if selected_cat == '3. Farm Equipment & Tools' or selected_cat == 'Farm Equipment & Tools' %}selected{% endif %}>3. Farm Equipment & Tools</option>
+                                <option value="4. Buildings & Structures" {% if selected_cat == '4. Buildings & Structures' or selected_cat == 'Buildings & Structures' %}selected{% endif %}>4. Buildings & Structures</option>
+                                <option value="5. Harvesting & Post-Harvest Inventory" {% if selected_cat == '5. Harvesting & Post-Harvest Inventory' or selected_cat == 'Harvesting & Post-Harvest Inventory' %}selected{% endif %}>5. Harvesting & Post-Harvest Inventory</option>
+                                <option value="6. Farm Inputs & Consumables" {% if selected_cat == '6. Farm Inputs & Consumables' or selected_cat == 'Farm Inputs & Consumables' %}selected{% endif %}>6. Farm Inputs & Consumables</option>
+                                <option value="7. Financial & Record Inventory" {% if selected_cat == '7. Financial & Record Inventory' or selected_cat == 'Financial & Record Inventory' %}selected{% endif %}>7. Financial & Record Inventory</option>
+                                <option value="8. Transport & Logistics" {% if selected_cat == '8. Transport & Logistics' or selected_cat == 'Transport & Logistics' %}selected{% endif %}>8. Transport & Logistics</option>
+                            </optgroup>
+                            <optgroup label="General Categories">
+                                <option value="Borehole Drilling" {% if selected_cat == 'Borehole Drilling' %}selected{% endif %}>Borehole Drilling</option>
+                                <option value="Office Equipment" {% if selected_cat == 'Office Equipment' %}selected{% endif %}>Office Equipment</option>
+                                <option value="Construction Materials" {% if selected_cat == 'Construction Materials' %}selected{% endif %}>Construction Materials</option>
+                            </optgroup>
+
                         </select>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="subcategory" class="form-label fw-bold">Subcategory</label>
-                            <input type="text" class="form-control" id="subcategory" name="subcategory" value="{{ item.subcategory if item else '' }}" placeholder="e.g. Drilling Equipment">
+                            <input type="text" class="form-control" id="subcategory" name="subcategory" list="subcategory_list" value="{{ item.subcategory if item else '' }}" placeholder="e.g. Drilling Equipment">
+                            <datalist id="subcategory_list">
+                                <!-- Populated via JS -->
+                            </datalist>
                         </div>
                         <div class="col-md-6">
                             <label for="location" class="form-label fw-bold">Location</label>
@@ -107,5 +131,33 @@
         
         document.getElementById('total_value_display').textContent = 'MWK ' + formatter.format(total);
     }
+
+    const farmSubcats = {
+        "1. Crop Production Inventory": ["Seeds & Planting Materials", "Fertilizers & Soil Amendments", "Agrochemicals", "Irrigation Supplies"],
+        "2. Livestock Inventory": ["Animals", "Feed & Supplements", "Animal Health Supplies"],
+        "3. Farm Equipment & Tools": ["Hoes", "Slashers", "Panga knives", "Wheelbarrows", "Sprayers", "Tractors", "Ploughs & Harrows"],
+        "4. Buildings & Structures": ["Storage sheds", "Animal housing", "Greenhouses", "Silos"],
+        "5. Harvesting & Post-Harvest Inventory": ["Sacks", "Drying sheets", "Shellers"],
+        "6. Farm Inputs & Consumables": ["Fuel", "Lubricants", "Packaging materials", "Twine/rope"],
+        "7. Financial & Record Inventory": ["Input purchase records", "Sales records", "Veterinary records", "Labor records", "Stock inventory register"],
+        "8. Transport & Logistics": ["Bicycles/motorcycles", "Trucks", "Animal carts"]
+    };
+
+    function updateSubcategories() {
+        const cat = document.getElementById('category').value;
+        const datalist = document.getElementById('subcategory_list');
+        datalist.innerHTML = '';
+        
+        if (farmSubcats[cat]) {
+            farmSubcats[cat].forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                datalist.appendChild(option);
+            });
+        }
+    }
+
+    // Initial run
+    document.addEventListener('DOMContentLoaded', updateSubcategories);
 </script>
 {% endblock %}

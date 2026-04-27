@@ -37,15 +37,15 @@ def list_inventory():
     items = query.all()
     
     # Calculate totals and categories for the template summary
-    grand_total = sum(item.total_value for item in items)
+    grand_total = sum((item.total_value or 0.0) for item in items)
     categories = {}
     for item in items:
         # Use subcategory for the breakdown if provided, otherwise category
         cat_name = item.subcategory if item.subcategory else item.category
         if cat_name not in categories:
             categories[cat_name] = {'count': 0, 'total_value': 0}
-        categories[cat_name]['count'] += item.quantity
-        categories[cat_name]['total_value'] += item.total_value
+        categories[cat_name]['count'] += (item.quantity or 0)
+        categories[cat_name]['total_value'] += (item.total_value or 0.0)
 
     return render_template('inventory/list.html', 
                            items=items, 
@@ -106,8 +106,8 @@ def cashbook():
     
     # Calculate totals
     # Filter out opening balance from income sum to avoid double counting
-    total_income = sum(c['amount'] for c in credits_list if "Opening Balance" not in c['description'])
-    total_debits = sum(d['amount'] for d in debits_list)
+    total_income = sum((c['amount'] or 0.0) for c in credits_list if "Opening Balance" not in c['description'])
+    total_debits = sum((d['amount'] or 0.0) for d in debits_list)
     balance = opening_balance + total_income - total_debits
     
     # Breakdowns

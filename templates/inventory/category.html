@@ -338,13 +338,37 @@
 {% endblock %}
 
 {% block content %}
-{% set is_borehole = (category_name == 'Borehole Drilling') %}
-{% set is_office = (category_name == 'Office Equipment') %}
-{% set is_animal = (category_name == 'Animal Farm') %}
-{% set is_crop = (category_name == 'Crop Farming') %}
+{% set is_borehole = ('Borehole' in category_name) %}
+{% set is_office = ('Office' in category_name) %}
+{% set is_livestock = ('Livestock' in category_name or 'Animal' in category_name or '2.' in category_name) %}
+{% set is_crop = ('Crop' in category_name or '1.' in category_name) %}
+{% set is_equipment = ('Equipment' in category_name or 'Tools' in category_name or '3.' in category_name) %}
+{% set is_building = ('Building' in category_name or 'Structure' in category_name or '4.' in category_name) %}
+{% set is_harvest = ('Harvest' in category_name or '5.' in category_name) %}
+{% set is_finance = ('Financial' in category_name or 'Record' in category_name or '7.' in category_name) %}
+{% set is_transport = ('Transport' in category_name or 'Logistics' in category_name or '8.' in category_name) %}
+{% set is_inputs = ('Inputs' in category_name or '6.' in category_name) %}
 
-{% set icon_class = 'fa-tools color-blue' if is_borehole else 'fa-desktop color-purple' if is_office else 'fa-paw color-green' if is_animal else 'fa-tractor color-yellow' %}
-{% set bg_class = 'icon-Borehole' if is_borehole else 'icon-Office' if is_office else 'icon-Animal' if is_animal else 'icon-Crop' %}
+{% set icon_class = 'fa-tools color-blue' if is_borehole 
+                   else 'fa-desktop color-purple' if is_office 
+                   else 'fa-paw color-green' if is_livestock 
+                   else 'fa-seedling color-yellow' if is_crop 
+                   else 'fa-wrench color-blue' if is_equipment 
+                   else 'fa-building color-purple' if is_building 
+                   else 'fa-tractor color-yellow' if is_harvest 
+                   else 'fa-boxes color-green' if is_inputs
+                   else 'fa-file-invoice-dollar color-green' if is_finance 
+                   else 'fa-truck color-blue' if is_transport 
+                   else 'fa-box color-secondary' %}
+
+{% set bg_class = 'icon-Borehole' if is_borehole 
+                 else 'icon-Office' if is_office 
+                 else 'icon-Animal' if is_livestock 
+                 else 'icon-Crop' if is_crop 
+                 else 'icon-Borehole' if is_equipment or is_transport
+                 else 'icon-Office' if is_building
+                 else 'icon-Animal' if is_finance or is_inputs
+                 else 'icon-Crop' if is_harvest %}
 
 <div class="inv-category-page fade-in {% if is_borehole %}borehole-bg{% endif %}">
     <!-- Header -->
@@ -361,9 +385,14 @@
                 <p>
                     {% if is_borehole %}Drilling equipment, pumps, casing, vehicles, safety & survey tools
                     {% elif is_office %}Computing devices, furniture, communication & climate control
-                    {% elif is_animal %}Livestock, housing, feeding, dairy, veterinary & health supplies
-                    {% elif is_crop %}Seeds, fertilizers, agrochemicals, machinery, irrigation & storage
-                    {% else %}Asset tracking and management
+                    {% elif is_livestock %}Livestock (cattle, goats, sheep, chickens, pigs), housing, feeding, dairy & veterinary supplies
+                    {% elif is_crop %}Seeds, planting materials, fertilizers, agrochemicals, irrigation kits & water storage
+                    {% elif is_equipment %}Farm tools, hoes, slashers, wheelbarrows, sprayers, tractors, ploughs & harrows
+                    {% elif is_building %}Permanent assets, storage sheds, animal housing, greenhouses & silos
+                    {% elif is_harvest %}Sacks, drying sheets, tarpaulins & maize shellers
+                    {% elif is_finance %}Purchase records, sales records, veterinary & labor records, stock registers
+                    {% elif is_transport %}Bicycles, motorcycles, trucks & animal-drawn carts
+                    {% else %}Asset tracking and management for the {{ session.get('department_context', 'General') }} department
                     {% endif %}
                 </p>
             </div>
@@ -380,7 +409,7 @@
             <div class="sum-icon icon-blue" style="color:#4384f5;"><i class="fas fa-dollar-sign"></i></div>
             <div class="sum-text">
                 <h6>Total Value</h6>
-                <h4>MWK {{ "{:,.2f}".format(total_value) }}</h4>
+                <h4>MWK {{ "{:,.2f}".format(total_value or 0) }}</h4>
             </div>
         </div>
         <div class="sum-card">
@@ -430,7 +459,7 @@
                 <span class="subcat-name">{{ subcat }}</span>
                 <span class="subcat-count">{{ data['items']|length }} items</span>
             </div>
-            <div class="subcat-value">MWK {{ "{:,.2f}".format(data.total) }}</div>
+            <div class="subcat-value">MWK {{ "{:,.2f}".format(data.total or 0) }}</div>
         </div>
         <div class="subcat-body">
             <table class="table-custom">
@@ -461,8 +490,8 @@
                             {% endif %}
                         </td>
                         <td class="text-center fw-bold">{{ item.quantity }}</td>
-                        <td class="text-end text-muted">{{ "{:,.2f}".format(item.unit_value) }}</td>
-                        <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(item.total_value) }}</td>
+                        <td class="text-end text-muted">{{ "{:,.2f}".format(item.unit_value or 0) }}</td>
+                        <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(item.total_value or 0) }}</td>
                         <td class="text-end">
                             <a href="{{ url_for('inventory.edit_item', item_id=item.id) }}" class="action-btn me-2" title="Edit"><i class="fas fa-pen"></i></a>
                             <form action="{{ url_for('inventory.delete_item', item_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this asset?');">
@@ -491,7 +520,7 @@
             <p>{{ line_items }} line items shown</p>
         </div>
         <div class="gt-right">
-            <h2>MWK {{ "{:,.2f}".format(total_value) }}</h2>
+            <h2>MWK {{ "{:,.2f}".format(total_value or 0) }}</h2>
             <p>Estimated Value</p>
         </div>
     </div>

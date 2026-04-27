@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if item else 'Add' }} Farm Asset - MWE{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center fade-in">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas {{ 'fa-edit' if item else 'fa-plus-circle' }} me-2"></i>
+                    {{ 'Edit Farm Asset' if item else 'Add New Farm Asset' }}
+                </h5>
+                <a href="{{ url_for('farm.dashboard') }}" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="asset_name" class="form-label fw-bold">Asset Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="asset_name" name="asset_name" value="{{ item.asset_name if item else '' }}" required placeholder="e.g. Massey Ferguson Tractor">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="category" class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                        {% set selected_cat = item.category if item else '' %}
+                        <select class="form-select" id="category" name="category" required onchange="updateSubcategories()">
+                            <option value="" disabled {% if not selected_cat %}selected{% endif %}>Select Category</option>
+                            <option value="Office Equipment" {% if selected_cat == 'Office Equipment' %}selected{% endif %}>Office Equipment</option>
+                            <option value="1. Crop Production Inventory" {% if selected_cat == '1. Crop Production Inventory' %}selected{% endif %}>1. Crop Production Inventory</option>
+                            <option value="2. Livestock Inventory" {% if selected_cat == '2. Livestock Inventory' %}selected{% endif %}>2. Livestock Inventory</option>
+                            <option value="3. Farm Equipment & Tools" {% if selected_cat == '3. Farm Equipment & Tools' %}selected{% endif %}>3. Farm Equipment & Tools</option>
+                            <option value="4. Buildings & Structures" {% if selected_cat == '4. Buildings & Structures' %}selected{% endif %}>4. Buildings & Structures</option>
+                            <option value="5. Harvesting & Post-Harvest Inventory" {% if selected_cat == '5. Harvesting & Post-Harvest Inventory' %}selected{% endif %}>5. Harvesting & Post-Harvest Inventory</option>
+                            <option value="6. Farm Inputs & Consumables" {% if selected_cat == '6. Farm Inputs & Consumables' %}selected{% endif %}>6. Farm Inputs & Consumables</option>
+                            <option value="7. Financial & Record Inventory" {% if selected_cat == '7. Financial & Record Inventory' %}selected{% endif %}>7. Financial & Record Inventory</option>
+                            <option value="8. Transport & Logistics" {% if selected_cat == '8. Transport & Logistics' %}selected{% endif %}>8. Transport & Logistics</option>
+                        </select>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="subcategory" class="form-label fw-bold">Subcategory</label>
+                            <input type="text" class="form-control" id="subcategory" name="subcategory" list="subcategory_list" value="{{ item.subcategory if item else '' }}" placeholder="e.g. Irrigation Supplies">
+                            <datalist id="subcategory_list"></datalist>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="condition" class="form-label fw-bold">Condition</label>
+                            <select class="form-select" id="condition" name="condition">
+                                <option value="New" {% if item and item.condition == 'New' %}selected{% endif %}>New</option>
+                                <option value="Excellent" {% if item and item.condition == 'Excellent' %}selected{% endif %}>Excellent</option>
+                                <option value="Good" {% if not item or item.condition == 'Good' %}selected{% endif %}>Good</option>
+                                <option value="Fair" {% if item and item.condition == 'Fair' %}selected{% endif %}>Fair</option>
+                                <option value="Poor" {% if item and item.condition == 'Poor' %}selected{% endif %}>Poor</option>
+                                <option value="Scrap" {% if item and item.condition == 'Scrap' %}selected{% endif %}>Scrap</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label fw-bold">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" value="{{ item.quantity if item else '1' }}" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="unit_value" class="form-label fw-bold">Unit Value (MWK) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control" id="unit_value" name="unit_value" value="{{ item.unit_value if item else '0.00' }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="location" class="form-label fw-bold">Location</label>
+                            <input type="text" class="form-control" id="location" name="location" value="{{ item.location if item else '' }}" placeholder="e.g. Farm Shed A">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-bold">Description / Notes</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Additional details about the asset...">{{ item.description if item else '' }}</textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg fw-bold">
+                            <i class="fas fa-save me-2"></i>{{ 'Update Asset' if item else 'Save Farm Asset' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const farmSubcats = {
+        "Office Equipment": ["Computers & Laptops", "Printers & Scanners", "Office Furniture", "Stationery", "Networking Equipment"],
+        "1. Crop Production Inventory": [
+            "a) Seeds & Planting Materials (Maize, Groundnut, Bean, Vegetable)",
+            "b) Fertilizers & Soil Amendments (Basal, Top dressing, Manure/compost)",
+            "c) Agrochemicals (Herbicides, Pesticides, Fungicides)",
+            "d) Irrigation Supplies (Pumps, Pipes, Drip kits, Tanks)",
+            "Maize seeds", "Groundnut seeds", "Bean seeds", "Vegetable seedlings",
+            "Basal fertilizers (NPK)", "Top dressing fertilizers", "Manure/compost",
+            "Herbicides (weed killers)", "Pesticides (insect control)", "Fungicides (disease control)",
+            "Water pumps", "Pipes and hoses", "Drip irrigation kits", "Water storage tanks"
+        ],
+        "2. Livestock Inventory": [
+            "a) Animals (Cattle, Goats, Sheep, Chickens, Pigs)",
+            "b) Feed & Supplements (Bran, Soybean, Commercial, Minerals)",
+            "c) Animal Health Supplies (Vaccines, Dewormers, Antibiotics, Disinfectants)",
+            "Cattle", "Goats", "Sheep", "Chickens (layers/broilers)", "Pigs",
+            "Maize bran", "Soybean meal", "Commercial feed", "Mineral supplements",
+            "Vaccines", "Dewormers", "Antibiotics", "Disinfectants"
+        ],
+        "3. Farm Equipment & Tools": [
+            "Hoes", "Slashers", "Panga knives", "Wheelbarrows", 
+            "Sprayers (knapsack sprayers)", "Tractors", "Ploughs and harrows"
+        ],
+        "4. Buildings & Structures": [
+            "Storage sheds", "Animal housing", "Greenhouses", "Silos or grain storage facilities"
+        ],
+        "5. Harvesting & Post-Harvest Inventory": [
+            "Sacks", "Drying sheets/tarpaulins", "Shellers (for maize)"
+        ],
+        "6. Farm Inputs & Consumables": [
+            "Fuel (for machinery)", "Lubricants", "Packaging materials", "Twine/rope"
+        ],
+        "7. Financial & Record Inventory": [
+            "Input purchase records", "Sales records (crops and livestock)", 
+            "Veterinary records", "Labor records", "Stock inventory register"
+        ],
+        "8. Transport & Logistics": [
+            "Bicycles or motorcycles", "Trucks", "Animal carts (e.g., ox-cart)"
+        ]
+    };
+
+    function updateSubcategories() {
+        const cat = document.getElementById('category').value;
+        const list = document.getElementById('subcategory_list');
+        list.innerHTML = '';
+        if (farmSubcats[cat]) {
+            farmSubcats[cat].forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                list.appendChild(opt);
+            });
+        }
+    }
+
+    // Initialize on page load if editing
+    window.onload = updateSubcategories;
+</script>
+{% endblock %}

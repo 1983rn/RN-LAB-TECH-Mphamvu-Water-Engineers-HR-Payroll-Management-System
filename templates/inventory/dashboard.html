@@ -189,6 +189,12 @@
             <p>Mphamvu Water Engineers &mdash; Asset Overview</p>
         </div>
         <div class="d-flex align-items-center gap-3">
+            <form action="{{ url_for('inventory.fix_departments') }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-outline-warning d-flex align-items-center gap-2" onclick="return confirm('This will automatically allocate mixed assets to their respective departments. Continue?')">
+                    <i class="fas fa-sitemap"></i>
+                    <span>Departmentalize Assets</span>
+                </button>
+            </form>
             <a href="{{ url_for('inventory.add_item') }}" class="btn btn-primary d-flex align-items-center gap-2">
                 <i class="fas fa-plus"></i>
                 <span>Add New Item</span>
@@ -205,7 +211,7 @@
             <div class="d-flex justify-content-between">
                 <div>
                     <div class="stat-title">TOTAL ASSET VALUE</div>
-                    <div class="stat-value">MWK {{ "{:,.0f}".format(total_value) }}</div>
+                    <div class="stat-value">MWK {{ "{:,.0f}".format(total_value or 0) }}</div>
                 </div>
                 <div class="stat-icon icon-blue"><i class="fas fa-dollar-sign"></i></div>
             </div>
@@ -238,7 +244,7 @@
             <div class="d-flex justify-content-between">
                 <div>
                     <div class="stat-title">GOOD CONDITION</div>
-                    <div class="stat-value">{{ "{:.1f}".format(good_condition_pct) }}%</div>
+                    <div class="stat-value">{{ "{:.1f}".format(good_condition_pct or 0) }}%</div>
                 </div>
                 <div class="stat-icon icon-yellow"><i class="fas fa-arrow-trend-up"></i></div>
             </div>
@@ -249,81 +255,54 @@
     <!-- Category Cards -->
     <h3 class="section-title mb-2">Asset Categories</h3>
     <div class="category-cards">
-        {% set bore_val = categories.get('Borehole Drilling', {}).get('value', 0) %}
-        {% set bore_cnt = categories.get('Borehole Drilling', {}).get('count', 0) %}
-        {% set bore_pct = (bore_val / total_value * 100) if total_value > 0 else 0 %}
-        <a href="{{ url_for('inventory.category_view', category='Borehole Drilling') }}" class="category-card">
-            <div class="cat-icon-container">
-                <div class="cat-icon color-blue"><i class="fas fa-tools"></i></div>
-                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
-            </div>
-            <div class="cat-name">Borehole Drilling</div>
-            <div class="cat-val">MWK {{ "{:,.0f}".format(bore_val) }}</div>
-            <div class="cat-footer">
-                <span>{{ bore_cnt }} items</span>
-                <span class="color-blue fw-bold">{{ "{:.1f}".format(bore_pct) }}%</span>
-            </div>
-            <div class="cat-progress">
-                <div class="cat-progress-bar bg-blue" style="width: {{ bore_pct }}%"></div>
-            </div>
-        </a>
+        {% for cat_name, data in categories.items() %}
+            {% set cat_val = data.get('value', 0) %}
+            {% set cat_cnt = data.get('count', 0) %}
+            {% set cat_pct = (cat_val / total_value * 100) if total_value > 0 else 0 %}
+            
+            {# Determine icon and color based on category name #}
+            {% set icon = 'fa-tractor' %}
+            {% set color = 'yellow' %}
+            
+            {% if 'Borehole' in cat_name %}
+                {% set icon = 'fa-tools' %}
+                {% set color = 'blue' %}
+            {% elif 'Office' in cat_name %}
+                {% set icon = 'fa-desktop' %}
+                {% set color = 'purple' %}
+            {% elif 'Livestock' in cat_name or 'Animal' in cat_name %}
+                {% set icon = 'fa-paw' %}
+                {% set color = 'green' %}
+            {% elif 'Crop' in cat_name %}
+                {% set icon = 'fa-seedling' %}
+                {% set color = 'yellow' %}
+            {% elif 'Equipment' in cat_name or 'Tools' in cat_name %}
+                {% set icon = 'fa-wrench' %}
+                {% set color = 'blue' %}
+            {% elif 'Building' in cat_name %}
+                {% set icon = 'fa-building' %}
+                {% set color = 'purple' %}
+            {% elif 'Transport' in cat_name %}
+                {% set icon = 'fa-truck' %}
+                {% set color = 'blue' %}
+            {% endif %}
 
-        {% set off_val = categories.get('Office Equipment', {}).get('value', 0) %}
-        {% set off_cnt = categories.get('Office Equipment', {}).get('count', 0) %}
-        {% set off_pct = (off_val / total_value * 100) if total_value > 0 else 0 %}
-        <a href="{{ url_for('inventory.category_view', category='Office Equipment') }}" class="category-card">
-            <div class="cat-icon-container">
-                <div class="cat-icon color-purple"><i class="fas fa-desktop"></i></div>
-                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
-            </div>
-            <div class="cat-name">Office Equipment</div>
-            <div class="cat-val">MWK {{ "{:,.0f}".format(off_val) }}</div>
-            <div class="cat-footer">
-                <span>{{ off_cnt }} items</span>
-                <span class="color-purple fw-bold">{{ "{:.1f}".format(off_pct) }}%</span>
-            </div>
-            <div class="cat-progress">
-                <div class="cat-progress-bar bg-purple" style="width: {{ off_pct }}%"></div>
-            </div>
-        </a>
-
-        {% set ani_val = categories.get('Animal Farm', {}).get('value', 0) %}
-        {% set ani_cnt = categories.get('Animal Farm', {}).get('count', 0) %}
-        {% set ani_pct = (ani_val / total_value * 100) if total_value > 0 else 0 %}
-        <a href="{{ url_for('inventory.category_view', category='Animal Farm') }}" class="category-card">
-            <div class="cat-icon-container">
-                <div class="cat-icon color-green"><i class="fas fa-paw"></i></div>
-                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
-            </div>
-            <div class="cat-name">Animal Farm</div>
-            <div class="cat-val">MWK {{ "{:,.0f}".format(ani_val) }}</div>
-            <div class="cat-footer">
-                <span>{{ ani_cnt }} items</span>
-                <span class="color-green fw-bold">{{ "{:.1f}".format(ani_pct) }}%</span>
-            </div>
-            <div class="cat-progress">
-                <div class="cat-progress-bar bg-green" style="width: {{ ani_pct }}%"></div>
-            </div>
-        </a>
-
-        {% set crop_val = categories.get('Crop Farming', {}).get('value', 0) %}
-        {% set crop_cnt = categories.get('Crop Farming', {}).get('count', 0) %}
-        {% set crop_pct = (crop_val / total_value * 100) if total_value > 0 else 0 %}
-        <a href="{{ url_for('inventory.category_view', category='Crop Farming') }}" class="category-card">
-            <div class="cat-icon-container">
-                <div class="cat-icon color-yellow"><i class="fas fa-tractor"></i></div>
-                <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
-            </div>
-            <div class="cat-name">Crop Farming</div>
-            <div class="cat-val">MWK {{ "{:,.0f}".format(crop_val) }}</div>
-            <div class="cat-footer">
-                <span>{{ crop_cnt }} items</span>
-                <span class="color-yellow fw-bold">{{ "{:.1f}".format(crop_pct) }}%</span>
-            </div>
-            <div class="cat-progress">
-                <div class="cat-progress-bar bg-yellow" style="width: {{ crop_pct }}%"></div>
-            </div>
-        </a>
+            <a href="{{ url_for('inventory.category_view', category=cat_name) }}" class="category-card">
+                <div class="cat-icon-container">
+                    <div class="cat-icon color-{{ color }}"><i class="fas {{ icon }}"></i></div>
+                    <div class="cat-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+                <div class="cat-name">{{ cat_name }}</div>
+                <div class="cat-val">MWK {{ "{:,.0f}".format(cat_val or 0) }}</div>
+                <div class="cat-footer">
+                    <span>{{ cat_cnt }} items</span>
+                    <span class="color-{{ color }} fw-bold">{{ "{:.1f}".format(cat_pct or 0) }}%</span>
+                </div>
+                <div class="cat-progress">
+                    <div class="cat-progress-bar bg-{{ color }}" style="width: {{ cat_pct }}%"></div>
+                </div>
+            </a>
+        {% endfor %}
     </div>
 
     <!-- Charts Row -->
@@ -347,9 +326,15 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const labels = ['Borehole Drilling', 'Office Equipment', 'Animal Farm', 'Crop Farming'];
-        const dataVals = [{{ bore_val }}, {{ off_val }}, {{ ani_val }}, {{ crop_val }}];
-        const colors = ['#4384f5', '#8e44ad', '#23b761', '#f2ad3c'];
+        const categoriesData = {{ categories|tojson }};
+        const labels = Object.keys(categoriesData);
+        const dataVals = labels.map(label => categoriesData[label].value);
+        
+        const colors = [
+            '#4384f5', '#8e44ad', '#23b761', '#f2ad3c', 
+            '#e74c3c', '#1abc9c', '#34495e', '#f39c12',
+            '#d35400', '#2980b9', '#27ae60', '#8e44ad'
+        ];
         
         // Bar Chart
         const barCtx = document.getElementById('barChart').getContext('2d');
@@ -360,12 +345,13 @@
                 datasets: [{
                     label: 'Asset Value (MWK)',
                     data: dataVals,
-                    backgroundColor: colors,
+                    backgroundColor: colors.slice(0, labels.length),
                     borderRadius: 4
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false }
                 },

@@ -58,18 +58,18 @@ def dashboard():
 
     # --- Farm Inventory Data ---
     inventory_query = apply_dept_filter(Inventory.query, Inventory)
-    farm_inventory = inventory_query.filter_by(category='Farm Inventory').all()
+    farm_inventory = inventory_query.all()
 
     # --- Finance Data ---
     # We query transactions and cashbook entries specifically for the Farm department
     txs_query = apply_dept_filter(Transaction.query, Transaction)
     txs = txs_query.all()
-    sales_total = sum(t.amount for t in txs)
+    sales_total = sum((t.amount or 0.0) for t in txs)
     
     cash_query = apply_dept_filter(CashBookEntry.query, CashBookEntry)
     cash_entries = cash_query.all()
-    total_income = sales_total + sum(e.amount for e in cash_entries if e.type == 'Credit' and "Opening Balance" not in e.description)
-    total_expense = sum(e.amount for e in cash_entries if e.type == 'Debit')
+    total_income = sales_total + sum((e.amount or 0.0) for e in cash_entries if e.type == 'Credit' and "Opening Balance" not in e.description)
+    total_expense = sum((e.amount or 0.0) for e in cash_entries if e.type == 'Debit')
     
     # Opening balance for Farm
     ob_entry = CashBookEntry.query.filter(
@@ -156,8 +156,8 @@ def cashbook():
     input_query = apply_dept_filter(FarmInput.query, FarmInput)
     total_inventory = db.session.query(sa.func.sum(FarmInput.total_cost)).filter(input_query.where_clause).scalar() or 0.0
     
-    total_income = sum(c['amount'] for c in credits_list if "Opening Balance" not in c['description'])
-    total_debits = sum(d['amount'] for d in debits_list)
+    total_income = sum((c['amount'] or 0.0) for c in credits_list if "Opening Balance" not in c['description'])
+    total_debits = sum((d['amount'] or 0.0) for d in debits_list)
     balance = opening_balance + total_income - total_debits
     
     income_breakdown = {}
@@ -229,7 +229,10 @@ def update_livestock_status(animal_id):
     flash(f'Status updated to {new_status}.', 'success')
     return redirect(url_for('farm.dashboard'))
 
-# --- Activity Routes ---
+@farm_bp.route('/activity/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_activity():
     if request.method == 'POST':
         try:
             name = request.form.get('activity_name')
@@ -477,6 +480,7 @@ def add_farm_input_stock():
             db.session.rollback()
             flash(f'Error adding input: {str(e)}', 'error')
             
+    return render_template('farm/input_form.html', now=datetime.now())
 # --- Finance & Sales Routes ---
 @farm_bp.route('/sales/add', methods=['GET', 'POST'])
 @login_required
@@ -547,3 +551,72 @@ def generate_receipt(transaction_id):
     except Exception as e:
         flash(f'Error generating receipt: {str(e)}', 'error')
         return redirect(url_for('farm.dashboard'))
+
+# --- Asset Inventory Routes ---
+@farm_bp.route('/inventory/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_inventory_item():
+    if request.method == 'POST':
+        try:
+            qty = int(request.form.get('quantity', 0))
+            val = float(request.form.get('unit_value', 0))
+            new_item = Inventory(
+                asset_name=request.form.get('asset_name'),
+                category=request.form.get('category'),
+                subcategory=request.form.get('subcategory'),
+                condition=request.form.get('condition'),
+                location=request.form.get('location'),
+                quantity=qty,
+                unit_value=val,
+                total_value=qty * val,
+                description=request.form.get('description'),
+                department='Farm'
+            )
+            db.session.add(new_item)
+            db.session.commit()
+            flash('Farm asset added successfully.', 'success')
+            return redirect(url_for('farm.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding asset: {str(e)}', 'error')
+            
+    return render_template('farm/inventory_form.html', item=None)
+
+@farm_bp.route('/inventory/edit/<int:item_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_inventory_item(item_id):
+    item = Inventory.query.get_or_404(item_id)
+    if request.method == 'POST':
+        try:
+            item.asset_name = request.form.get('asset_name')
+            item.category = request.form.get('category')
+            item.subcategory = request.form.get('subcategory')
+            item.condition = request.form.get('condition')
+            item.location = request.form.get('location')
+            item.quantity = int(request.form.get('quantity', 0))
+            item.unit_value = float(request.form.get('unit_value', 0))
+            item.total_value = item.quantity * item.unit_value
+            item.description = request.form.get('description')
+            db.session.commit()
+            flash('Farm asset updated.', 'success')
+            return redirect(url_for('farm.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating asset: {str(e)}', 'error')
+    return render_template('farm/inventory_form.html', item=item)
+
+@farm_bp.route('/inventory/delete/<int:item_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_inventory_item(item_id):
+    item = Inventory.query.get_or_404(item_id)
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        flash('Asset deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting asset: {str(e)}', 'error')
+    return redirect(url_for('farm.dashboard'))

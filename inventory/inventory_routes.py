@@ -121,7 +121,7 @@ def add_item():
             db.session.rollback()
             flash(f'Error adding item: {str(e)}', 'error')
             
-    return render_template('inventory/form.html', item=None)
+    return render_template('inventory/form.html', item=None, dept_context=get_current_dept())
 
 @inventory_bp.route('/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
@@ -150,7 +150,7 @@ def edit_item(item_id):
             db.session.rollback()
             flash(f'Error updating item: {str(e)}', 'error')
             
-    return render_template('inventory/form.html', item=item)
+    return render_template('inventory/form.html', item=item, dept_context=get_current_dept())
 
 @inventory_bp.route('/delete/<int:item_id>', methods=['POST'])
 @login_required
@@ -203,3 +203,47 @@ def export_csv(category):
         mimetype="text/csv",
         headers={"Content-disposition": f"attachment; filename={filename}"}
     )
+
+@inventory_bp.route('/fix-departments', methods=['POST'])
+@login_required
+@admin_required
+def fix_departments():
+    """
+    Utility route to departmentalize existing inventory items based on their category.
+    """
+    items = Inventory.query.all()
+    count = 0
+    for item in items:
+        old_dept = item.department
+        new_dept = old_dept
+        
+        cat = item.category or ""
+        name = item.asset_name or ""
+        
+        # 1. Farm
+        if any(cat.startswith(str(i) + ".") for i in range(1, 9)) or \
+           any(term in cat.lower() for term in ['farm', 'crop', 'livestock', 'harvest']):
+            new_dept = 'Farm'
+        # 2. ICT
+        elif 'ICT' in cat.upper() or 'ICT' in name.upper() or 'SOFTWARE' in cat.upper():
+            new_dept = 'ICT Department'
+        # 3. Borehole
+        elif 'BOREHOLE' in cat.upper() or 'DRILLING' in cat.upper():
+            new_dept = 'Borehole Drilling'
+        # 4. Construction
+        elif 'CONSTRUCTION' in cat.upper() or 'BUILDING' in cat.upper():
+            new_dept = 'Construction'
+        # 5. Lodge
+        elif 'LODGE' in cat.upper() or 'ROOM' in cat.upper() or 'BED' in cat.upper() or 'REST HOUSE' in cat.upper():
+            new_dept = 'Lodge'
+            
+        if not new_dept:
+            new_dept = 'Borehole Drilling' # Default fallback
+            
+        if old_dept != new_dept:
+            item.department = new_dept
+            count += 1
+            
+    db.session.commit()
+    flash(f'Departmentalized {count} inventory items successfully.', 'success')
+    return redirect(url_for('inventory.dashboard'))
