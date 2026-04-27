@@ -128,18 +128,28 @@
     }
     
     .table thead th {
-        color: #FFD700 !important;
+        color: #FFFFFF !important; /* Changed from Gold to White */
         background: transparent !important;
-        border-bottom: 2px solid #FFD700 !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
         text-transform: uppercase;
         letter-spacing: 1px;
         text-shadow: 1px 1px 4px #000;
+        font-size: 0.95rem; /* Increased font size */
     }
-
+    
     .table td {
         background: transparent !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-        text-shadow: 1px 1px 3px #000;
+        color: #FFFFFF !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        text-shadow: 1px 1px 4px #000;
+        font-size: 1.2rem; /* Significantly increased font size */
+        font-weight: 600; /* Bolder text for clarity */
+    }
+
+    .table .badge {
+        color: #FFFFFF !important;
+        font-size: 0.95rem; /* Larger badges */
+        font-weight: 700;
     }
 
     /* Empty State - High Visibility */
@@ -475,13 +485,82 @@
         </div>
     </div>
 
+    <!-- Finance Tab -->
+    <div class="tab-pane fade" id="finance" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4><i class="fas fa-wallet text-success me-2"></i>Farm Finance & Cash Book</h4>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('farm.cashbook') }}" class="btn btn-outline-light btn-sm"><i class="fas fa-book-open me-1"></i> Full Cash Book</a>
+                <a href="{{ url_for('farm.cashbook') }}" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i> Add Entry</a>
+            </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card-glass" style="border-left-color: #2ecc71;">
+                    <small>Total Income</small>
+                    <h3 class="text-success">MWK {{ "{:,.2f}".format(total_income) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card-glass" style="border-left-color: #e74c3c;">
+                    <small>Total Expense</small>
+                    <h3 class="text-danger">MWK {{ "{:,.2f}".format(total_expense) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card-glass" style="border-left-color: #3498db;">
+                    <small>Net Profit/Loss</small>
+                    <h3 class="text-info">MWK {{ "{:,.2f}".format(net_profit) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Cash Book Entries -->
+        <div class="table-container-glass">
+            <div class="table-responsive">
+                <table class="table table-hover text-white align-middle">
+                    <thead>
+                        <tr class="opacity-75 small text-uppercase">
+                            <th class="border-0">DATE</th>
+                            <th class="border-0">DESCRIPTION</th>
+                            <th class="border-0">REFERENCE</th>
+                            <th class="border-0">CATEGORY</th>
+                            <th class="border-0">TYPE</th>
+                            <th class="border-0 text-end">AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in finance_entries %}
+                        <tr>
+                            <td>{{ entry.date.strftime('%d %b, %Y') }}</td>
+                            <td class="fw-bold">{{ entry.description }}</td>
+                            <td><span class="small opacity-75">{{ entry.ref }}</span></td>
+                            <td><span class="badge bg-dark border border-secondary">{{ entry.category }}</span></td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if entry.type == 'Credit' else 'danger' }}">
+                                    {{ entry.type }}
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold {{ 'text-success' if entry.type == 'Credit' else 'text-danger' }}">
+                                MWK {{ "{:,.2f}".format(entry.amount) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center empty-state-hub"><i class="fas fa-book-medical fa-3x mb-3"></i><br>No financial records found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Quotations Tab -->
     <div class="tab-pane fade" id="quotations" role="tabpanel">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4><i class="fas fa-file-contract text-success me-2"></i>Farm Quotations</h4>
-            <a href="{{ url_for('quotations.create_quotation') }}" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i> New Quotation</a>
+            <a href="{{ url_for('quotations.create_quotation', department='Farm') }}" class="btn btn-success btn-sm"><i class="fas fa-plus me-1"></i> New Quotation</a>
         </div>
         <div class="table-container-glass">
             <div class="table-responsive">

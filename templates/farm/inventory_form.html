@@ -26,19 +26,37 @@
 
                     <div class="mb-3">
                         <label for="category" class="form-label fw-bold">Category <span class="text-danger">*</span></label>
-                        {% set selected_cat = item.category if item else '' %}
-                        <select class="form-select" id="category" name="category" required onchange="updateSubcategories()">
-                            <option value="" disabled {% if not selected_cat %}selected{% endif %}>Select Category</option>
-                            <option value="Office Equipment" {% if selected_cat == 'Office Equipment' %}selected{% endif %}>Office Equipment</option>
-                            <option value="1. Crop Production Inventory" {% if selected_cat == '1. Crop Production Inventory' %}selected{% endif %}>1. Crop Production Inventory</option>
-                            <option value="2. Livestock Inventory" {% if selected_cat == '2. Livestock Inventory' %}selected{% endif %}>2. Livestock Inventory</option>
-                            <option value="3. Farm Equipment & Tools" {% if selected_cat == '3. Farm Equipment & Tools' %}selected{% endif %}>3. Farm Equipment & Tools</option>
-                            <option value="4. Buildings & Structures" {% if selected_cat == '4. Buildings & Structures' %}selected{% endif %}>4. Buildings & Structures</option>
-                            <option value="5. Harvesting & Post-Harvest Inventory" {% if selected_cat == '5. Harvesting & Post-Harvest Inventory' %}selected{% endif %}>5. Harvesting & Post-Harvest Inventory</option>
-                            <option value="6. Farm Inputs & Consumables" {% if selected_cat == '6. Farm Inputs & Consumables' %}selected{% endif %}>6. Farm Inputs & Consumables</option>
-                            <option value="7. Financial & Record Inventory" {% if selected_cat == '7. Financial & Record Inventory' %}selected{% endif %}>7. Financial & Record Inventory</option>
-                            <option value="8. Transport & Logistics" {% if selected_cat == '8. Transport & Logistics' %}selected{% endif %}>8. Transport & Logistics</option>
-                        </select>
+                        <div class="input-group">
+                            {% set selected_cat = item.category if item else '' %}
+                            <select class="form-select" id="category" name="category" required onchange="updateSubcategories()">
+                                <option value="" disabled {% if not selected_cat %}selected{% endif %}>Select Category</option>
+                                <option value="Office Equipment" {% if selected_cat == 'Office Equipment' %}selected{% endif %}>Office Equipment</option>
+                                <option value="Crop Production Inventory" {% if selected_cat == 'Crop Production Inventory' %}selected{% endif %}>Crop Production Inventory</option>
+                                <option value="Livestock Inventory" {% if selected_cat == 'Livestock Inventory' %}selected{% endif %}>Livestock Inventory</option>
+                                <option value="Farm Equipment & Tools" {% if selected_cat == 'Farm Equipment & Tools' %}selected{% endif %}>Farm Equipment & Tools</option>
+                                <option value="Buildings & Structures" {% if selected_cat == 'Buildings & Structures' %}selected{% endif %}>Buildings & Structures</option>
+                                <option value="Harvesting & Post-Harvest Inventory" {% if selected_cat == 'Harvesting & Post-Harvest Inventory' %}selected{% endif %}>Harvesting & Post-Harvest Inventory</option>
+                                <option value="Farm Inputs & Consumables" {% if selected_cat == 'Farm Inputs & Consumables' %}selected{% endif %}>Farm Inputs & Consumables</option>
+                                <option value="Financial & Record Inventory" {% if selected_cat == 'Financial & Record Inventory' %}selected{% endif %}>Financial & Record Inventory</option>
+                                <option value="Transport & Logistics" {% if selected_cat == 'Transport & Logistics' %}selected{% endif %}>Transport & Logistics</option>
+                                {% for cat in custom_categories %}
+                                    <option value="{{ cat }}" {% if selected_cat == cat %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-outline-success" type="button" onclick="toggleCustomCategory()">
+                                <i class="fas fa-plus-circle"></i> Add Custom...
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="customCategoryDiv" class="mb-3 d-none">
+                        <label for="new_category" class="form-label fw-bold text-success">New Category Name</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control border-success" id="new_category" placeholder="Enter new category name">
+                            <button class="btn btn-success" type="button" id="saveCategoryBtn">
+                                <i class="fas fa-save me-1"></i> Save Category
+                            </button>
+                        </div>
                     </div>
 
                     <div class="row mb-3">
@@ -94,7 +112,7 @@
 <script>
     const farmSubcats = {
         "Office Equipment": ["Computers & Laptops", "Printers & Scanners", "Office Furniture", "Stationery", "Networking Equipment"],
-        "1. Crop Production Inventory": [
+        "Crop Production Inventory": [
             "a) Seeds & Planting Materials (Maize, Groundnut, Bean, Vegetable)",
             "b) Fertilizers & Soil Amendments (Basal, Top dressing, Manure/compost)",
             "c) Agrochemicals (Herbicides, Pesticides, Fungicides)",
@@ -104,7 +122,7 @@
             "Herbicides (weed killers)", "Pesticides (insect control)", "Fungicides (disease control)",
             "Water pumps", "Pipes and hoses", "Drip irrigation kits", "Water storage tanks"
         ],
-        "2. Livestock Inventory": [
+        "Livestock Inventory": [
             "a) Animals (Cattle, Goats, Sheep, Chickens, Pigs)",
             "b) Feed & Supplements (Bran, Soybean, Commercial, Minerals)",
             "c) Animal Health Supplies (Vaccines, Dewormers, Antibiotics, Disinfectants)",
@@ -112,24 +130,24 @@
             "Maize bran", "Soybean meal", "Commercial feed", "Mineral supplements",
             "Vaccines", "Dewormers", "Antibiotics", "Disinfectants"
         ],
-        "3. Farm Equipment & Tools": [
+        "Farm Equipment & Tools": [
             "Hoes", "Slashers", "Panga knives", "Wheelbarrows", 
             "Sprayers (knapsack sprayers)", "Tractors", "Ploughs and harrows"
         ],
-        "4. Buildings & Structures": [
+        "Buildings & Structures": [
             "Storage sheds", "Animal housing", "Greenhouses", "Silos or grain storage facilities"
         ],
-        "5. Harvesting & Post-Harvest Inventory": [
+        "Harvesting & Post-Harvest Inventory": [
             "Sacks", "Drying sheets/tarpaulins", "Shellers (for maize)"
         ],
-        "6. Farm Inputs & Consumables": [
+        "Farm Inputs & Consumables": [
             "Fuel (for machinery)", "Lubricants", "Packaging materials", "Twine/rope"
         ],
-        "7. Financial & Record Inventory": [
+        "Financial & Record Inventory": [
             "Input purchase records", "Sales records (crops and livestock)", 
             "Veterinary records", "Labor records", "Stock inventory register"
         ],
-        "8. Transport & Logistics": [
+        "Transport & Logistics": [
             "Bicycles or motorcycles", "Trucks", "Animal carts (e.g., ox-cart)"
         ]
     };
@@ -146,6 +164,58 @@
             });
         }
     }
+
+    function toggleCustomCategory() {
+        const div = document.getElementById('customCategoryDiv');
+        div.classList.toggle('d-none');
+        if (!div.classList.contains('d-none')) {
+            document.getElementById('new_category').focus();
+        }
+    }
+
+    document.getElementById('saveCategoryBtn').addEventListener('click', function() {
+        const newCat = document.getElementById('new_category').value.trim();
+        if (!newCat) {
+            alert('Please enter a category name');
+            return;
+        }
+
+        fetch('{{ url_for("farm.add_custom_category") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                category_name: newCat,
+                department: 'Farm'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add to dropdown
+                const select = document.getElementById('category');
+                const opt = document.createElement('option');
+                opt.value = newCat;
+                opt.text = newCat;
+                opt.selected = true;
+                select.appendChild(opt);
+                
+                // Reset and hide input
+                document.getElementById('new_category').value = '';
+                document.getElementById('customCategoryDiv').classList.add('d-none');
+                
+                // Show success alert
+                alert('Category saved and selected!');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving category');
+        });
+    });
 
     // Initialize on page load if editing
     window.onload = updateSubcategories;

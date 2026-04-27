@@ -146,6 +146,14 @@ class CustomProjectType(db.Model):
     department = db.Column(db.String(100), default='Borehole')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class CustomInventoryCategory(db.Model):
+    __tablename__ = 'custom_inventory_categories'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    category_name = db.Column(db.String(200), unique=True, nullable=False)
+    department = db.Column(db.String(100), default='Farm')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Contract(db.Model):
     __tablename__ = 'contracts'
     

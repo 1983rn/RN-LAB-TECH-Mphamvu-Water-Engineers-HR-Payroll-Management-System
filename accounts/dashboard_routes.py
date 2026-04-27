@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, Response, make_response
 from functools import wraps
 from datetime import datetime, date
-from models import Inventory, FarmActivity, Transaction, Invoice, Quotation, Contract, FarmOutput, FarmExpense, Payroll, CashBookEntry, PayrollBatch, PayrollOTP, Employee, LodgeInventory
+from models import (Inventory, FarmActivity, Transaction, Invoice, Quotation, Contract, 
+                    FarmOutput, FarmExpense, Payroll, CashBookEntry, PayrollBatch, PayrollOTP, 
+                    Employee, LodgeInventory, ConstructionStock, Livestock, FarmInput, LodgePayment, LodgeExpense)
 from db_utils import db
 import csv
 import io
@@ -61,25 +63,54 @@ def accounts_required(f):
 @login_required
 @accounts_required
 def dashboard():
-    # 1. Total Inventory Wealth (Excluding 'Poor' condition)
-    # Generic Inventory
+    # 1. Total Inventory Wealth (Consolidated from all tables)
+    # Generic Inventory (Borehole, ICT, HR, Accounts)
     standard_inventory_val = db.session.query(db.func.sum(Inventory.total_value)).filter(Inventory.condition != 'Poor').scalar() or 0
     # Lodge Inventory
     lodge_inventory_val = db.session.query(db.func.sum(LodgeInventory.total_value)).filter(LodgeInventory.condition != 'Poor').scalar() or 0
-    total_inventory_wealth = standard_inventory_val + lodge_inventory_val
+    # Construction Materials
+    const_inventory_val = db.session.query(db.func.sum(ConstructionStock.total_value)).scalar() or 0
+    # Farm Assets (Livestock + Inputs)
+    livestock_val = db.session.query(db.func.sum(Livestock.purchase_price)).filter_by(status='Alive').scalar() or 0
+    farm_inputs_val = db.session.query(db.func.sum(FarmInput.total_cost)).scalar() or 0
+    
+    total_inventory_wealth = standard_inventory_val + lodge_inventory_val + const_inventory_val + livestock_val + farm_inputs_val
     
     # 2. Consolidated Cashbook Totals (All 7 Departments)
-    departments = ['Borehole Drilling', 'Farm', 'Construction', 'Lodge', 'HR', 'Accounts', 'ICT Department']
+    # Mapping the 7 departments as per company structure
+    departments = [
+        'Borehole Drilling', 
+        'Farm', 
+        'Construction', 
+        'Lodge', 
+        'ICT Department', 
+        'HR', 
+        'Accounts'
+    ]
     dept_stats = []
     total_company_income = 0
     total_company_expense = 0
 
     for dept in departments:
+        # a) Central Cashbook Entries
         income = db.session.query(db.func.sum(CashBookEntry.amount)).filter_by(department=dept, type='Credit').scalar() or 0
         expense = db.session.query(db.func.sum(CashBookEntry.amount)).filter_by(department=dept, type='Debit').scalar() or 0
-        # Include specific transactions for business departments
+        
+        # b) Specialized Business Revenue (In case not mirrored in cashbook yet)
         if dept == 'Borehole Drilling':
-             income += db.session.query(db.func.sum(Transaction.amount)).filter_by(department='Borehole Drilling').scalar() or 0
+            # Core transactions usually aren't all in cashbook yet
+            income += db.session.query(db.func.sum(Transaction.amount)).filter_by(department='Borehole Drilling').scalar() or 0
+        elif dept == 'Lodge':
+            # LodgePayments aren't mirrored in cashbook in current logic
+            income += db.session.query(db.func.sum(LodgePayment.amount)).filter_by(status='Completed').scalar() or 0
+            expense += db.session.query(db.func.sum(LodgeExpense.amount)).scalar() or 0
+        elif dept == 'Farm':
+            # FarmExpenses might be separate from Cashbook
+            expense += db.session.query(db.func.sum(FarmExpense.amount)).scalar() or 0
+        
+        # c) Staff Payroll (Company-wide staff costs)
+        payroll_expense = db.session.query(db.func.sum(Payroll.net_salary)).join(Employee).filter(Employee.department == dept).scalar() or 0
+        expense += payroll_expense
         
         profit_loss = income - expense
         dept_stats.append({
@@ -115,7 +146,7 @@ def salaries():
     batches = PayrollBatch.query.order_by(PayrollBatch.created_at.desc()).all()
     
     # Requirement: Categorize by departments
-    departments = ['Borehole Drilling', 'Farm', 'Construction', 'Lodge', 'HR', 'Accounts', 'ICT Department']
+    departments = ['Borehole Drilling', 'Farm', 'Construction', 'Lodge', 'ICT Department', 'HR', 'Accounts']
     categorized_payroll = {}
     total_net_all = 0
     

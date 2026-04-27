@@ -76,6 +76,12 @@
                                 <input class="project-type-checkbox form-check-input" type="checkbox" id="cpt9" value="Masonry Cement">
                                 <label class="form-check-label" for="cpt9">Rank 5: Masonry Cement [Masonry (Non-structural)]</label>
                             </div>
+                             {% elif department == 'Farm' %}
+                            <!-- Farm Department: Uses custom project types only -->
+                            <p class="text-muted small px-2 py-2 mb-0"><i class="fas fa-info-circle me-1"></i>Use "Add Custom Project" below to add your farm project types. They will be saved for future use.</p>
+                            {% if not custom_project_types %}
+                            <p class="text-muted small px-2 mb-0 fst-italic">No project types yet. Add your first one below.</p>
+                            {% endif %}
                             {% else %}
                             <!-- Borehole Drilling Specific Project Types (Default) -->
                             <div class="form-check">

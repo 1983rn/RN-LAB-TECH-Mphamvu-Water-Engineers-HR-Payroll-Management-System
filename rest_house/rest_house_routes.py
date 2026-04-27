@@ -7,7 +7,7 @@ from models import (
 from db_utils import db
 from datetime import datetime, date
 
-rest_house_bp = Blueprint('rest_house', __name__, url_prefix='/rest-house')
+rest_house_bp = Blueprint('rest_house', __name__, url_prefix='/lodge')
 
 def login_required(f):
     @wraps(f)

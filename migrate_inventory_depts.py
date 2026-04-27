@@ -38,7 +38,7 @@ def migrate():
             elif 'CONSTRUCTION' in cat.upper() or 'BUILDING' in cat.upper():
                 new_dept = 'Construction'
             
-            # 5. Lodge / Rest House
+            # 5. Lodge
             elif 'LODGE' in cat.upper() or 'ROOM' in cat.upper() or 'BED' in cat.upper():
                 new_dept = 'Lodge'
 

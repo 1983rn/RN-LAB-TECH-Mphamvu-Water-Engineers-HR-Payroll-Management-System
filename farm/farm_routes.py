@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, send_file
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, send_file, jsonify
 from functools import wraps
-from models import FarmActivity, FarmInput, FarmOutput, FarmExpense, Livestock, CropCycle, Transaction, CashBookEntry, Quotation, Invoice, DeliveryNote, Inventory
+from models import FarmActivity, FarmInput, FarmOutput, FarmExpense, Livestock, CropCycle, Transaction, CashBookEntry, Quotation, Invoice, DeliveryNote, Inventory, CustomInventoryCategory
 from utils.auth_utils import apply_dept_filter, get_current_dept
 from db_utils import db
 from datetime import datetime, date
@@ -64,10 +64,33 @@ def dashboard():
     # We query transactions and cashbook entries specifically for the Farm department
     txs_query = apply_dept_filter(Transaction.query, Transaction)
     txs = txs_query.all()
-    sales_total = sum((t.amount or 0.0) for t in txs)
     
     cash_query = apply_dept_filter(CashBookEntry.query, CashBookEntry)
     cash_entries = cash_query.all()
+    
+    # Combined Cashbook Entries for the Dashboard
+    finance_entries = []
+    for t in txs:
+        finance_entries.append({
+            'date': t.payment_date,
+            'description': t.notes or f"Farm Sale - {t.client.client_name if t.client else 'Cash'}",
+            'ref': t.reference_number or 'SALE',
+            'category': 'Business Revenue',
+            'type': 'Credit',
+            'amount': float(t.amount or 0.0)
+        })
+    for e in cash_entries:
+        finance_entries.append({
+            'date': e.date,
+            'description': e.description,
+            'ref': e.reference or 'FARM',
+            'category': e.category or 'Operations',
+            'type': e.type,
+            'amount': float(e.amount or 0.0)
+        })
+    finance_entries.sort(key=lambda x: x['date'], reverse=True)
+
+    sales_total = sum((t.amount or 0.0) for t in txs)
     total_income = sales_total + sum((e.amount or 0.0) for e in cash_entries if e.type == 'Credit' and "Opening Balance" not in e.description)
     total_expense = sum((e.amount or 0.0) for e in cash_entries if e.type == 'Debit')
     
@@ -104,6 +127,7 @@ def dashboard():
                           total_expense=total_expense,
                           net_profit=net_profit,
                           txs=txs,
+                          finance_entries=finance_entries[:20], # Show last 20 for dashboard
                           quotes=farm_quotes,
                           invoices=farm_invoices,
                           deliveries=farm_deliveries,
@@ -154,7 +178,7 @@ def cashbook():
     
     # Total Input Asset Value
     input_query = apply_dept_filter(FarmInput.query, FarmInput)
-    total_inventory = db.session.query(sa.func.sum(FarmInput.total_cost)).filter(input_query.where_clause).scalar() or 0.0
+    total_inventory = input_query.with_entities(sa.func.sum(FarmInput.total_cost)).scalar() or 0.0
     
     total_income = sum((c['amount'] or 0.0) for c in credits_list if "Opening Balance" not in c['description'])
     total_debits = sum((d['amount'] or 0.0) for d in debits_list)
@@ -174,18 +198,57 @@ def cashbook():
     credits_list.sort(key=lambda x: x['date'], reverse=True)
     debits_list.sort(key=lambda x: x['date'], reverse=True)
 
-    return render_template('finance_dashboard/cashbook.html', 
+    return render_template('farm/cashbook.html', 
                            credits=credits_list,
                            debits=debits_list,
                            total_income=total_income,
                            total_debits=total_debits,
-                           balance=balance,
                            opening_balance=opening_balance,
+                           balance=balance,
                            total_inventory=total_inventory,
                            income_breakdown=income_breakdown,
                            expense_breakdown=expense_breakdown,
                            now=datetime.now(),
                            is_farm=True)
+
+@farm_bp.route('/cashbook/add', methods=['POST'])
+@login_required
+@admin_required
+def add_cashbook_entry():
+    try:
+        date_str = request.form.get('date')
+        description = request.form.get('description')
+        amount_str = request.form.get('amount')
+        entry_type = request.form.get('type')
+
+        if not all([date_str, description, amount_str, entry_type]):
+            flash('Please fill in all required fields.', 'error')
+            return redirect(url_for('farm.cashbook'))
+
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        amount = float(amount_str)
+        reference = request.form.get('reference')
+        category = request.form.get('category')
+
+        entry = CashBookEntry(
+            date=date_obj,
+            description=description,
+            reference=reference,
+            amount=amount,
+            type=entry_type,
+            category=category,
+            department='Farm'
+        )
+        db.session.add(entry)
+        db.session.commit()
+        flash('Entry added to Farm Cash Book successfully!', 'success')
+    except ValueError:
+        flash('Error: Invalid date or amount format.', 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding entry: {str(e)}', 'error')
+
+    return redirect(url_for('farm.cashbook'))
 
 # --- Livestock Routes ---
 @farm_bp.route('/livestock/add', methods=['GET', 'POST'])
@@ -581,7 +644,8 @@ def add_inventory_item():
             db.session.rollback()
             flash(f'Error adding asset: {str(e)}', 'error')
             
-    return render_template('farm/inventory_form.html', item=None)
+    custom_categories = CustomInventoryCategory.query.filter_by(department='Farm').all()
+    return render_template('farm/inventory_form.html', item=None, custom_categories=[c.category_name for c in custom_categories])
 
 @farm_bp.route('/inventory/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
@@ -605,7 +669,8 @@ def edit_inventory_item(item_id):
         except Exception as e:
             db.session.rollback()
             flash(f'Error updating asset: {str(e)}', 'error')
-    return render_template('farm/inventory_form.html', item=item)
+    custom_categories = CustomInventoryCategory.query.filter_by(department='Farm').all()
+    return render_template('farm/inventory_form.html', item=item, custom_categories=[c.category_name for c in custom_categories])
 
 @farm_bp.route('/inventory/delete/<int:item_id>', methods=['POST'])
 @login_required
@@ -620,3 +685,27 @@ def delete_inventory_item(item_id):
         db.session.rollback()
         flash(f'Error deleting asset: {str(e)}', 'error')
     return redirect(url_for('farm.dashboard'))
+@farm_bp.route('/api/custom_categories', methods=['POST'])
+@login_required
+@admin_required
+def add_custom_category():
+    try:
+        data = request.get_json()
+        category_name = data.get('category_name')
+        department = data.get('department', 'Farm')
+        
+        if not category_name:
+            return jsonify({'success': False, 'message': 'Category name is required'}), 400
+            
+        existing = CustomInventoryCategory.query.filter_by(category_name=category_name, department=department).first()
+        if existing:
+            return jsonify({'success': False, 'message': 'Category already exists'}), 400
+            
+        new_category = CustomInventoryCategory(category_name=category_name, department=department)
+        db.session.add(new_category)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Category added successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500

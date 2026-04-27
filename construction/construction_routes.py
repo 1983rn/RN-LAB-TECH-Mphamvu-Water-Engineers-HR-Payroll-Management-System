@@ -285,3 +285,52 @@ def use_material():
     projects = ConstructionProject.query.all()
     materials = ConstructionStock.query.all()
     return render_template('construction/use_material_form.html', projects=projects, materials=materials, now=datetime.now())
+
+@construction_bp.route('/cashbook', methods=['GET'])
+@login_required
+@admin_required
+def cashbook_view():
+    query = CashBookEntry.query.filter_by(department='Construction')
+    entries = query.order_by(CashBookEntry.date.desc()).all()
+    
+    total_credits = db.session.query(sa.func.sum(CashBookEntry.amount)).filter_by(department='Construction', type='Credit').scalar() or 0
+    total_debits = db.session.query(sa.func.sum(CashBookEntry.amount)).filter_by(department='Construction', type='Debit').scalar() or 0
+    balance = total_credits - total_debits
+    
+    return render_template('construction/cashbook.html', 
+                           entries=entries, 
+                           total_credits=total_credits, 
+                           total_debits=total_debits, 
+                           balance=balance,
+                           now=datetime.now())
+
+@construction_bp.route('/cashbook/add', methods=['POST'])
+@login_required
+@admin_required
+def add_cashbook_entry():
+    try:
+        date_str = request.form.get('date')
+        description = request.form.get('description')
+        amount = float(request.form.get('amount', 0))
+        entry_type = request.form.get('type')
+        category = request.form.get('category')
+        reference = request.form.get('reference')
+
+        new_entry = CashBookEntry(
+            date=datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else datetime.now().date(),
+            description=description,
+            amount=amount,
+            type=entry_type,
+            category=category,
+            reference=reference,
+            department='Construction'
+        )
+        
+        db.session.add(new_entry)
+        db.session.commit()
+        flash('Cashbook entry added successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding cashbook entry: {str(e)}', 'error')
+        
+    return redirect(url_for('construction.cashbook_view'))

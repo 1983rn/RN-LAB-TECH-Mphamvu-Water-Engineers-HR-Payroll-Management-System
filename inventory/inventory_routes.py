@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, Response
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, Response, jsonify
 from functools import wraps
 from utils.auth_utils import apply_dept_filter, get_current_dept
-from models import Inventory
+from models import Inventory, CustomInventoryCategory
 from db_utils import db
 import csv
 import io
@@ -121,7 +121,9 @@ def add_item():
             db.session.rollback()
             flash(f'Error adding item: {str(e)}', 'error')
             
-    return render_template('inventory/form.html', item=None, dept_context=get_current_dept())
+    dept = get_current_dept()
+    custom_categories = CustomInventoryCategory.query.filter_by(department=dept).all()
+    return render_template('inventory/form.html', item=None, dept_context=dept, custom_categories=[c.category_name for c in custom_categories])
 
 @inventory_bp.route('/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
@@ -150,7 +152,9 @@ def edit_item(item_id):
             db.session.rollback()
             flash(f'Error updating item: {str(e)}', 'error')
             
-    return render_template('inventory/form.html', item=item, dept_context=get_current_dept())
+    dept = get_current_dept()
+    custom_categories = CustomInventoryCategory.query.filter_by(department=dept).all()
+    return render_template('inventory/form.html', item=item, dept_context=dept, custom_categories=[c.category_name for c in custom_categories])
 
 @inventory_bp.route('/delete/<int:item_id>', methods=['POST'])
 @login_required
@@ -234,7 +238,7 @@ def fix_departments():
         elif 'CONSTRUCTION' in cat.upper() or 'BUILDING' in cat.upper():
             new_dept = 'Construction'
         # 5. Lodge
-        elif 'LODGE' in cat.upper() or 'ROOM' in cat.upper() or 'BED' in cat.upper() or 'REST HOUSE' in cat.upper():
+        elif 'LODGE' in cat.upper() or 'ROOM' in cat.upper() or 'BED' in cat.upper():
             new_dept = 'Lodge'
             
         if not new_dept:

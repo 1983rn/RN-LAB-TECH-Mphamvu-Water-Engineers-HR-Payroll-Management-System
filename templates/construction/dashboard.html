@@ -385,6 +385,7 @@
                         <th>LOCATION</th>
                         <th>STATUS</th>
                         <th class="text-end">TOTAL QUOTE</th>
+                        <th class="text-end">ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -395,6 +396,11 @@
                         <td>{{ q.project_location }}</td>
                         <td><span class="badge bg-info">{{ q.status }}</span></td>
                         <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(q.total_amount) }}</td>
+                        <td class="text-end">
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteQuotation('{{ q.quotation_id }}')" title="Delete Quotation">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -545,9 +551,16 @@
 
     <!-- Cashbook Tab -->
     <div class="tab-pane fade" id="cashbook" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="text-white mb-0"><i class="fas fa-book text-success me-2"></i>Construction Finance</h4>
-            <a href="{{ url_for('construction.dashboard') }}" class="btn btn-outline-light btn-sm"><i class="fas fa-sync me-1"></i> Refresh</a>
+        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white bg-opacity-5 rounded-3">
+            <h4 class="text-white mb-0"><i class="fas fa-book-open text-warning me-2"></i>Construction Finance</h4>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('construction.cashbook_view') }}" class="btn btn-warning btn-sm fw-bold">
+                    <i class="fas fa-external-link-alt me-1"></i> VIEW FULL CASHBOOK
+                </a>
+                <a href="{{ url_for('construction.dashboard') }}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sync me-1"></i> Refresh
+                </a>
+            </div>
         </div>
         <div class="table-container-glass">
             <table class="table table-hover align-middle">
@@ -642,6 +655,31 @@
                 errorDiv.style.display = 'block';
             }
         })
+    }
+    function deleteQuotation(quotationId) {
+        if (confirm('Deleting this quotation will also delete all related invoices, delivery notes, and transactions. This action cannot be undone. Continue?')) {
+            fetch(`/quotations/delete/${quotationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (data.success) {
+                    alert('Quotation and all related records deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error deleting quotation: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting quotation. Please try again.');
+            });
+        }
     }
 </script>
 {% endblock %}

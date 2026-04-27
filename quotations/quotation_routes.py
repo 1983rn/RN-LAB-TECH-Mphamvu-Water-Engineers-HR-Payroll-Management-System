@@ -28,8 +28,8 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('role') not in ['Administrator', 'HR Manager']:
-            flash('Administrator access required', 'error')
+        if session.get('role') not in ['Administrator', 'HR Manager', 'Director', 'Accountant']:
+            flash('Administrator or Financial access required', 'error')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
@@ -152,7 +152,7 @@ def create_quotation():
             flash(f'Error creating quotation: {str(e)}', 'error')
             return redirect(url_for('quotations.create_quotation', rfq_id=rfq_id))
     
-    department = request.args.get('department', 'Borehole')
+    department = request.args.get('department') or session.get('department_context', 'Borehole')
     custom_project_types = CustomProjectType.query.filter_by(department=department).all()
     return render_template('quotations/create.html', rfq=rfq, custom_project_types=[t.project_type for t in custom_project_types], department=department)
 

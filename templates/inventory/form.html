@@ -2,21 +2,73 @@
 
 {% block title %}{{ 'Edit Asset' if item else 'Add Asset' }} - Inventory - MWE{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
+    }
+    .alert-info {
+        background-color: rgba(56, 189, 248, 0.1) !important;
+        border-color: rgba(56, 189, 248, 0.3) !important;
+        color: #38bdf8 !important;
+    }
+    .card {
+        background-color: rgba(30, 41, 59, 0.7) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #ffffff !important;
+    }
+    .card-header {
+        background-color: transparent !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .form-label { color: #e2e8f0 !important; }
+    .form-control, .form-select {
+        background-color: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #ffffff !important;
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: #0f172a !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25) !important;
+    }
+    .form-control::placeholder { color: #64748b !important; }
+    .input-group-text {
+        background-color: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #94a3b8 !important;
+    }
+    .bg-light { background-color: rgba(255, 255, 255, 0.05) !important; }
+    .text-muted { color: #94a3b8 !important; }
+    .text-dark { color: #ffffff !important; }
+    .btn-outline-secondary {
+        color: #94a3b8;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    .btn-outline-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+    }
+    h2, h4, h5, .fw-bold { color: #ffffff !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center fade-in">
     <div class="col-md-8">
         <div class="alert alert-info border-3 text-center">
-            <h4 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i>MPHAMVU INVENTORY SYSTEM v2.1</h4>
-            <p class="mb-0">All 8 Farm Categories (1-8) are implemented in the dropdown below.</p>
+            <h4 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i>MPHAMVU INVENTORY SYSTEM v2.2</h4>
+            <p class="mb-0">Construction Division Categories are now active. Use "Add Custom..." to add more.</p>
         </div>
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold">
-                    <i class="fas {{ 'fa-edit' if item else 'fa-plus-circle' }} me-2 text-primary"></i>
+                    <i class="fas {{ 'fa-edit' if item else 'fa-plus-circle' }} me-2 text-info"></i>
                     {{ 'Edit Asset' if item else 'Add New Asset' }}
-                    <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">v2.1 (Farm Categories Enabled)</span>
+                    <span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem;">v2.2 (Construction Enabled)</span>
                 </h5>
-                <p class="small text-muted mb-0">Note: All Farm categories (1-8) are now listed below for easy access.</p>
                 <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Back to Inventory
                 </a>
@@ -30,27 +82,47 @@
                     
                     <div class="mb-3">
                         <label for="category" class="form-label fw-bold">Category <span class="text-danger">*</span></label>
-                        {% set selected_cat = request.args.get('cat') or (item.category if item else '') %}
-                        <select class="form-select" id="category" name="category" required onchange="updateSubcategories()">
-                            <option value="" disabled {% if not selected_cat %}selected{% endif %}>Select Category</option>
+                        <div class="input-group">
+                            {% set selected_cat = request.args.get('cat') or (item.category if item else '') %}
+                            <select class="form-select" id="category" name="category" required onchange="updateSubcategories()">
+                                <option value="" disabled {% if not selected_cat %}selected{% endif %}>Select Category</option>
 
-                            <optgroup label="Farm Inventory Categories">
-                                <option value="1. Crop Production Inventory" {% if selected_cat == '1. Crop Production Inventory' or selected_cat == 'Crop Production Inventory' %}selected{% endif %}>1. Crop Production Inventory</option>
-                                <option value="2. Livestock Inventory" {% if selected_cat == '2. Livestock Inventory' or selected_cat == 'Livestock Inventory' %}selected{% endif %}>2. Livestock Inventory</option>
-                                <option value="3. Farm Equipment & Tools" {% if selected_cat == '3. Farm Equipment & Tools' or selected_cat == 'Farm Equipment & Tools' %}selected{% endif %}>3. Farm Equipment & Tools</option>
-                                <option value="4. Buildings & Structures" {% if selected_cat == '4. Buildings & Structures' or selected_cat == 'Buildings & Structures' %}selected{% endif %}>4. Buildings & Structures</option>
-                                <option value="5. Harvesting & Post-Harvest Inventory" {% if selected_cat == '5. Harvesting & Post-Harvest Inventory' or selected_cat == 'Harvesting & Post-Harvest Inventory' %}selected{% endif %}>5. Harvesting & Post-Harvest Inventory</option>
-                                <option value="6. Farm Inputs & Consumables" {% if selected_cat == '6. Farm Inputs & Consumables' or selected_cat == 'Farm Inputs & Consumables' %}selected{% endif %}>6. Farm Inputs & Consumables</option>
-                                <option value="7. Financial & Record Inventory" {% if selected_cat == '7. Financial & Record Inventory' or selected_cat == 'Financial & Record Inventory' %}selected{% endif %}>7. Financial & Record Inventory</option>
-                                <option value="8. Transport & Logistics" {% if selected_cat == '8. Transport & Logistics' or selected_cat == 'Transport & Logistics' %}selected{% endif %}>8. Transport & Logistics</option>
-                            </optgroup>
-                            <optgroup label="General Categories">
-                                <option value="Borehole Drilling" {% if selected_cat == 'Borehole Drilling' %}selected{% endif %}>Borehole Drilling</option>
-                                <option value="Office Equipment" {% if selected_cat == 'Office Equipment' %}selected{% endif %}>Office Equipment</option>
-                                <option value="Construction Materials" {% if selected_cat == 'Construction Materials' %}selected{% endif %}>Construction Materials</option>
-                            </optgroup>
+                                <optgroup label="Construction Categories">
+                                    <option value="Building Materials" {% if selected_cat == 'Building Materials' or selected_cat == '1. Building Materials' %}selected{% endif %}>Building Materials</option>
+                                    <option value="Tools and Small Equipment" {% if selected_cat == 'Tools and Small Equipment' or selected_cat == '2. Tools and Small Equipment' %}selected{% endif %}>Tools and Small Equipment</option>
+                                    <option value="Heavy Machinery and Equipment" {% if selected_cat == 'Heavy Machinery and Equipment' or selected_cat == '3. Heavy Machinery and Equipment' %}selected{% endif %}>Heavy Machinery and Equipment</option>
+                                    <option value="Safety Equipment (PPE)" {% if selected_cat == 'Safety Equipment (PPE)' or selected_cat == '4. Safety Equipment (PPE)' %}selected{% endif %}>Safety Equipment (PPE)</option>
+                                    <option value="Site and Office Supplies" {% if selected_cat == 'Site and Office Supplies' or selected_cat == '5. Site and Office Supplies' %}selected{% endif %}>Site and Office Supplies</option>
+                                    <option value="Spare Parts and Maintenance Items" {% if selected_cat == 'Spare Parts and Maintenance Items' or selected_cat == '6. Spare Parts and Maintenance Items' %}selected{% endif %}>Spare Parts and Maintenance Items</option>
+                                    <option value="Temporary Structures and Site Facilities" {% if selected_cat == 'Temporary Structures and Site Facilities' or selected_cat == '7. Temporary Structures and Site Facilities' %}selected{% endif %}>Temporary Structures and Site Facilities</option>
+                                    <option value="Fuel and Consumables" {% if selected_cat == 'Fuel and Consumables' or selected_cat == '8. Fuel and Consumables' %}selected{% endif %}>Fuel and Consumables</option>
+                                    <option value="Surveying and Layout Equipment" {% if selected_cat == 'Surveying and Layout Equipment' or selected_cat == '9. Surveying and Layout Equipment' %}selected{% endif %}>Surveying and Layout Equipment</option>
+                                </optgroup>
+                                <optgroup label="General Categories">
+                                    <option value="Office Equipment" {% if selected_cat == 'Office Equipment' %}selected{% endif %}>Office Equipment</option>
+                                </optgroup>
+                                {% if custom_categories %}
+                                <optgroup label="Custom Lists">
+                                    {% for cat in custom_categories %}
+                                    <option value="{{ cat }}" {% if selected_cat == cat %}selected{% endif %}>{{ cat }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                            </select>
+                            <button class="btn btn-outline-info" type="button" onclick="toggleCustomCategory()">
+                                <i class="fas fa-plus-circle"></i> Add Custom...
+                            </button>
+                        </div>
+                    </div>
 
-                        </select>
+                    <div id="customCategoryDiv" class="mb-3 d-none">
+                        <label for="new_category" class="form-label fw-bold text-info">New Category Name</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control border-info" id="new_category" placeholder="Enter new category name">
+                            <button class="btn btn-info text-dark fw-bold" type="button" id="saveCategoryBtn">
+                                <i class="fas fa-save me-1"></i> Save Category
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="row mb-3">
@@ -73,7 +145,7 @@
                             <option value="New" {% if item and item.condition == 'New' %}selected{% endif %}>New</option>
                             <option value="Excellent" {% if item and item.condition == 'Excellent' %}selected{% endif %}>Excellent</option>
                             <option value="Good" {% if item and item.condition == 'Good' %}selected{% endif %}>Good</option>
-                            <option value="Fail" {% if item and item.condition == 'Fail' %}selected{% endif %}>Fail</option>
+                            <option value="Fair" {% if item and item.condition == 'Fair' %}selected{% endif %}>Fair</option>
                             <option value="Poor" {% if item and item.condition == 'Poor' %}selected{% endif %}>Poor</option>
                         </select>
                     </div>
@@ -93,9 +165,9 @@
                     </div>
                     
                     <div class="mb-4">
-                        <div class="p-3 bg-light rounded text-center border">
+                        <div class="p-3 bg-light rounded text-center border" style="border-color: rgba(255,255,255,0.1) !important;">
                             <span class="text-muted fw-bold me-2">Calculated Total Value:</span>
-                            <span class="fs-4 fw-bold text-primary" id="total_value_display">
+                            <span class="fs-4 fw-bold text-info" id="total_value_display">
                                 MWK {{ "{:,.2f}".format(item.total_value) if item else "0.00" }}
                             </span>
                         </div>
@@ -123,7 +195,6 @@
         var unit_value = parseFloat(document.getElementById('unit_value').value) || 0;
         var total = quantity * unit_value;
         
-        // Format as MWK 1,000,000.00
         var formatter = new Intl.NumberFormat('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
@@ -132,15 +203,16 @@
         document.getElementById('total_value_display').textContent = 'MWK ' + formatter.format(total);
     }
 
-    const farmSubcats = {
-        "1. Crop Production Inventory": ["Seeds & Planting Materials", "Fertilizers & Soil Amendments", "Agrochemicals", "Irrigation Supplies"],
-        "2. Livestock Inventory": ["Animals", "Feed & Supplements", "Animal Health Supplies"],
-        "3. Farm Equipment & Tools": ["Hoes", "Slashers", "Panga knives", "Wheelbarrows", "Sprayers", "Tractors", "Ploughs & Harrows"],
-        "4. Buildings & Structures": ["Storage sheds", "Animal housing", "Greenhouses", "Silos"],
-        "5. Harvesting & Post-Harvest Inventory": ["Sacks", "Drying sheets", "Shellers"],
-        "6. Farm Inputs & Consumables": ["Fuel", "Lubricants", "Packaging materials", "Twine/rope"],
-        "7. Financial & Record Inventory": ["Input purchase records", "Sales records", "Veterinary records", "Labor records", "Stock inventory register"],
-        "8. Transport & Logistics": ["Bicycles/motorcycles", "Trucks", "Animal carts"]
+    const constSubcats = {
+        "Building Materials": ["Cement", "Sand (fine and coarse)", "Aggregates (gravel, crushed stones)", "Bricks and concrete blocks", "Steel (reinforcement bars, mesh)", "Timber (planks, plywood, formwork materials)", "Roofing materials (iron sheets, tiles)", "Paints, varnishes, and finishes", "Pipes (PVC, metal)", "Electrical materials (wires, cables, conduits)"],
+        "Tools and Small Equipment": ["Hammers, screwdrivers, spanners", "Measuring tapes, spirit levels", "Wheelbarrows", "Shovels, hoes, pickaxes", "Trowels and floats", "Drilling machines", "Grinders and cutters"],
+        "Heavy Machinery and Equipment": ["Excavators", "Bulldozers", "Concrete mixers", "Cranes", "Road rollers", "Dump trucks", "Water pumps", "Generators"],
+        "Safety Equipment (PPE)": ["Helmets (hard hats)", "Safety boots", "Reflective vests", "Gloves", "Safety goggles", "Ear protection", "Harnesses (for working at heights)"],
+        "Site and Office Supplies": ["Stationery (papers, pens, files)", "Site record books/logbooks", "Computers and printers", "Survey equipment (levels, theodolites)", "Communication devices (radios, phones)"],
+        "Spare Parts and Maintenance Items": ["Engine oil and lubricants", "Filters (air, oil, fuel)", "Tyres and tubes", "Nuts, bolts, washers", "Belts and hoses"],
+        "Temporary Structures and Site Facilities": ["Scaffolding materials", "Formwork and shuttering", "Site cabins/offices", "Fencing materials", "Storage containers"],
+        "Fuel and Consumables": ["Diesel and petrol", "Welding rods", "Gas (for welding/cutting)", "Cleaning materials"],
+        "Surveying and Layout Equipment": ["Measuring wheels", "GPS devices", "Total stations", "Ranging rods"]
     };
 
     function updateSubcategories() {
@@ -148,8 +220,8 @@
         const datalist = document.getElementById('subcategory_list');
         datalist.innerHTML = '';
         
-        if (farmSubcats[cat]) {
-            farmSubcats[cat].forEach(sub => {
+        if (constSubcats[cat]) {
+            constSubcats[cat].forEach(sub => {
                 const option = document.createElement('option');
                 option.value = sub;
                 datalist.appendChild(option);
@@ -157,7 +229,61 @@
         }
     }
 
-    // Initial run
+    function toggleCustomCategory() {
+        const div = document.getElementById('customCategoryDiv');
+        div.classList.toggle('d-none');
+        if (!div.classList.contains('d-none')) {
+            document.getElementById('new_category').focus();
+        }
+    }
+
+    document.getElementById('saveCategoryBtn').addEventListener('click', function() {
+        const newCat = document.getElementById('new_category').value.trim();
+        if (!newCat) {
+            alert('Please enter a category name');
+            return;
+        }
+
+        fetch('{{ url_for("farm.add_custom_category") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                category_name: newCat,
+                department: '{{ dept_context or "Construction" }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('category');
+                const opt = document.createElement('option');
+                opt.value = newCat;
+                opt.text = newCat;
+                opt.selected = true;
+                
+                let customGroup = select.querySelector('optgroup[label="Custom Lists"]');
+                if (!customGroup) {
+                    customGroup = document.createElement('optgroup');
+                    customGroup.label = "Custom Lists";
+                    select.appendChild(customGroup);
+                }
+                customGroup.appendChild(opt);
+                
+                document.getElementById('new_category').value = '';
+                document.getElementById('customCategoryDiv').classList.add('d-none');
+                alert('Category saved and selected!');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving category');
+        });
+    });
+
     document.addEventListener('DOMContentLoaded', updateSubcategories);
 </script>
 {% endblock %}

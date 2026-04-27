@@ -121,6 +121,52 @@
                     </li>
                     {% endif %}
 
+                    {% if session.get('department_context') == 'Farm' %}
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('farm.dashboard') }}#livestock" class="nav-menu-link">
+                            <i class="fas fa-paw"></i>
+                            <span class="nav-text">Livestock</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('farm.dashboard') }}#crops" class="nav-menu-link">
+                            <i class="fas fa-seedling"></i>
+                            <span class="nav-text">Crops</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('farm.dashboard') }}#inputs" class="nav-menu-link">
+                            <i class="fas fa-boxes"></i>
+                            <span class="nav-text">Farm Inputs</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('farm.dashboard') }}#inventory" class="nav-menu-link">
+                            <i class="fas fa-tractor"></i>
+                            <span class="nav-text">Inventory</span>
+                        </a>
+                    </li>
+                    <div class="nav-section-label small opacity-50">FINANCE</div>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('farm.dashboard') }}#quotations" class="nav-menu-link">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span class="nav-text">Quotations</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('farm.dashboard') }}#invoices" class="nav-menu-link">
+                            <i class="fas fa-file-invoice"></i>
+                            <span class="nav-text">Invoices</span>
+                        </a>
+                    </li>
+                    <li class="nav-menu-item">
+                        <a href="{{ url_for('farm.cashbook') }}" class="nav-menu-link {% if 'cashbook' in request.endpoint %}active{% endif %}">
+                            <i class="fas fa-book-medical"></i>
+                            <span class="nav-text">Cash Book</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
                     {% if session.get('department_context') == 'ICT Department' %}
                     <li class="nav-menu-item">
                         <a href="{{ url_for('ict.projects') }}" class="nav-menu-link {% if request.endpoint and 'project' in request.endpoint %}active{% endif %}">

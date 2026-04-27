@@ -7,7 +7,7 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <h2><i class="fas fa-file-invoice me-2"></i>Quotation Management</h2>
-            <a href="{{ url_for('quotations.create_quotation') }}" class="btn btn-primary">
+            <a href="{{ url_for('quotations.create_quotation', department=session.get('department_context', 'Borehole')) }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>Create Quotation
             </a>
         </div>
@@ -97,7 +97,7 @@
             <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
             <h5 class="text-muted">No quotations found</h5>
             <p class="text-muted">Start by creating your first quotation.</p>
-            <a href="{{ url_for('quotations.create_quotation') }}" class="btn btn-primary">
+            <a href="{{ url_for('quotations.create_quotation', department=session.get('department_context', 'Borehole')) }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>Create First Quotation
             </a>
         </div>
