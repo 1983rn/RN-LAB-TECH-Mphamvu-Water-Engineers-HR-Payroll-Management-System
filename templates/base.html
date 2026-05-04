@@ -17,6 +17,11 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{{ 'has-sidebar' if session.user_id else 'no-sidebar' }}">
+    <!-- Rainbow Loader Overlay -->
+    <div id="loader-overlay">
+        <div class="rainbow-loader"></div>
+    </div>
+
 
     {% if session.user_id %}
     <!-- ═══ SIDEBAR ═══ -->
@@ -445,8 +450,45 @@
     {% endif %}
     
     {% block extra_js %}{% endblock %}
+
+    <!-- Rainbow Loader Control Script -->
+    <script>
+        function showLoader() {
+            document.getElementById("loader-overlay").style.display = "flex";
+        }
+        
+        function hideLoader() {
+            const loader = document.getElementById("loader-overlay");
+            loader.style.opacity = "0";
+            setTimeout(() => {
+                loader.style.display = "none";
+                loader.style.opacity = "1";
+            }, 300);
+        }
+
+        // Hide loader when page is fully loaded
+        window.addEventListener('load', hideLoader);
+
+        // Show loader on navigation or form submission
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('a, button');
+            if (target && !target.getAttribute('data-bs-toggle') && !target.hasAttribute('onclick') && target.type !== 'button') {
+                // Check if it's an external link or has target="_blank"
+                if (target.tagName === 'A' && (target.getAttribute('target') === '_blank' || target.href.startsWith('tel:') || target.href.startsWith('mailto:'))) {
+                    return;
+                }
+                showLoader();
+            }
+        });
+
+        // Show loader on form submission
+        document.addEventListener('submit', function() {
+            showLoader();
+        });
+    </script>
     
     <!-- Enterprise Support Widget -->
+
     <div class="support-widget">
         <div class="support-options" id="supportOptions">
             <a href="tel:+265991332952" class="support-item"><i class="fas fa-phone"></i> Call</a>

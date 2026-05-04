@@ -1286,3 +1286,40 @@ body.welcome-body {
 .badge-pending { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.5); }
 .badge-progress { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.5); }
 .badge-completed { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.5); }
+
+/* ══════════════════════════════════════
+   RAINBOW CIRCULAR LOADER
+   ══════════════════════════════════════ */
+#loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.8); /* Dark glass to match React UI */
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.3s ease-out;
+}
+
+.rainbow-loader {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 6px solid transparent;
+    border-top: 6px solid #ef4444; /* red-500 */
+    border-right: 6px solid #f97316; /* orange-500 */
+    border-bottom: 6px solid #22c55e; /* green-500 */
+    border-left: 6px solid #3b82f6; /* blue-500 */
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
