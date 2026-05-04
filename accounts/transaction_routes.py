@@ -204,11 +204,10 @@ def delete_transaction(transaction_id):
 def transaction_dashboard():
     # Get transaction statistics
     q = apply_dept_filter(Transaction.query, Transaction)
-    total_transactions = q.count()
-    total_amount = db.session.query(db.func.sum(Transaction.amount)).filter(apply_dept_filter(Transaction.query, Transaction).where_clause).scalar() or 0
-    # Wait, the above total_amount query is complex with filter. 
-    # Let me simplify:
+    
+    # Get current and total transaction statistics
     transactions = q.all()
+    total_transactions = len(transactions)
     total_amount = sum(t.amount for t in transactions)
     
     # Get current month transactions

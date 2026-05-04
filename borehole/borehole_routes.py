@@ -102,7 +102,7 @@ def cashbook():
     opening_balance = float(opening_balance_entry.amount) if opening_balance_entry else 0.0
     
     # Calculate Total Inventory Asset Value for this department
-    total_inventory = db.session.query(db.func.sum(Inventory.total_value)).filter(apply_dept_filter(Inventory.query, Inventory).where_clause).scalar() or 0.0
+    total_inventory = apply_dept_filter(db.session.query(db.func.sum(Inventory.total_value)), Inventory).scalar() or 0.0
     
     # Calculate totals
     # Filter out opening balance from income sum to avoid double counting
