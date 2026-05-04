@@ -69,13 +69,18 @@ with app.app_context():
         if not default_admin:
             default_admin = User(
                 username='Mphamvuwaterengineers',
-                password_hash=generate_password_hash('.org.ulandaduwe/2026/**?'),
+                password_hash=generate_password_hash('.org.ulandaduwe/2026/**?/'),
                 role='Administrator',
                 password_change_required=True
             )
             db.session.add(default_admin)
             db.session.commit()
             print("Default admin created successfully.")
+        elif default_admin.password_change_required:
+            # Force reset password if they haven't logged in successfully yet
+            default_admin.password_hash = generate_password_hash('.org.ulandaduwe/2026/**?/')
+            db.session.commit()
+            print("Default admin password reset to provided credentials.")
     except Exception as e:
         print(f"Database initialization error: {e}")
         # On Render, printing to stdout shows up in logs
