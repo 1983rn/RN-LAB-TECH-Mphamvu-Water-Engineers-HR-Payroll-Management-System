@@ -40,10 +40,45 @@ database_url = os.environ.get('DATABASE_URL', 'sqlite:///system.db')
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
+# Add SSL requirements for Render PostgreSQL if not present
+if "postgresql" in database_url and "sslmode" not in database_url:
+    if "?" in database_url:
+        database_url += "&sslmode=require"
+    else:
+        database_url += "?sslmode=require"
+
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+
+# Initialize database and default admin on startup
+with app.app_context():
+    try:
+        init_db()
+        
+        # Start Email RFQ fetching background daemon (if not in a worker that shouldn't)
+        # On Render, background tasks might be better in a separate worker, but for simplicity:
+        try:
+            from utils.rfq_parser import start_background_task
+            start_background_task()
+        except Exception as e:
+            app.logger.error(f"Failed to start background task: {e}")
+        
+        default_admin = User.query.filter_by(username='Mphamvuwaterengineers').first()
+        if not default_admin:
+            default_admin = User(
+                username='Mphamvuwaterengineers',
+                password_hash=generate_password_hash('.org.ulandaduwe/2026/**?'),
+                role='Administrator',
+                password_change_required=True
+            )
+            db.session.add(default_admin)
+            db.session.commit()
+            print("Default admin created successfully.")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        # On Render, printing to stdout shows up in logs
 
 # Register blueprints
 app.register_blueprint(employee_bp)
@@ -94,21 +129,25 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        user = User.query.filter_by(username=username).first()
-        
-        if user and check_password_hash(user.password_hash, password):
-            session['user_id'] = user.user_id
-            session['username'] = user.username
-            session['role'] = user.role
+        try:
+            user = User.query.filter_by(username=username).first()
             
-            if user.password_change_required:
-                flash('Please change your password on first login', 'info')
-                return redirect(url_for('change_password'))
-            
-            flash('Login successful!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid username or password', 'error')
+            if user and check_password_hash(user.password_hash, password):
+                session['user_id'] = user.user_id
+                session['username'] = user.username
+                session['role'] = user.role
+                
+                if user.password_change_required:
+                    flash('Please change your password on first login', 'info')
+                    return redirect(url_for('change_password'))
+                
+                flash('Login successful!', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Invalid username or password', 'error')
+        except Exception as e:
+            app.logger.error(f"Login error: {e}")
+            flash('A database error occurred. Please try again later.', 'error')
     
     return render_template('login.html')
 
@@ -152,22 +191,26 @@ def dashboard():
     from models import PayrollOTP
     role = session.get('role')
     
-    stats = {
-        'total_employees': Employee.query.count(),
-        'active_employees': Employee.query.filter_by(status='Active').count(),
-        'total_clients': apply_dept_filter(Client.query, Client).count(),
-        'pending_quotations': apply_dept_filter(Quotation.query, Quotation).filter_by(status='Pending').count(),
-        'approved_contracts': apply_dept_filter(Contract.query, Contract).filter_by(status='Approved').count(),
-        'total_transactions': apply_dept_filter(Transaction.query, Transaction).count()
-    }
+    try:
+        stats = {
+            'total_employees': Employee.query.count(),
+            'active_employees': Employee.query.filter_by(status='Active').count(),
+            'total_clients': apply_dept_filter(Client.query, Client).count(),
+            'pending_quotations': apply_dept_filter(Quotation.query, Quotation).filter_by(status='Pending').count(),
+            'approved_contracts': apply_dept_filter(Contract.query, Contract).filter_by(status='Approved').count(),
+            'total_transactions': apply_dept_filter(Transaction.query, Transaction).count()
+        }
+    except Exception as e:
+        app.logger.error(f"Dashboard stats error: {e}")
+        stats = {k: 0 for k in ['total_employees', 'active_employees', 'total_clients', 'pending_quotations', 'approved_contracts', 'total_transactions']}
     
     # MD Context: Pending OTPs
     pending_otps = []
     if role == 'Director':
-        # Simulating active requests for batches that need OTP
-        # In a real scenario, this would check PayrollOTP where is_used=False AND expires_at > now
-        # OR check PayrollBatch where status='Approved by SHR'
-        pending_otps = PayrollOTP.query.filter_by(is_used=False).filter(PayrollOTP.expires_at > datetime.utcnow()).all()
+        try:
+            pending_otps = PayrollOTP.query.filter_by(is_used=False).filter(PayrollOTP.expires_at > datetime.utcnow()).all()
+        except Exception as e:
+            app.logger.error(f"Dashboard OTP error: {e}")
     
     return render_template('dashboard.html', 
                          role=role, 
@@ -179,39 +222,42 @@ def verify_document(document_number):
     """Verify document authenticity via QR code"""
     from models import Invoice, Quotation, DeliveryNote, Payroll
     
-    doc_type = document_number.split('-')[0]
-    
-    if doc_type == 'INV':
-        invoice = Invoice.query.filter_by(invoice_id=int(document_number.split('-')[2])).first()
-        if invoice:
-            return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
-            <p><b>Document Type:</b> Invoice</p>
-            <p><b>Document Number:</b> {document_number}</p>
-            <p><b>Status:</b> <span style='color:green'>VALID</span></p>
-            <p><b>Amount:</b> MWK {invoice.amount:,.2f}</p>"""
-    elif doc_type == 'QTN':
-        quotation = Quotation.query.filter_by(quotation_id=int(document_number.split('-')[2])).first()
-        if quotation:
-            return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
-            <p><b>Document Type:</b> Quotation</p>
-            <p><b>Document Number:</b> {document_number}</p>
-            <p><b>Client:</b> {quotation.client.client_name}</p>
-            <p><b>Status:</b> <span style='color:green'>VALID</span></p>
-            <p><b>Amount:</b> MWK {quotation.total_amount:,.2f}</p>"""
-    elif doc_type == 'DN':
-        delivery = DeliveryNote.query.filter_by(delivery_id=int(document_number.split('-')[2])).first()
-        if delivery:
-            return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
-            <p><b>Document Type:</b> Delivery Note</p>
-            <p><b>Document Number:</b> {document_number}</p>
-            <p><b>Status:</b> <span style='color:green'>VALID</span></p>"""
-    elif doc_type == 'PAY':
-        payroll = Payroll.query.filter_by(payroll_id=int(document_number.split('-')[2])).first()
-        if payroll:
-            return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
-            <p><b>Document Type:</b> Payslip</p>
-            <p><b>Document Number:</b> {document_number}</p>
-            <p><b>Status:</b> <span style='color:green'>VALID</span></p>"""
+    try:
+        doc_type = document_number.split('-')[0]
+        
+        if doc_type == 'INV':
+            invoice = Invoice.query.filter_by(invoice_id=int(document_number.split('-')[2])).first()
+            if invoice:
+                return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
+                <p><b>Document Type:</b> Invoice</p>
+                <p><b>Document Number:</b> {document_number}</p>
+                <p><b>Status:</b> <span style='color:green'>VALID</span></p>
+                <p><b>Amount:</b> MWK {invoice.amount:,.2f}</p>"""
+        elif doc_type == 'QTN':
+            quotation = Quotation.query.filter_by(quotation_id=int(document_number.split('-')[2])).first()
+            if quotation:
+                return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
+                <p><b>Document Type:</b> Quotation</p>
+                <p><b>Document Number:</b> {document_number}</p>
+                <p><b>Client:</b> {quotation.client.client_name}</p>
+                <p><b>Status:</b> <span style='color:green'>VALID</span></p>
+                <p><b>Amount:</b> MWK {quotation.total_amount:,.2f}</p>"""
+        elif doc_type == 'DN':
+            delivery = DeliveryNote.query.filter_by(delivery_id=int(document_number.split('-')[2])).first()
+            if delivery:
+                return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
+                <p><b>Document Type:</b> Delivery Note</p>
+                <p><b>Document Number:</b> {document_number}</p>
+                <p><b>Status:</b> <span style='color:green'>VALID</span></p>"""
+        elif doc_type == 'PAY':
+            payroll = Payroll.query.filter_by(payroll_id=int(document_number.split('-')[2])).first()
+            if payroll:
+                return f"""<h2>MPHAMVU WATER ENGINEERS</h2>
+                <p><b>Document Type:</b> Payslip</p>
+                <p><b>Document Number:</b> {document_number}</p>
+                <p><b>Status:</b> <span style='color:green'>VALID</span></p>"""
+    except Exception as e:
+        app.logger.error(f"Verification error: {e}")
     
     return "<h2>Invalid Document</h2><p style='color:red'>This document could not be verified.</p>"
 
@@ -233,25 +279,5 @@ def submit_support_request():
     return redirect(request.referrer or url_for('dashboard'))
 
 if __name__ == '__main__':
-    # Initialize database and default admin only on direct run
-    with app.app_context():
-        # db.create_all() is called within init_db()
-        init_db()
-        
-        # Start Email RFQ fetching background daemon
-        from utils.rfq_parser import start_background_task
-        start_background_task()
-        
-        default_admin = User.query.filter_by(username='Mphamvuwaterengineers').first()
-        if not default_admin:
-            default_admin = User(
-                username='Mphamvuwaterengineers',
-                password_hash=generate_password_hash('.org.ulandaduwe/2026/**?'),
-                role='Administrator',
-                password_change_required=True
-            )
-            db.session.add(default_admin)
-            db.session.commit()
-
     port = int(os.environ.get('PORT', 5001))
     app.run(debug=True, host='0.0.0.0', port=port)
