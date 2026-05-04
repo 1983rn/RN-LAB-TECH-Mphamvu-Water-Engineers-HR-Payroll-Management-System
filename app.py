@@ -65,22 +65,29 @@ with app.app_context():
         except Exception as e:
             app.logger.error(f"Failed to start background task: {e}")
         
-        default_admin = User.query.filter_by(username='Mphamvuwaterengineers').first()
+        # ─── UNIVERSAL ADMIN INITIALIZATION (Local & Render) ───
+        admin_username = 'Mphamvuwaterengineers'
+        admin_password = '.org.ulandaduwe/2026/**?/'
+        
+        default_admin = User.query.filter_by(username=admin_username).first()
+        
         if not default_admin:
+            # Create new admin if missing
             default_admin = User(
-                username='Mphamvuwaterengineers',
-                password_hash=generate_password_hash('.org.ulandaduwe/2026/**?/'),
+                username=admin_username,
+                password_hash=generate_password_hash(admin_password),
                 role='Administrator',
                 password_change_required=True
             )
             db.session.add(default_admin)
             db.session.commit()
-            print("Default admin created successfully.")
+            print(f"Created new default admin: {admin_username}")
         elif default_admin.password_change_required:
-            # Force reset password if they haven't logged in successfully yet
-            default_admin.password_hash = generate_password_hash('.org.ulandaduwe/2026/**?/')
+            # Force password synchronization if change is still required
+            # This ensures both local and Render stay in sync with your provided credentials
+            default_admin.password_hash = generate_password_hash(admin_password)
             db.session.commit()
-            print("Default admin password reset to provided credentials.")
+            print(f"Synchronized admin password for: {admin_username}")
     except Exception as e:
         print(f"Database initialization error: {e}")
         # On Render, printing to stdout shows up in logs
