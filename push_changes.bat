@@ -1,0 +1,9 @@
+@echo off
+echo Adding changes...
+git add .
+echo Committing changes...
+git commit -m "Optimize Rainbow Loader: removed delays/transitions, fixed same-page anchor behavior, and enabled non-blocking overlay"
+echo Pushing to GitHub...
+git push origin main
+echo Done!
+pause

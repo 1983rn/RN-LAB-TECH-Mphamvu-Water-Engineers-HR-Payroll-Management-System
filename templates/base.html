@@ -341,7 +341,7 @@
         <!-- Top Header -->
         <header class="top-header">
             <div class="header-left">
-                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                <button type="button" class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="header-brand">
@@ -454,36 +454,96 @@
     <!-- Rainbow Loader Control Script -->
     <script>
         function showLoader() {
-            document.getElementById("loader-overlay").style.display = "flex";
+            const loader = document.getElementById("loader-overlay");
+            if (loader) {
+                loader.style.display = "flex";
+                loader.style.opacity = "1";
+            }
         }
         
         function hideLoader() {
             const loader = document.getElementById("loader-overlay");
-            loader.style.opacity = "0";
-            setTimeout(() => {
+            if (loader) {
                 loader.style.display = "none";
-                loader.style.opacity = "1";
-            }, 300);
+                loader.style.opacity = "0";
+            }
         }
 
-        // Hide loader when page is fully loaded
+        // Hide loader instantly on these events
         window.addEventListener('load', hideLoader);
+        window.addEventListener('pageshow', hideLoader);
+        window.addEventListener('popstate', hideLoader);
+        window.addEventListener('error', hideLoader);
+        document.addEventListener('DOMContentLoaded', hideLoader);
 
-        // Show loader on navigation or form submission
-        document.addEventListener('click', function(e) {
-            const target = e.target.closest('a, button');
-            if (target && !target.getAttribute('data-bs-toggle') && !target.hasAttribute('onclick') && target.type !== 'button') {
-                // Check if it's an external link or has target="_blank"
-                if (target.tagName === 'A' && (target.getAttribute('target') === '_blank' || target.href.startsWith('tel:') || target.href.startsWith('mailto:'))) {
-                    return;
-                }
-                showLoader();
-            }
+        // Show loader when the browser is definitely starting to navigate away
+        window.addEventListener('beforeunload', function(e) {
+            showLoader();
         });
 
-        // Show loader on form submission
-        document.addEventListener('submit', function() {
+        // Immediate feedback for clicks, but with strict filtering to avoid "stuck" states
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('a, button');
+            if (!target || e.defaultPrevented) return;
+
+            if (target.classList.contains('no-loader')) return;
+
+            // Skip common non-navigational attributes
+            if (target.getAttribute('data-bs-toggle') || 
+                target.getAttribute('data-bs-dismiss') ||
+                target.hasAttribute('onclick') || 
+                target.getAttribute('type') === 'button') {
+                return;
+            }
+
+            if (target.tagName === 'A') {
+                const href = target.getAttribute('href');
+                if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+                try {
+                    const url = new URL(target.href, window.location.origin);
+                    
+                    // Skip if it's the same page and it has a hash (anchor link)
+                    if (url.origin === window.location.origin && 
+                        url.pathname === window.location.pathname && 
+                        url.search === window.location.search &&
+                        url.hash !== "") {
+                        return;
+                    }
+                    
+                    // Skip external links or special protocols
+                    if (url.origin !== window.location.origin || 
+                        target.getAttribute('target') === '_blank' || 
+                        target.hasAttribute('download')) {
+                        return;
+                    }
+                } catch(err) { return; }
+            }
+
+            if (target.tagName === 'BUTTON') {
+                const form = target.closest('form');
+                if (form && form.getAttribute('target') === '_blank') return;
+                // If it's a submit button, the 'submit' event will handle it more reliably
+                if (target.getAttribute('type') === 'submit') return;
+            }
+
             showLoader();
+            
+            // Safety: hide after 10s if navigation fails
+            setTimeout(hideLoader, 10000);
+        });
+
+        // Handle form submissions
+        document.addEventListener('submit', function(e) {
+            if (e.defaultPrevented) return;
+            if (e.target.getAttribute('target') === '_blank') return;
+            
+            if (!e.target.checkValidity || e.target.checkValidity()) {
+                showLoader();
+            }
+            
+            // Safety fallback
+            setTimeout(hideLoader, 10000);
         });
     </script>
     
@@ -496,7 +556,7 @@
             <a href="https://mail.google.com/mail/?view=cm&fs=1&to=robertnsambe@gmail.com" target="_blank" class="support-item"><i class="fas fa-envelope"></i> Email</a>
             <a href="#" onclick="openSupportPanel(); return false;" class="support-item"><i class="fas fa-headset"></i> System Support</a>
         </div>
-        <button id="supportToggle" class="support-main-btn">
+        <button type="button" id="supportToggle" class="support-main-btn">
             <i class="fas fa-headset"></i>
         </button>
     </div>

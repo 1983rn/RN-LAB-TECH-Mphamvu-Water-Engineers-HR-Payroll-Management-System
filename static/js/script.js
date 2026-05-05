@@ -54,15 +54,11 @@ $(document).ready(function() {
     // Loading state for buttons
     $('.btn-loading').on('click', function() {
         var btn = $(this);
-        var originalText = btn.html();
+        var form = btn.closest('form');
+        if (form.length && !form[0].checkValidity()) return;
+
         btn.html('<span class="loading"></span> Loading...');
-        btn.prop('disabled', true);
-        
-        // Simulate loading (remove this in production)
-        setTimeout(function() {
-            btn.html(originalText);
-            btn.prop('disabled', false);
-        }, 2000);
+        btn.addClass('disabled');
     });
     
     // Auto-format currency inputs

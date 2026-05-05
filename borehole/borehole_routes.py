@@ -126,7 +126,7 @@ def cashbook():
     credits_list.sort(key=lambda x: x['date'], reverse=True)
     debits_list.sort(key=lambda x: x['date'], reverse=True)
 
-    return render_template('finance_dashboard/cashbook.html', 
+    return render_template('accounts/cashbook.html', 
                            credits=credits_list,
                            debits=debits_list,
                            total_income=total_income,
