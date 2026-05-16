@@ -41,9 +41,13 @@
                             <span class="badge bg-secondary">{{ quotation.reference_number }}</span>
                         </td>
                         <td>
-                            <a href="#" class="text-decoration-none">
-                                {{ quotation.client.client_name }}
-                            </a>
+                            {% if quotation.client %}
+                                <a href="#" class="text-decoration-none">
+                                    {{ quotation.client.client_name }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Unknown Client</span>
+                            {% endif %}
                         </td>
                         <td>{{ quotation|quotation_location_display }}</td>
                         <td><strong>MK {{ "{:,.2f}".format(quotation.total_amount) }}</strong></td>
@@ -56,8 +60,14 @@
                                 {{ quotation.status }}
                             </span>
                         </td>
-                        <td>{{ quotation.created_at.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ (quotation.created_at.replace(tzinfo=None) + timedelta(days=quotation.validity_days or 30)).strftime('%d/%m/%Y') }}</td>
+                        <td>{{ quotation.created_at.strftime('%d/%m/%Y') if quotation.created_at else 'N/A' }}</td>
+                        <td>
+                            {% if quotation.created_at %}
+                                {{ (quotation.created_at.replace(tzinfo=None) + timedelta(days=quotation.validity_days or 30)).strftime('%d/%m/%Y') }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ url_for('quotations.view_quotation', quotation_id=quotation.quotation_id) }}" class="btn btn-outline-primary" title="View">

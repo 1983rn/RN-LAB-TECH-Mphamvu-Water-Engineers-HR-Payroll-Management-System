@@ -340,6 +340,8 @@ def add_hash_to_story(story, doc_hash):
 
 def generate_document_number(doc_type, doc_id, created_date):
     """Generate official document number: DOC-YYYY-MM-NNN"""
+    if created_date is None:
+        created_date = datetime.now()
     year = created_date.year
     month = created_date.strftime('%m')
     return f"{doc_type}-{year}-{month}-{doc_id:03d}"
