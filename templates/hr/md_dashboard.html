@@ -61,6 +61,11 @@
                 <i class="fas fa-user-shield me-2"></i> ACCESS CONTROL (ACL)
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <a href="{{ url_for('hr.project_tracking') }}" class="nav-link bg-dark text-info border-info border-bottom-0 fw-bold">
+                <i class="fas fa-tasks me-2"></i> PROJECT TRACKING
+            </a>
+        </li>
     </ul>
 
     <div class="tab-content" id="mdTabContent">
@@ -92,6 +97,7 @@
                                         <option value="Payslip">Payslip Page</option>
                                         <option value="Accounts">Accounts Page</option>
                                         <option value="Salary_OTP">Salary Payments Page</option>
+                                        <option value="Project_Tracking">Project Tracking Page</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-warning w-100 fw-bold">GRANT PERMISSION</button>

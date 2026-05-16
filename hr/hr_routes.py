@@ -151,7 +151,7 @@ def manage_authorizations():
 @hr_bp.route('/gateway/<module>', methods=['GET'])
 @login_required
 def gateway(module):
-    valid_modules = ['Employees', 'Payroll', 'Payslip', 'Accounts']
+    valid_modules = ['Employees', 'Payroll', 'Payslip', 'Accounts', 'Project_Tracking']
     if module not in valid_modules:
         flash("Invalid module.", "error")
         return redirect(url_for('hr.dashboard'))
@@ -287,5 +287,102 @@ def request_access():
         return redirect(url_for('payroll.payslip_center'))
     elif module == 'Accounts':
         return redirect(url_for('accounts.dashboard'))
+    elif module == 'Project_Tracking':
+        return redirect(url_for('hr.project_tracking'))
         
     return redirect(url_for('hr.dashboard'))
+@hr_bp.route('/project_tracking', methods=['GET'])
+@login_required
+@admin_required
+def project_tracking():
+    from models import ConstructionProject, ICTProject, FarmActivity, CropCycle, Quotation
+    from datetime import date
+    
+    today = date.today()
+    
+    # Fetch all project types
+    construction_projects = ConstructionProject.query.all()
+    ict_projects = ICTProject.query.all()
+    farm_activities = FarmActivity.query.all()
+    crop_cycles = CropCycle.query.all()
+    pending_quotations = Quotation.query.filter_by(status='Pending').all()
+    
+    # Categorization logic
+    def get_status_category(p, end_date_attr='end_date'):
+        status = getattr(p, 'status', '').lower()
+        end_date = getattr(p, end_date_attr, None)
+        
+        if status in ['completed', 'harvested']:
+            return 'completed'
+        
+        if end_date and end_date < today:
+            return 'overdue'
+            
+        if status in ['planning', 'planned', 'pending']:
+            return 'offered'
+            
+        if status in ['in progress', 'growing', 'testing']:
+            return 'underway'
+            
+        return 'other'
+
+    # Unified structure
+    projects = {
+        'Borehole Drilling': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []},
+        'Construction': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []},
+        'Farm': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []},
+        'ICT': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []}
+    }
+    
+    # Process Quotations (Pending)
+    for q in pending_quotations:
+        dept = q.department if q.department in projects else 'Borehole Drilling'
+        projects[dept]['quotations_offered'].append({
+            'id': q.quotation_id,
+            'client': q.client.client_name if q.client else 'Unknown',
+            'amount': q.total_amount,
+            'location': q.project_location
+        })
+    
+    # Process Construction & Borehole (using ConstructionProject model)
+    for p in construction_projects:
+        dept = p.department if p.department in projects else 'Construction'
+        cat = get_status_category(p)
+        projects[dept][cat].append({
+            'name': p.project_name,
+            'start': p.start_date,
+            'end': p.end_date,
+            'status': p.status
+        })
+        
+    # Process ICT
+    for p in ict_projects:
+        cat = get_status_category(p)
+        projects['ICT'][cat].append({
+            'name': p.project_name,
+            'start': p.start_date,
+            'end': p.end_date,
+            'status': p.status
+        })
+        
+    # Process Farm (Activities)
+    for p in farm_activities:
+        cat = get_status_category(p)
+        projects['Farm'][cat].append({
+            'name': p.activity_name,
+            'start': p.start_date,
+            'end': p.end_date,
+            'status': p.status
+        })
+        
+    # Process Farm (Crop Cycles)
+    for p in crop_cycles:
+        cat = get_status_category(p, 'expected_harvest_date')
+        projects['Farm'][cat].append({
+            'name': f"Crop: {p.crop_name} ({p.variety})",
+            'start': p.planting_date,
+            'end': p.expected_harvest_date,
+            'status': p.status
+        })
+
+    return render_template('hr/project_tracking.html', projects=projects, today=today)

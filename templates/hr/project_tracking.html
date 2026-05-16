@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Project Tracking - HR Department{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tracking-wrapper {
+        background: url('{{ url_for('static', filename='images/hr_neutral_bg.png') }}') no-repeat center center fixed;
+        background-size: cover;
+        min-height: calc(100vh - 80px);
+        padding: 30px;
+        position: relative;
+    }
+
+    .tracking-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 0;
+    }
+
+    .tracking-container {
+        position: relative;
+        z-index: 1;
+    }
+
+    .dept-card {
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid #FFD700;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        overflow: hidden;
+    }
+
+    .dept-header {
+        background: #FFD700;
+        color: #000;
+        padding: 10px 20px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .status-section {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    }
+
+    .status-section:last-child {
+        border-bottom: none;
+    }
+
+    .status-title {
+        color: #FFD700;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .status-title i {
+        margin-right: 10px;
+    }
+
+    .project-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+    }
+
+    .project-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 4px solid #FFD700;
+        padding: 15px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .project-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateX(5px);
+    }
+
+    .project-name {
+        color: #fff;
+        font-weight: 700;
+        margin-bottom: 5px;
+        font-size: 1rem;
+    }
+
+    .project-dates {
+        font-size: 0.85rem;
+        color: #ccc;
+    }
+
+    .remind-tag {
+        color: #ff4d4d;
+        font-weight: 800;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    .badge-offered { background: #0dcaf0; color: #000; }
+    .badge-underway { background: #ffc107; color: #000; }
+    .badge-completed { background: #198754; color: #fff; }
+    .badge-overdue { background: #dc3545; color: #fff; }
+
+    .empty-state {
+        color: rgba(255, 255, 255, 0.4);
+        font-style: italic;
+        font-size: 0.85rem;
+    }
+
+    .tab-nav {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+
+    .tab-btn {
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid #FFD700;
+        color: #FFD700;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .tab-btn:hover, .tab-btn.active {
+        background: #FFD700;
+        color: #000;
+        text-decoration: none;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tracking-wrapper">
+    <div class="tracking-overlay"></div>
+    
+    <div class="tracking-container container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="text-white fw-900 text-uppercase" style="letter-spacing: 3px; text-shadow: 2px 2px 10px #000;">
+                <i class="fas fa-project-diagram me-3 text-warning"></i>Project Tracking
+            </h1>
+            <div class="tab-nav">
+                <a href="{{ url_for('hr.dashboard') }}" class="tab-btn"><i class="fas fa-home me-1"></i> Dashboard</a>
+                <a href="#" class="tab-btn active"><i class="fas fa-tasks me-1"></i> Tracking</a>
+                {% if session.get('md_logged_in') %}
+                <a href="{{ url_for('hr.md_dashboard') }}" class="tab-btn"><i class="fas fa-shield-alt me-1"></i> MD Dashboard</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% for dept, categories in projects.items() %}
+        <div class="dept-card">
+            <div class="dept-header">
+                <span><i class="fas fa-building me-2"></i> {{ dept }} Department</span>
+                <span class="badge bg-dark text-warning border border-warning">{{ categories.offered|length + categories.underway|length + categories.completed|length + categories.overdue|length }} Projects</span>
+            </div>
+
+            <!-- QUOTATIONS OFFERED (NEW SECTION) -->
+            <div class="status-section">
+                <div class="status-title"><i class="fas fa-file-invoice-dollar text-info"></i> Offered Projects (Pending Quotations)</div>
+                {% if categories.quotations_offered %}
+                <div class="project-grid">
+                    {% for q in categories.quotations_offered %}
+                    <div class="project-card" style="border-color: #0dcaf0;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="project-name">{{ q.client }}</div>
+                                <div class="project-dates">
+                                    <i class="fas fa-map-marker-alt me-1"></i> {{ q.location or 'No Location' }}<br>
+                                    <i class="fas fa-money-bill-wave me-1 text-success"></i> <strong>MK {{ "{:,.2f}".format(q.amount) }}</strong>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-info fw-bold text-dark" onclick="openApproveModal('{{ q.id }}', '{{ q.client }}')">
+                                APPROVE & START
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">No pending quotations for this department.</div>
+                {% endif %}
+            </div>
+
+            <!-- PROJECTS OFFERED (PLANNING) -->
+            <div class="status-section">
+                <div class="status-title"><i class="fas fa-handshake text-secondary"></i> Projects in Planning</div>
+                {% if categories.offered %}
+                <div class="project-grid">
+                    {% for p in categories.offered %}
+                    <div class="project-card" style="border-color: #0dcaf0;">
+                        <div class="project-name">{{ p.name }}</div>
+                        <div class="project-dates">
+                            <i class="far fa-calendar-alt me-1"></i> Start: {{ p.start.strftime('%d/%m/%Y') if p.start else 'TBD' }} 
+                            &nbsp;&bull;&nbsp; 
+                            <i class="far fa-calendar-check me-1"></i> Target: {{ p.end.strftime('%d/%m/%Y') if p.end else 'TBD' }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">No projects currently offered.</div>
+                {% endif %}
+            </div>
+
+            <!-- PROJECTS UNDER WAY -->
+            <div class="status-section">
+                <div class="status-title"><i class="fas fa-spinner fa-spin text-warning"></i> Projects Under Way</div>
+                {% if categories.underway %}
+                <div class="project-grid">
+                    {% for p in categories.underway %}
+                    <div class="project-card" style="border-color: #ffc107;">
+                        <div class="project-name">{{ p.name }}</div>
+                        <div class="project-dates">
+                            <i class="far fa-calendar-alt me-1"></i> Started: {{ p.start.strftime('%d/%m/%Y') if p.start else 'N/A' }} 
+                            &nbsp;&bull;&nbsp; 
+                            <i class="far fa-hourglass-half me-1"></i> Exp. Completion: {{ p.end.strftime('%d/%m/%Y') if p.end else 'N/A' }}
+                        </div>
+                        {% if p.end and (p.end - today).days <= 7 and (p.end - today).days >= 0 %}
+                        <div class="remind-tag">
+                            <i class="fas fa-exclamation-triangle me-1"></i> REMINDER: Due in {{ (p.end - today).days }} days
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">No projects currently under way.</div>
+                {% endif %}
+            </div>
+
+            <!-- PROJECTS COMPLETED -->
+            <div class="status-section">
+                <div class="status-title"><i class="fas fa-check-circle text-success"></i> Projects Completed</div>
+                {% if categories.completed %}
+                <div class="project-grid">
+                    {% for p in categories.completed %}
+                    <div class="project-card" style="border-color: #198754;">
+                        <div class="project-name">{{ p.name }}</div>
+                        <div class="project-dates">
+                            <i class="fas fa-calendar-day me-1"></i> Timeline: {{ p.start.strftime('%d/%m/%Y') if p.start else '?' }} to {{ p.end.strftime('%d/%m/%Y') if p.end else '?' }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">No projects completed yet.</div>
+                {% endif %}
+            </div>
+
+            <!-- PROJECTS OVERDUE (FAILED TO COMPLETE ON TIME) -->
+            <div class="status-section">
+                <div class="status-title"><i class="fas fa-clock text-danger"></i> Failed to complete on time</div>
+                {% if categories.overdue %}
+                <div class="project-grid">
+                    {% for p in categories.overdue %}
+                    <div class="project-card" style="border-color: #dc3545;">
+                        <div class="project-name">{{ p.name }}</div>
+                        <div class="project-dates">
+                            <i class="fas fa-calendar-times me-1"></i> Expected: {{ p.end.strftime('%d/%m/%Y') if p.end else 'N/A' }} 
+                            &nbsp;&bull;&nbsp;
+                            <span class="text-danger fw-bold">Delayed by {{ (today - p.end).days }} days</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">All active projects are within schedule.</div>
+                {% endif %}
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-warning">
+            <div class="modal-header border-warning">
+                <h5 class="modal-title fw-bold text-warning">APPROVE PROJECT & SET TIMELINE</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="approveForm" method="POST">
+                <div class="modal-body">
+                    <p class="small text-white-50">You are approving the quotation for <strong id="modalClientName" class="text-white"></strong>. Please set the project schedule below.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small text-warning fw-bold">PROJECT START DATE</label>
+                        <input type="date" name="start_date" class="form-control bg-black text-white border-secondary" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small text-warning fw-bold">EXPECTED COMPLETION DATE</label>
+                        <input type="date" name="end_date" class="form-control bg-black text-white border-secondary" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-warning fw-bold">NOTES (OPTIONAL)</label>
+                        <textarea name="notes" class="form-control bg-black text-white border-secondary" rows="2" placeholder="Any additional project details..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-warning">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">CANCEL</button>
+                    <button type="submit" class="btn btn-warning fw-bold text-dark">ACTIVATE PROJECT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openApproveModal(quotationId, clientName) {
+        document.getElementById('modalClientName').innerText = clientName;
+        // Include the current URL as the 'next' parameter so we redirect back here
+        var nextUrl = encodeURIComponent(window.location.pathname);
+        document.getElementById('approveForm').action = "/quotations/approve/" + quotationId + "?next=" + nextUrl;
+        var modal = new bootstrap.Modal(document.getElementById('approveModal'));
+        modal.show();
+    }
+</script>
+{% endblock %}

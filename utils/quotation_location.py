@@ -2,10 +2,10 @@
 
 
 def format_coord_pair(lat, lng, precision=6):
-    """Format latitude/longitude as a parenthesized pair."""
+    """Format latitude/longitude as a parenthesized pair with GPS inside the brackets."""
     if lat is None or lng is None:
         return ''
-    return f'({lat:.{precision}f}, {lng:.{precision}f})'
+    return f'(GPS {lat:.{precision}f}, {lng:.{precision}f})'
 
 
 def parse_optional_coord(form, key):

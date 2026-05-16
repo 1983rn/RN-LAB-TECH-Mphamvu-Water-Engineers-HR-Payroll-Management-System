@@ -545,7 +545,10 @@ def approve_quotation(quotation_id):
         # Recalculate credit score after new invoice creation (affects outstanding balance ratio)
         update_client_credit_score(quotation.client_id)
 
-        flash(f'Quotation approved successfully. Contract and Invoice created.', 'success')
+        flash(f'Quotation approved successfully. Project is now active.', 'success')
+        next_url = request.args.get('next')
+        if next_url:
+            return redirect(next_url)
         return redirect(url_for('quotations.list_quotations'))
         
     except Exception as e:

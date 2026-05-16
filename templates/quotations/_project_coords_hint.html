@@ -7,7 +7,7 @@
         <button type="button" class="btn btn-link btn-sm p-0 align-baseline quotation-gps-coords-link text-primary"
                 data-lat="{{ entity.project_latitude }}" data-lng="{{ entity.project_longitude }}"
                 title="Show this location on the map">
-            ({{ "%.6f"|format(entity.project_latitude) }}, {{ "%.6f"|format(entity.project_longitude) }})
+            (GPS {{ "%.6f"|format(entity.project_latitude) }}, {{ "%.6f"|format(entity.project_longitude) }})
             <i class="fas fa-map-marker-alt small" aria-hidden="true"></i>
         </button>
     </p>
@@ -19,7 +19,7 @@
             <button type="button" class="btn btn-link btn-sm p-0 align-baseline quotation-gps-coords-link text-primary"
                     data-lat="{{ gps_initial_lat }}" data-lng="{{ gps_initial_lng }}"
                     title="Show this location on the map">
-                ({{ "%.6f"|format(gps_initial_lat) }}, {{ "%.6f"|format(gps_initial_lng) }})
+                (GPS {{ "%.6f"|format(gps_initial_lat) }}, {{ "%.6f"|format(gps_initial_lng) }})
                 <i class="fas fa-map-marker-alt small" aria-hidden="true"></i>
             </button>
         {% else %}
