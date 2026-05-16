@@ -4,6 +4,9 @@ import os
 # Ensure the project directory is in Python's module search path (needed for gunicorn)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from utils.env_loader import load_project_dotenv
+load_project_dotenv()
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -129,7 +132,17 @@ def admin_required(f):
 
 @app.context_processor
 def inject_now():
-    return {'datetime': datetime}
+    return {
+        'datetime': datetime,
+    }
+
+
+@app.template_filter('quotation_location_display')
+def quotation_location_display_filter(quotation):
+    from utils.quotation_location import format_quotation_project_location
+    if quotation is None:
+        return ''
+    return format_quotation_project_location(quotation)
 
 @app.route('/')
 def index():

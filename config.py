@@ -2,7 +2,7 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'mphamvu_water_engineers_secret_key_2026'
-    
+
     # Email Configuration
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587

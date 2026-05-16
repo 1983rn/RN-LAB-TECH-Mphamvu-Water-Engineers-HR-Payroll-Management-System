@@ -45,7 +45,7 @@
                                 {{ quotation.client.client_name }}
                             </a>
                         </td>
-                        <td>{{ quotation.project_location }}</td>
+                        <td>{{ quotation|quotation_location_display }}</td>
                         <td><strong>MK {{ "{:,.2f}".format(quotation.total_amount) }}</strong></td>
                         <td>
                             <span class="badge bg-{{ 

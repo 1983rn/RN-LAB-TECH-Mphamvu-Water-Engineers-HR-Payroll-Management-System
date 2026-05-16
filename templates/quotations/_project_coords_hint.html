@@ -1,0 +1,30 @@
+{# GPS coordinates under the project location field.
+   read_only + entity: stored coords link to the map (view pages).
+   Otherwise: live hint updated when "Load on quotation" is clicked on the GPS tab. #}
+{% if read_only is defined and read_only and entity is defined %}
+    {% if entity.project_latitude is not none and entity.project_longitude is not none %}
+    <p class="small text-muted mb-0 mt-1"><strong>GPS coordinates:</strong>
+        <button type="button" class="btn btn-link btn-sm p-0 align-baseline quotation-gps-coords-link text-primary"
+                data-lat="{{ entity.project_latitude }}" data-lng="{{ entity.project_longitude }}"
+                title="Show this location on the map">
+            ({{ "%.6f"|format(entity.project_latitude) }}, {{ "%.6f"|format(entity.project_longitude) }})
+            <i class="fas fa-map-marker-alt small" aria-hidden="true"></i>
+        </button>
+    </p>
+    {% endif %}
+{% else %}
+    <p class="small text-muted mb-3 mt-1"><strong>GPS coordinates:</strong>
+        <span id="project-location-coords-hint" class="text-primary">
+        {% if gps_initial_lat is defined and gps_initial_lat is not none and gps_initial_lng is defined and gps_initial_lng is not none %}
+            <button type="button" class="btn btn-link btn-sm p-0 align-baseline quotation-gps-coords-link text-primary"
+                    data-lat="{{ gps_initial_lat }}" data-lng="{{ gps_initial_lng }}"
+                    title="Show this location on the map">
+                ({{ "%.6f"|format(gps_initial_lat) }}, {{ "%.6f"|format(gps_initial_lng) }})
+                <i class="fas fa-map-marker-alt small" aria-hidden="true"></i>
+            </button>
+        {% else %}
+            Not set — open the GPS tab to place a pin, then click <em>Load on quotation</em>.
+        {% endif %}
+        </span>
+    </p>
+{% endif %}

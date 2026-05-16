@@ -3,6 +3,7 @@ from functools import wraps
 from models import db, Client, Quotation, Invoice, Transaction, SupportRequest, ICTProject, ICTDeveloper, ICTTask, ICTTraining, Employee, Inventory, CashBookEntry, DeliveryNote, QuotationItem, Contract
 from datetime import datetime
 from utils.pdf_utils import generate_receipt_pdf
+from utils.quotation_location import parse_optional_coord
 import io
 
 ict_bp = Blueprint('ict', __name__, url_prefix='/ict')
@@ -213,6 +214,8 @@ def create_quotation():
     new_quo = Quotation(
         client_id=client_id,
         project_location=location,
+        project_latitude=parse_optional_coord(request.form, 'project_latitude'),
+        project_longitude=parse_optional_coord(request.form, 'project_longitude'),
         total_amount=amount,
         department='ICT Department',
         status='Pending'

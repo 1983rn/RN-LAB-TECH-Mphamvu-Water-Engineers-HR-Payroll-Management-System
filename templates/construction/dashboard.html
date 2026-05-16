@@ -255,7 +255,7 @@
                         <tr>
                             <td class="fw-bold">{{ project.project_name }}</td>
                             <td>{{ project.client.client_name }}</td>
-                            <td>{{ project.location }}</td>
+                            <td>{{ project.location or '—' }}{% if project.project_latitude is not none and project.project_longitude is not none %} <span class="text-white-50 small">({{ "%.6f"|format(project.project_latitude) }}, {{ "%.6f"|format(project.project_longitude) }})</span>{% endif %}</td>
                             <td>
                                 <span class="badge bg-{{ 'success' if project.status == 'Completed' else 'info' if project.status == 'In Progress' else 'warning' }}">
                                     {{ project.status }}
@@ -393,7 +393,7 @@
                     <tr>
                         <td class="fw-bold text-success">{{ q.reference_number }}</td>
                         <td>{{ q.client.client_name }}</td>
-                        <td>{{ q.project_location }}</td>
+                        <td>{{ q|quotation_location_display }}</td>
                         <td><span class="badge bg-info">{{ q.status }}</span></td>
                         <td class="text-end fw-bold">MWK {{ "{:,.2f}".format(q.total_amount) }}</td>
                         <td class="text-end">

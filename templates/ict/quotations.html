@@ -36,7 +36,7 @@
                         <tr>
                             <td class="fw-bold">{{ quo.reference_number }}</td>
                             <td>{{ quo.client.client_name }}</td>
-                            <td>{{ quo.project_location }}</td>
+                            <td>{{ quo|quotation_location_display }}</td>
                             <td class="text-info fw-bold">{{ "{:,.2f}".format(quo.total_amount) }}</td>
                             <td>{{ quo.created_at.strftime('%d %b %Y') }}</td>
                             <td>
@@ -84,6 +84,7 @@
                         <div class="col-md-6">
                             <label class="form-label text-white-50">LOCATION</label>
                             <input type="text" name="location" class="form-control bg-dark text-white border-secondary" placeholder="Project Site" required>
+                            {% include 'quotations/_project_coords_hint.html' %}
                         </div>
                         <div class="col-md-12">
                             <label class="form-label text-white-50">TOTAL AMOUNT (MWK)</label>
@@ -92,6 +93,10 @@
                         <div class="col-md-12">
                             <label class="form-label text-white-50">PROJECT SCOPE / DESCRIPTION</label>
                             <textarea name="description" class="form-control bg-dark text-white border-secondary" rows="4"></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <h6 class="text-white-50 text-uppercase small mb-2">GPS pin (optional)</h6>
+                            {% include 'quotations/_gps_map_tab.html' %}
                         </div>
                     </div>
                 </div>

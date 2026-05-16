@@ -1,0 +1,40 @@
+{% include 'quotations/_gps_map_assets.html' %}
+<p class="text-muted small mb-2">Click the map to place the project pin (satellite view). Drag the pin to adjust, then <strong>Load on quotation</strong>. Use <strong>HD view</strong> for finer zoom, or <strong>Capture image</strong> to save a satellite snapshot with coordinates.</p>
+<div id="quotation-gps-map-wrap" class="quotation-gps-map-wrap rounded border mb-2">
+    <div id="quotation-gps-map" class="quotation-gps-map-canvas"></div>
+    <div id="quotation-gps-capture-label" class="quotation-gps-capture-label d-none" aria-hidden="true"></div>
+</div>
+<p class="mb-2"><strong>Selected coordinates:</strong> <span id="quotation-gps-coord-readout" class="text-primary">{% if gps_initial_lat is defined and gps_initial_lat is not none and gps_initial_lng is defined and gps_initial_lng is not none %}{{ "%.6f"|format(gps_initial_lat) }}, {{ "%.6f"|format(gps_initial_lng) }}{% else %}—{% endif %}</span></p>
+<input type="hidden" name="project_latitude" id="project_latitude" value="{% if gps_initial_lat is defined and gps_initial_lat is not none %}{{ gps_initial_lat }}{% endif %}">
+<input type="hidden" name="project_longitude" id="project_longitude" value="{% if gps_initial_lng is defined and gps_initial_lng is not none %}{{ gps_initial_lng }}{% endif %}">
+<div class="d-flex flex-wrap gap-2 mb-2">
+    <button type="button" class="btn btn-primary btn-sm" id="quotation-gps-apply">
+        <i class="fas fa-location-arrow me-1"></i>Load on quotation
+    </button>
+    <button type="button" class="btn btn-outline-info btn-sm" id="quotation-gps-hd" title="Larger map and maximum zoom for fine detail">
+        <i class="fas fa-expand me-1"></i>HD view
+    </button>
+    <button type="button" class="btn btn-outline-success btn-sm" id="quotation-gps-capture" title="Download satellite image with coordinates">
+        <i class="fas fa-camera me-1"></i>Capture image
+    </button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="quotation-gps-clear">Clear pin</button>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.QuotationGpsMap) return;
+    QuotationGpsMap.registerPicker({
+        mapId: 'quotation-gps-map',
+        mapWrapId: 'quotation-gps-map-wrap',
+        captureLabelId: 'quotation-gps-capture-label',
+        latInputId: 'project_latitude',
+        lngInputId: 'project_longitude',
+        readoutId: 'quotation-gps-coord-readout',
+        clearButtonId: 'quotation-gps-clear',
+        applyButtonId: 'quotation-gps-apply',
+        hdButtonId: 'quotation-gps-hd',
+        captureButtonId: 'quotation-gps-capture',
+        initialLat: {% if gps_initial_lat is defined and gps_initial_lat is not none %}{{ gps_initial_lat }}{% else %}null{% endif %},
+        initialLng: {% if gps_initial_lng is defined and gps_initial_lng is not none %}{{ gps_initial_lng }}{% else %}null{% endif %}
+    });
+});
+</script>

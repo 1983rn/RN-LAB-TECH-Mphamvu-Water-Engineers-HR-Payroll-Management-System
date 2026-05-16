@@ -86,7 +86,11 @@
             <div class="mb-3">
                 <label>Location</label>
                 <input type="text" name="location" class="form-control" placeholder="Specific Site Location">
+                {% include 'quotations/_project_coords_hint.html' %}
             </div>
+
+            <h6 class="text-white-50 text-uppercase small mb-2">Satellite map (optional)</h6>
+            {% include 'quotations/_gps_map_tab.html' %}
 
             <div class="row">
                 <div class="col-md-6 mb-3">

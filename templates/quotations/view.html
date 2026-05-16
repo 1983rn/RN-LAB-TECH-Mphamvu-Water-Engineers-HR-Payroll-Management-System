@@ -31,6 +31,16 @@
                 <h5 class="mb-0">Quotation Information</h5>
             </div>
             <div class="card-body">
+                <ul class="nav nav-tabs mb-3" id="quotationViewTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="quotation-details-tab" data-bs-toggle="tab" data-bs-target="#quotation-details-pane" type="button" role="tab" aria-controls="quotation-details-pane" aria-selected="true">Details</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="quotation-gps-tab" data-bs-toggle="tab" data-bs-target="#quotation-gps-pane" type="button" role="tab" aria-controls="quotation-gps-pane" aria-selected="false"><i class="fas fa-map-marker-alt me-1"></i>GPS</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="quotationViewTabContent">
+                <div class="tab-pane fade show active" id="quotation-details-pane" role="tabpanel" aria-labelledby="quotation-details-tab">
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <strong>Quotation Number:</strong>
@@ -59,7 +69,10 @@
                 
                 <div class="mb-3">
                     <strong>Project Location:</strong><br>
-                    {{ quotation.project_location }}
+                    {{ quotation.project_location or '—' }}
+                    {% set read_only = true %}
+                    {% set entity = quotation %}
+                    {% include 'quotations/_project_coords_hint.html' %}
                 </div>
                 
                 {% if quotation.borehole_depth %}
@@ -67,6 +80,13 @@
                     <strong>Estimated Borehole Depth:</strong> {{ quotation.borehole_depth }} meters
                 </div>
                 {% endif %}
+                </div>
+                <div class="tab-pane fade" id="quotation-gps-pane" role="tabpanel" aria-labelledby="quotation-gps-tab">
+                    {% set gps_initial_lat = quotation.project_latitude %}
+                    {% set gps_initial_lng = quotation.project_longitude %}
+                    {% include 'quotations/_gps_map_view.html' %}
+                </div>
+                </div>
             </div>
         </div>
         

@@ -36,6 +36,25 @@ def init_db():
                 except Exception:
                     # Column likely already exists
                     pass
+
+            gps_type = 'DOUBLE PRECISION' if engine_name == 'postgresql' else 'FLOAT'
+            for col in ('project_latitude', 'project_longitude'):
+                try:
+                    print(f"Checking for column '{col}' in 'quotations'...")
+                    conn.execute(text(f"ALTER TABLE quotations ADD COLUMN {col} {gps_type}"))
+                    conn.commit()
+                    print(f"Added column '{col}'.")
+                except Exception:
+                    pass
+
+            for col in ('project_latitude', 'project_longitude'):
+                try:
+                    print(f"Checking for column '{col}' in 'construction_projects'...")
+                    conn.execute(text(f"ALTER TABLE construction_projects ADD COLUMN {col} {gps_type}"))
+                    conn.commit()
+                    print(f"Added column '{col}' to construction_projects.")
+                except Exception:
+                    pass
     except Exception as e:
         print(f"Migration check skipped or failed: {e}")
         

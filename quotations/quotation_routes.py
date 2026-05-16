@@ -14,6 +14,7 @@ from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_sig
 
 from utils.credit_scoring import update_client_credit_score
 from utils.auth_utils import apply_dept_filter, get_current_dept
+from utils.quotation_location import format_quotation_project_location, parse_optional_coord
 
 quotations_bp = Blueprint('quotations', __name__, url_prefix='/quotations')
 
@@ -90,12 +91,16 @@ def create_quotation():
             
             # Create quotation
             project_location = request.form['project_location']
+            proj_lat = parse_optional_coord(request.form, 'project_latitude')
+            proj_lng = parse_optional_coord(request.form, 'project_longitude')
             borehole_depth = float(request.form.get('borehole_depth', 0)) if request.form.get('borehole_depth') and request.form.get('borehole_depth').strip() else None
             validity_days = int(request.form.get('validity_days', 30) or '30')
             
             quotation = Quotation(
                 client_id=client.client_id,
                 project_location=project_location,
+                project_latitude=proj_lat,
+                project_longitude=proj_lng,
                 borehole_depth=borehole_depth,
                 total_amount=0,  # Will be calculated below
                 validity_days=validity_days,
@@ -182,6 +187,8 @@ def edit_quotation(quotation_id):
             
             # Update quotation fields
             quotation.project_location = request.form['project_location']
+            quotation.project_latitude = parse_optional_coord(request.form, 'project_latitude')
+            quotation.project_longitude = parse_optional_coord(request.form, 'project_longitude')
             quotation.description = request.form.get('description', 'We have pleasure in quoting our prices for borehole development as follows;')
             
             # Delete existing quotation items
@@ -349,9 +356,10 @@ def download_quotation_pdf(quotation_id):
     ]))
     story.append(info_table)
     
-    # Location row
+    # Location row (includes GPS coordinates when stored on the quotation)
+    loc_display = format_quotation_project_location(quotation)
     location_table = Table(
-        [[Paragraph(f"<b>Location</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{quotation.project_location}", normal_style)]],
+        [[Paragraph(f"<b>Location</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{loc_display}", normal_style)]],
         colWidths=[page_width]
     )
     location_table.setStyle(TableStyle([

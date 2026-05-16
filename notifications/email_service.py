@@ -74,6 +74,7 @@ def send_quotation_notification(quotation_id):
     """Send notification when quotation is ready"""
     try:
         from models import Quotation
+        from utils.quotation_location import format_quotation_project_location
         
         quotation = Quotation.query.get(quotation_id)
         if not quotation:
@@ -85,7 +86,7 @@ def send_quotation_notification(quotation_id):
         
         Quotation Details:
         - Reference: {quotation.reference_number}
-        - Project Location: {quotation.project_location}
+        - Project Location: {format_quotation_project_location(quotation)}
         - Total Amount: MK {quotation.total_amount:,.2f}
         - Valid Until: {(quotation.created_at + datetime.timedelta(days=quotation.validity_days)).strftime('%d/%m/%Y')}
         

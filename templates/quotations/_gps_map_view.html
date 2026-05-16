@@ -1,0 +1,40 @@
+{% include 'quotations/_gps_map_assets.html' %}
+<p class="text-muted small mb-2">Project pin on satellite imagery (read-only). Use <strong>HD view</strong> for finer zoom or <strong>Capture image</strong> to save a snapshot with coordinates.</p>
+<div id="quotation-gps-map-view-wrap" class="quotation-gps-map-wrap rounded border mb-2">
+    <div id="quotation-gps-map-view" class="quotation-gps-map-canvas"></div>
+    <div id="quotation-gps-capture-label-view" class="quotation-gps-capture-label d-none" aria-hidden="true"></div>
+</div>
+<p class="mb-2"><strong>Coordinates:</strong>
+    {% if gps_initial_lat is defined and gps_initial_lat is not none and gps_initial_lng is defined and gps_initial_lng is not none %}
+    <button type="button" class="btn btn-link btn-sm p-0 align-baseline quotation-gps-coords-link text-primary"
+            data-lat="{{ gps_initial_lat }}" data-lng="{{ gps_initial_lng }}"
+            title="Show this location on the map">
+        ({{ "%.6f"|format(gps_initial_lat) }}, {{ "%.6f"|format(gps_initial_lng) }})
+        <i class="fas fa-map-marker-alt small" aria-hidden="true"></i>
+    </button>
+    {% else %}
+    <span class="text-muted">No GPS pin saved for this quotation.</span>
+    {% endif %}
+</p>
+<div class="d-flex flex-wrap gap-2 mb-2">
+    <button type="button" class="btn btn-outline-info btn-sm" id="quotation-gps-hd-view">
+        <i class="fas fa-expand me-1"></i>HD view
+    </button>
+    <button type="button" class="btn btn-outline-success btn-sm" id="quotation-gps-capture-view">
+        <i class="fas fa-camera me-1"></i>Capture image
+    </button>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.QuotationGpsMap) return;
+    QuotationGpsMap.registerView({
+        mapId: 'quotation-gps-map-view',
+        mapWrapId: 'quotation-gps-map-view-wrap',
+        captureLabelId: 'quotation-gps-capture-label-view',
+        hdButtonId: 'quotation-gps-hd-view',
+        captureButtonId: 'quotation-gps-capture-view',
+        lat: {% if gps_initial_lat is defined and gps_initial_lat is not none %}{{ gps_initial_lat }}{% else %}null{% endif %},
+        lng: {% if gps_initial_lng is defined and gps_initial_lng is not none %}{{ gps_initial_lng }}{% else %}null{% endif %}
+    });
+});
+</script>

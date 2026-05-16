@@ -580,7 +580,7 @@
                         <tr>
                             <td class="fw-bold">{{ quo.reference_number }}</td>
                             <td>{{ quo.client.client_name }}</td>
-                            <td>{{ quo.project_location }}</td>
+                            <td>{{ quo|quotation_location_display }}</td>
                             <td>{{ quo.created_at.strftime('%Y-%m-%d') }}</td>
                             <td>
                                 <span class="badge bg-{{ 

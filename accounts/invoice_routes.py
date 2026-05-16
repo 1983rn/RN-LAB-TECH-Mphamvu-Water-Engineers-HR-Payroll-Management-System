@@ -16,6 +16,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from utils.pdf_utils import add_company_header_to_story, add_pdf_footer, add_signature_block, build_pdf_with_numbering, create_numbered_doc, generate_document_number, generate_qr_code, add_signature_stamp_qr, add_stamp_and_qr, generate_document_hash, secure_pdf, add_hash_to_story, generate_receipt_pdf
 from utils.credit_scoring import update_client_credit_score
 from utils.auth_utils import apply_dept_filter, get_current_dept
+from utils.quotation_location import format_quotation_project_location
 
 finance_bp = Blueprint('finance', __name__, url_prefix='/accounts/invoices')
 
@@ -175,7 +176,7 @@ def download_invoice_pdf(invoice_id):
     # Project Description
     story.append(Paragraph("PROJECT DETAILS", ParagraphStyle('ProjDetails', parent=styles['Heading3'], fontSize=10, leading=10, spaceAfter=2)))
     story.append(Paragraph(f"Project: {client.project_type}", ParagraphStyle('ProjText', parent=styles['Normal'], fontSize=9, leading=10)))
-    story.append(Paragraph(f"Location: {quotation.project_location}", ParagraphStyle('LocText', parent=styles['Normal'], fontSize=9, leading=10)))
+    story.append(Paragraph(f"Location: {format_quotation_project_location(quotation)}", ParagraphStyle('LocText', parent=styles['Normal'], fontSize=9, leading=10)))
     story.append(Spacer(1, 2))
     
     # Invoice Items
@@ -619,7 +620,7 @@ def approve_invoice():
             if not delivery_note:
                 items_desc = ", ".join([i.project_type for i in (quotation.quotation_items or [])])
                 if not items_desc:
-                    items_desc = quotation.project_location or "Standard Delivery"
+                    items_desc = format_quotation_project_location(quotation) or "Standard Delivery"
                 
                 delivery_note = DeliveryNote(
                     quotation_id=quotation.quotation_id,

@@ -31,7 +31,7 @@
             <h5>Client Information</h5>
             <p class="mb-1"><strong>Name:</strong> {{ quotation.client.client_name }}</p>
             <p class="mb-1"><strong>Phone:</strong> {{ quotation.client.phone or 'N/A' }}</p>
-            <p class="mb-1"><strong>Location:</strong> {{ quotation.project_location }}</p>
+            <p class="mb-1"><strong>Location:</strong> {{ quotation|quotation_location_display }}</p>
         </div>
 
         <div class="table-responsive">

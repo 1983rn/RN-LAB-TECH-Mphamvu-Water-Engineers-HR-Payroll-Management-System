@@ -7,6 +7,7 @@ from datetime import datetime
 import sqlalchemy as sa
 from utils.pdf_utils import generate_receipt_pdf
 from utils.auth_utils import apply_dept_filter, get_current_dept
+from utils.quotation_location import parse_optional_coord
 
 construction_bp = Blueprint('construction', __name__, url_prefix='/construction')
 
@@ -141,6 +142,8 @@ def add_project():
             project_name=request.form.get('project_name'),
             client_id=request.form.get('client_id'),
             location=request.form.get('location'),
+            project_latitude=parse_optional_coord(request.form, 'project_latitude'),
+            project_longitude=parse_optional_coord(request.form, 'project_longitude'),
             description=request.form.get('description'),
             estimated_budget=float(request.form.get('budget', 0)),
             start_date=datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date() if request.form.get('start_date') else None,
