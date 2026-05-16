@@ -63,7 +63,7 @@
                         <strong>Created Date:</strong> {{ quotation.created_at.strftime('%d/%m/%Y') }}
                     </div>
                     <div class="col-md-6">
-                        <strong>Valid Until:</strong> {{ (quotation.created_at.replace(tzinfo=None) + timedelta(days=quotation.validity_days)).strftime('%d/%m/%Y') }}
+                        <strong>Valid Until:</strong> {{ (quotation.created_at.replace(tzinfo=None) + timedelta(days=quotation.validity_days or 30)).strftime('%d/%m/%Y') }}
                     </div>
                 </div>
                 
