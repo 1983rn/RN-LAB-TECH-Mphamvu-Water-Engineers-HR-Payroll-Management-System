@@ -36,13 +36,44 @@
     .dept-header {
         background: #FFD700;
         color: #000;
-        padding: 10px 20px;
+        padding: 5px 20px;
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 2px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    .header-nav {
+        display: flex;
+        gap: 5px;
+    }
+
+    .header-nav-btn {
+        background: rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        color: #000;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: 800;
+        font-size: 0.75rem;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+    }
+
+    .header-nav-btn:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .header-nav-btn.active {
+        background: #000;
+        color: #FFD700;
+        border-color: #000;
+    }
+
+    .dept-section {
+        transition: opacity 0.3s ease;
     }
 
     .status-section {
@@ -172,126 +203,159 @@
         </div>
 
         {% for dept, categories in projects.items() %}
+        {% set dept_slug = dept.replace(' ', '_').lower() %}
         <div class="dept-card">
-            <div class="dept-header">
-                <span><i class="fas fa-building me-2"></i> {{ dept }} Department</span>
-                <span class="badge bg-dark text-warning border border-warning">{{ categories.offered|length + categories.underway|length + categories.completed|length + categories.overdue|length }} Projects</span>
+            <div class="dept-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-building me-2"></i> {{ dept }} Department
+                </div>
+                
+                <!-- NEW: Header Navigation Tabs -->
+                <div class="header-nav">
+                    <button class="header-nav-btn active" id="{{ dept_slug }}-tracking-btn" onclick="switchDeptTab('{{ dept_slug }}', 'tracking')">
+                        <i class="fas fa-chart-line me-1"></i> PROJECT TRACKING
+                    </button>
+                    <button class="header-nav-btn" id="{{ dept_slug }}-quotations-btn" onclick="switchDeptTab('{{ dept_slug }}', 'quotations')">
+                        <i class="fas fa-file-invoice-dollar me-1"></i> AVAILABLE QUOTATIONS 
+                        {% if categories.pending_award %}<span class="badge bg-danger ms-1">{{ categories.pending_award|length }}</span>{% endif %}
+                    </button>
+                </div>
             </div>
 
-            <!-- QUOTATIONS OFFERED (NEW SECTION) -->
-            <div class="status-section">
-                <div class="status-title"><i class="fas fa-file-invoice-dollar text-info"></i> Offered Projects (Pending Quotations)</div>
-                {% if categories.quotations_offered %}
-                <div class="project-grid">
-                    {% for q in categories.quotations_offered %}
-                    <div class="project-card" style="border-color: #0dcaf0;">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="project-name">{{ q.client }}</div>
-                                <div class="project-dates">
-                                    <i class="fas fa-map-marker-alt me-1"></i> {{ q.location or 'No Location' }}<br>
-                                    <i class="fas fa-money-bill-wave me-1 text-success"></i> <strong>MK {{ "{:,.2f}".format(q.amount) }}</strong>
+            <div class="dept-body">
+                <!-- SECTION 1: PROJECT TRACKING (DEFAULT) -->
+                <div id="{{ dept_slug }}-tracking-section" class="dept-section p-3">
+                    
+                    <!-- PROJECTS UNDER WAY -->
+                    <div class="status-title"><i class="fas fa-spinner fa-spin text-warning"></i> Projects Under Way</div>
+                    {% if categories.underway %}
+                    <div class="project-grid mb-4">
+                        {% for p in categories.underway %}
+                        <div class="project-card" style="border-color: #ffc107;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="project-name">{{ p.name }}</div>
+                                    <div class="project-dates">
+                                        {% if p.amount %}
+                                        <i class="fas fa-money-bill-wave me-1 text-success"></i> <strong>MK {{ "{:,.2f}".format(p.amount) }}</strong><br>
+                                        {% endif %}
+                                        <i class="far fa-calendar-alt me-1"></i> Started: {{ p.start.strftime('%d/%m/%Y') if p.start else 'N/A' }} 
+                                        &nbsp;&bull;&nbsp; 
+                                        <i class="far fa-hourglass-half me-1"></i> Exp. Completion: {{ p.end.strftime('%d/%m/%Y') if p.end else 'N/A' }}
+                                    </div>
                                 </div>
+                                {% if p.type == 'Awarded Quotation' %}
+                                <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{{ p.id }}', '{{ p.name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
                             </div>
-                            <button class="btn btn-sm btn-info fw-bold text-dark" onclick="openApproveModal('{{ q.id }}', '{{ q.client }}')">
-                                APPROVE & START
-                            </button>
+                            {% if p.end and (p.end - today).days <= 7 and (p.end - today).days >= 0 %}
+                            <div class="remind-tag">
+                                <i class="fas fa-exclamation-triangle me-1"></i> REMINDER: Due in {{ (p.end - today).days }} days
+                            </div>
+                            {% endif %}
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="empty-state">No pending quotations for this department.</div>
-                {% endif %}
-            </div>
+                    {% else %}
+                    <div class="empty-state mb-4">No projects currently under way.</div>
+                    {% endif %}
 
-            <!-- PROJECTS OFFERED (PLANNING) -->
-            <div class="status-section">
-                <div class="status-title"><i class="fas fa-handshake text-secondary"></i> Projects in Planning</div>
-                {% if categories.offered %}
-                <div class="project-grid">
-                    {% for p in categories.offered %}
-                    <div class="project-card" style="border-color: #0dcaf0;">
-                        <div class="project-name">{{ p.name }}</div>
-                        <div class="project-dates">
-                            <i class="far fa-calendar-alt me-1"></i> Start: {{ p.start.strftime('%d/%m/%Y') if p.start else 'TBD' }} 
-                            &nbsp;&bull;&nbsp; 
-                            <i class="far fa-calendar-check me-1"></i> Target: {{ p.end.strftime('%d/%m/%Y') if p.end else 'TBD' }}
+                    <!-- PROJECTS COMPLETED -->
+                    <div class="status-title"><i class="fas fa-check-circle text-success"></i> Projects Completed</div>
+                    {% if categories.completed %}
+                    <div class="project-grid mb-4">
+                        {% for p in categories.completed %}
+                        <div class="project-card" style="border-color: #198754;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="project-name">{{ p.name }}</div>
+                                    <div class="project-dates">
+                                        {% if p.amount %}
+                                        <i class="fas fa-money-bill-wave me-1 text-success"></i> <strong>MK {{ "{:,.2f}".format(p.amount) }}</strong><br>
+                                        {% endif %}
+                                        <i class="fas fa-calendar-day me-1"></i> Timeline: {{ p.start.strftime('%d/%m/%Y') if p.start else '?' }} to {{ p.end.strftime('%d/%m/%Y') if p.end else '?' }}
+                                    </div>
+                                </div>
+                                {% if p.type == 'Awarded Quotation' %}
+                                <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{{ p.id }}', '{{ p.name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="empty-state">No projects currently offered.</div>
-                {% endif %}
-            </div>
+                    {% else %}
+                    <div class="empty-state mb-4">No projects completed yet.</div>
+                    {% endif %}
 
-            <!-- PROJECTS UNDER WAY -->
-            <div class="status-section">
-                <div class="status-title"><i class="fas fa-spinner fa-spin text-warning"></i> Projects Under Way</div>
-                {% if categories.underway %}
-                <div class="project-grid">
-                    {% for p in categories.underway %}
-                    <div class="project-card" style="border-color: #ffc107;">
-                        <div class="project-name">{{ p.name }}</div>
-                        <div class="project-dates">
-                            <i class="far fa-calendar-alt me-1"></i> Started: {{ p.start.strftime('%d/%m/%Y') if p.start else 'N/A' }} 
-                            &nbsp;&bull;&nbsp; 
-                            <i class="far fa-hourglass-half me-1"></i> Exp. Completion: {{ p.end.strftime('%d/%m/%Y') if p.end else 'N/A' }}
+                    <!-- PROJECTS OVERDUE -->
+                    <div class="status-title"><i class="fas fa-clock text-danger"></i> Failed to complete on time</div>
+                    {% if categories.overdue %}
+                    <div class="project-grid">
+                        {% for p in categories.overdue %}
+                        <div class="project-card" style="border-color: #dc3545;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="project-name">{{ p.name }}</div>
+                                    <div class="project-dates">
+                                        {% if p.amount %}
+                                        <i class="fas fa-money-bill-wave me-1 text-success"></i> <strong>MK {{ "{:,.2f}".format(p.amount) }}</strong><br>
+                                        {% endif %}
+                                        <i class="fas fa-calendar-times me-1"></i> Expected: {{ p.end.strftime('%d/%m/%Y') if p.end else 'N/A' }} 
+                                        &nbsp;&bull;&nbsp;
+                                        <span class="text-danger fw-bold">Delayed by {{ (today - p.end).days }} days</span>
+                                    </div>
+                                </div>
+                                {% if p.type == 'Awarded Quotation' %}
+                                <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{{ p.id }}', '{{ p.name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
-                        {% if p.end and (p.end - today).days <= 7 and (p.end - today).days >= 0 %}
-                        <div class="remind-tag">
-                            <i class="fas fa-exclamation-triangle me-1"></i> REMINDER: Due in {{ (p.end - today).days }} days
-                        </div>
-                        {% endif %}
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state">All active projects are within schedule.</div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="empty-state">No projects currently under way.</div>
-                {% endif %}
-            </div>
 
-            <!-- PROJECTS COMPLETED -->
-            <div class="status-section">
-                <div class="status-title"><i class="fas fa-check-circle text-success"></i> Projects Completed</div>
-                {% if categories.completed %}
-                <div class="project-grid">
-                    {% for p in categories.completed %}
-                    <div class="project-card" style="border-color: #198754;">
-                        <div class="project-name">{{ p.name }}</div>
-                        <div class="project-dates">
-                            <i class="fas fa-calendar-day me-1"></i> Timeline: {{ p.start.strftime('%d/%m/%Y') if p.start else '?' }} to {{ p.end.strftime('%d/%m/%Y') if p.end else '?' }}
+                <!-- SECTION 2: AVAILABLE QUOTATIONS -->
+                <div id="{{ dept_slug }}-quotations-section" class="dept-section p-3 d-none">
+                    <div class="status-title"><i class="fas fa-file-invoice-dollar text-info"></i> Quotations Awaiting Approval</div>
+                    {% if categories.pending_award %}
+                    <div class="project-grid">
+                        {% for item in categories.pending_award %}
+                        <div class="project-card" style="border-color: #0dcaf0;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="project-name">{{ item.name }}</div>
+                                    <div class="project-dates">
+                                        {% if item.type == 'Quotation' %}
+                                            <i class="fas fa-money-bill-wave me-1 text-success"></i> <strong>MK {{ "{:,.2f}".format(item.amount) }}</strong><br>
+                                            <i class="fas fa-map-marker-alt me-1"></i> {{ item.location or 'No Location' }}
+                                        {% else %}
+                                            <i class="fas fa-info-circle me-1"></i> Status: {{ item.status }} (Planning)
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if item.type == 'Quotation' %}
+                                <button class="btn btn-sm btn-info fw-bold text-dark" onclick="openApproveModal('{{ item.id }}', '{{ item.name }}')">
+                                    APPROVE AWARD
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state text-center py-4">No available quotations for this department.</div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="empty-state">No projects completed yet.</div>
-                {% endif %}
             </div>
-
-            <!-- PROJECTS OVERDUE (FAILED TO COMPLETE ON TIME) -->
-            <div class="status-section">
-                <div class="status-title"><i class="fas fa-clock text-danger"></i> Failed to complete on time</div>
-                {% if categories.overdue %}
-                <div class="project-grid">
-                    {% for p in categories.overdue %}
-                    <div class="project-card" style="border-color: #dc3545;">
-                        <div class="project-name">{{ p.name }}</div>
-                        <div class="project-dates">
-                            <i class="fas fa-calendar-times me-1"></i> Expected: {{ p.end.strftime('%d/%m/%Y') if p.end else 'N/A' }} 
-                            &nbsp;&bull;&nbsp;
-                            <span class="text-danger fw-bold">Delayed by {{ (today - p.end).days }} days</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="empty-state">All active projects are within schedule.</div>
-                {% endif %}
-            </div>
-
         </div>
         {% endfor %}
     </div>
@@ -334,13 +398,49 @@
 </div>
 
 <script>
+    function switchDeptTab(deptSlug, target) {
+        // Toggle sections
+        document.getElementById(deptSlug + '-tracking-section').classList.toggle('d-none', target !== 'tracking');
+        document.getElementById(deptSlug + '-quotations-section').classList.toggle('d-none', target !== 'quotations');
+        
+        // Toggle buttons
+        document.getElementById(deptSlug + '-tracking-btn').classList.toggle('active', target === 'tracking');
+        document.getElementById(deptSlug + '-quotations-btn').classList.toggle('active', target === 'quotations');
+    }
+
     function openApproveModal(quotationId, clientName) {
         document.getElementById('modalClientName').innerText = clientName;
         // Include the current URL as the 'next' parameter so we redirect back here
         var nextUrl = encodeURIComponent(window.location.pathname);
-        document.getElementById('approveForm').action = "/quotations/approve/" + quotationId + "?next=" + nextUrl;
+        var approveUrl = "{{ url_for('quotations.approve_quotation', quotation_id=0) }}".replace('0', quotationId);
+        document.getElementById('approveForm').action = approveUrl + "?next=" + nextUrl;
         var modal = new bootstrap.Modal(document.getElementById('approveModal'));
         modal.show();
+    }
+
+    function confirmDelete(quotationId, clientName) {
+        if (confirm("Are you sure you want to delete the quotation/project for " + clientName + "? This action cannot be undone.")) {
+            var deleteUrl = "{{ url_for('quotations.delete_quotation', quotation_id=0) }}".replace('0', quotationId);
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("An error occurred while deleting the record.");
+            });
+        }
     }
 </script>
 {% endblock %}

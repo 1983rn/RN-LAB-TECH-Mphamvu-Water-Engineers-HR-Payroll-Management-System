@@ -305,84 +305,102 @@ def project_tracking():
     ict_projects = ICTProject.query.all()
     farm_activities = FarmActivity.query.all()
     crop_cycles = CropCycle.query.all()
-    pending_quotations = Quotation.query.filter_by(status='Pending').all()
     
-    # Categorization logic
-    def get_status_category(p, end_date_attr='end_date'):
+    # Fetch ALL quotations to separate into Pending vs Approved (Awarded)
+    all_quotations = Quotation.query.all()
+    
+    # Unified structure
+    projects = {
+        'Borehole Drilling': {'pending_award': [], 'underway': [], 'completed': [], 'overdue': []},
+        'Construction': {'pending_award': [], 'underway': [], 'completed': [], 'overdue': []},
+        'Farm': {'pending_award': [], 'underway': [], 'completed': [], 'overdue': []},
+        'ICT': {'pending_award': [], 'underway': [], 'completed': [], 'overdue': []}
+    }
+    
+    # helper for department mapping
+    def get_target_dept(dept_name):
+        d = (dept_name or '').strip().lower()
+        if 'construction' in d: return 'Construction'
+        if 'ict' in d: return 'ICT'
+        if 'farm' in d: return 'Farm'
+        return 'Borehole Drilling'
+
+    # Process Quotations
+    for q in all_quotations:
+        dept = get_target_dept(q.department)
+        
+        if q.status == 'Approved':
+            # Awarded! Use contract dates entered during approval
+            from models import Contract
+            contract = Contract.query.filter_by(quotation_id=q.quotation_id).order_by(Contract.created_at.desc()).first()
+            
+            # If for some reason there's no contract, we still show it but with N/A dates
+            # instead of falling back to quotation creation date
+            data = {
+                'type': 'Awarded Quotation',
+                'id': q.quotation_id,
+                'name': q.client.client_name if q.client else 'Unknown',
+                'amount': q.total_amount,
+                'start': contract.start_date if contract else None,
+                'end': contract.end_date if contract else None,
+                'status': 'Approved'
+            }
+            
+            # Determine tracking category
+            end_date = data['end']
+            if end_date and end_date < today:
+                projects[dept]['overdue'].append(data)
+            else:
+                projects[dept]['underway'].append(data)
+                
+        elif q.status not in ['Rejected', 'Completed']:
+            # Pending Award - these go to "Available Quotations"
+            projects[dept]['pending_award'].append({
+                'type': 'Quotation',
+                'id': q.quotation_id,
+                'name': q.client.client_name if q.client else 'Unknown',
+                'amount': q.total_amount,
+                'location': q.project_location,
+                'date': q.created_at,
+                'status': q.status
+            })
+    
+    def process_project(p, dept, name, end_date_attr='end_date'):
         status = getattr(p, 'status', '').lower()
         end_date = getattr(p, end_date_attr, None)
         
-        if status in ['completed', 'harvested']:
-            return 'completed'
+        # Determine if awarded
+        is_pending = status in ['planning', 'planned', 'pending']
         
-        if end_date and end_date < today:
-            return 'overdue'
-            
-        if status in ['planning', 'planned', 'pending']:
-            return 'offered'
-            
-        if status in ['in progress', 'growing', 'testing']:
-            return 'underway'
-            
-        return 'other'
+        data = {
+            'type': 'Project',
+            'name': name,
+            'start': getattr(p, 'start_date', None) or getattr(p, 'planting_date', None),
+            'end': end_date,
+            'status': p.status
+        }
+        
+        if is_pending:
+            projects[dept]['pending_award'].append(data)
+        elif status in ['completed', 'harvested']:
+            projects[dept]['completed'].append(data)
+        elif end_date and end_date < today:
+            projects[dept]['overdue'].append(data)
+        else:
+            projects[dept]['underway'].append(data)
 
-    # Unified structure
-    projects = {
-        'Borehole Drilling': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []},
-        'Construction': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []},
-        'Farm': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []},
-        'ICT': {'offered': [], 'underway': [], 'completed': [], 'overdue': [], 'quotations_offered': []}
-    }
-    
-    # Process Quotations (Pending)
-    for q in pending_quotations:
-        dept = q.department if q.department in projects else 'Borehole Drilling'
-        projects[dept]['quotations_offered'].append({
-            'id': q.quotation_id,
-            'client': q.client.client_name if q.client else 'Unknown',
-            'amount': q.total_amount,
-            'location': q.project_location
-        })
-    
-    # Process Construction & Borehole (using ConstructionProject model)
+    # Process all departments
     for p in construction_projects:
         dept = p.department if p.department in projects else 'Construction'
-        cat = get_status_category(p)
-        projects[dept][cat].append({
-            'name': p.project_name,
-            'start': p.start_date,
-            'end': p.end_date,
-            'status': p.status
-        })
+        process_project(p, dept, p.project_name)
         
-    # Process ICT
     for p in ict_projects:
-        cat = get_status_category(p)
-        projects['ICT'][cat].append({
-            'name': p.project_name,
-            'start': p.start_date,
-            'end': p.end_date,
-            'status': p.status
-        })
+        process_project(p, 'ICT', p.project_name)
         
-    # Process Farm (Activities)
     for p in farm_activities:
-        cat = get_status_category(p)
-        projects['Farm'][cat].append({
-            'name': p.activity_name,
-            'start': p.start_date,
-            'end': p.end_date,
-            'status': p.status
-        })
+        process_project(p, 'Farm', p.activity_name)
         
-    # Process Farm (Crop Cycles)
     for p in crop_cycles:
-        cat = get_status_category(p, 'expected_harvest_date')
-        projects['Farm'][cat].append({
-            'name': f"Crop: {p.crop_name} ({p.variety})",
-            'start': p.planting_date,
-            'end': p.expected_harvest_date,
-            'status': p.status
-        })
+        process_project(p, 'Farm', f"Crop: {p.crop_name}", 'expected_harvest_date')
 
     return render_template('hr/project_tracking.html', projects=projects, today=today)
