@@ -116,14 +116,29 @@
                         <label for="project_type" class="form-label">Primary Project Type *</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3"><i class="fas fa-tint text-primary"></i></span>
-                            <select class="form-select border-start-0 rounded-end-pill" id="project_type" name="project_type" required>
+                            <select class="form-select border-start-0 rounded-end-pill" id="project_type" name="project_type" required onchange="handleProjectTypeChange(this)">
                                 <option value="" selected disabled>Select primary service</option>
-                                <option value="Borehole Drilling">Borehole Drilling</option>
-                                <option value="Water Reticulation">Water Reticulation</option>
-                                <option value="Irrigation System">Irrigation System</option>
-                                <option value="Pump Installation">Pump Installation</option>
-                                <option value="Solar Water System">Solar Water System</option>
-                                <option value="General Maintenance">General Maintenance</option>
+                                {% set dept = session.get('department_context', 'Borehole Drilling') %}
+                                {% if dept == 'ICT Department' or dept == 'ICT' %}
+                                    <option value="General Maintenance">General Maintenance</option>
+                                    <option value="Software Development">Software Development</option>
+                                    <option value="Website Development">Website Development</option>
+                                    <option value="Software Update">Software Update</option>
+                                    <option value="Training">Training</option>
+                                {% else %}
+                                    <option value="Borehole Drilling">Borehole Drilling</option>
+                                    <option value="Water Reticulation">Water Reticulation</option>
+                                    <option value="Irrigation System">Irrigation System</option>
+                                    <option value="Pump Installation">Pump Installation</option>
+                                    <option value="Solar Water System">Solar Water System</option>
+                                    <option value="General Maintenance">General Maintenance</option>
+                                {% endif %}
+                                {% if custom_types %}
+                                    {% for ct in custom_types %}
+                                        <option value="{{ ct.project_type }}">{{ ct.project_type }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                                <option value="add_new_project_type" class="text-primary fw-bold">+ Add primary project...</option>
                             </select>
                         </div>
                     </div>
@@ -146,4 +161,58 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function handleProjectTypeChange(selectElement) {
+        if (selectElement.value === 'add_new_project_type') {
+            Swal.fire({
+                title: 'Add Custom Project Type',
+                input: 'text',
+                inputLabel: 'New Project Type Name',
+                inputPlaceholder: 'Enter new project type',
+                showCancelButton: true,
+                confirmButtonText: 'Add',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to write something!'
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const newType = result.value;
+                    
+                    fetch("{{ url_for('clients.add_custom_project_type') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ project_type: newType })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Add new option and select it
+                            const newOption = new Option(newType, newType, true, true);
+                            selectElement.insertBefore(newOption, selectElement.lastElementChild);
+                            Swal.fire('Added!', 'Custom project type has been added.', 'success');
+                        } else {
+                            Swal.fire('Error', data.message || 'Failed to add custom type', 'error');
+                            selectElement.value = ""; // Reset to placeholder
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                        selectElement.value = ""; // Reset to placeholder
+                    });
+                } else {
+                    selectElement.value = ""; // Reset to placeholder if cancelled
+                }
+            });
+        }
+    }
+</script>
 {% endblock %}

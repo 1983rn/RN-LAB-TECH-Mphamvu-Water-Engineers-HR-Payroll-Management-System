@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from functools import wraps
-from models import Client, ClientCreditScore
+from models import Client, ClientCreditScore, CustomProjectType
 from db_utils import db
 from utils.credit_scoring import update_client_credit_score
 from utils.auth_utils import apply_dept_filter, get_current_dept
@@ -87,7 +87,8 @@ def add_client():
             flash(f'Error adding client: {str(e)}', 'error')
             return redirect(url_for('clients.add_client'))
             
-    return render_template('clients/add.html')
+    custom_types = CustomProjectType.query.filter_by(department=get_current_dept()).all()
+    return render_template('clients/add.html', custom_types=custom_types)
 
 @clients_bp.route('/delete/<int:client_id>', methods=['POST'])
 @login_required
@@ -112,3 +113,32 @@ def delete_client(client_id):
         db.session.rollback()
         flash(f'Error deleting client: {str(e)}', 'error')
         return redirect(url_for('clients.list_clients'))
+
+@clients_bp.route('/add_custom_project_type', methods=['POST'])
+@login_required
+def add_custom_project_type():
+    data = request.get_json()
+    project_type_name = data.get('project_type', '').strip()
+    
+    if not project_type_name:
+        return jsonify({'success': False, 'message': 'Project type name is required'}), 400
+        
+    try:
+        # Check if already exists globally due to unique constraint
+        dept = get_current_dept()
+        existing = CustomProjectType.query.filter_by(project_type=project_type_name).first()
+        if existing:
+            # If it already exists, just return success so the user can use it
+            return jsonify({'success': True, 'message': 'Project type added successfully'})
+            
+        new_type = CustomProjectType(
+            project_type=project_type_name,
+            department=dept
+        )
+        db.session.add(new_type)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Project type added successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500

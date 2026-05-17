@@ -343,7 +343,10 @@ def project_tracking():
                 'amount': q.total_amount,
                 'start': contract.start_date if contract else None,
                 'end': contract.end_date if contract else None,
-                'status': 'Approved'
+                'status': 'Approved',
+                'location': q.project_location,
+                'latitude': q.project_latitude,
+                'longitude': q.project_longitude
             }
             
             # Determine tracking category
@@ -361,6 +364,8 @@ def project_tracking():
                 'name': q.client.client_name if q.client else 'Unknown',
                 'amount': q.total_amount,
                 'location': q.project_location,
+                'latitude': q.project_latitude,
+                'longitude': q.project_longitude,
                 'date': q.created_at,
                 'status': q.status
             })
@@ -377,7 +382,10 @@ def project_tracking():
             'name': name,
             'start': getattr(p, 'start_date', None) or getattr(p, 'planting_date', None),
             'end': end_date,
-            'status': p.status
+            'status': p.status,
+            'location': getattr(p, 'location', None) or getattr(p, 'project_location', None),
+            'latitude': getattr(p, 'project_latitude', None),
+            'longitude': getattr(p, 'project_longitude', None)
         }
         
         if is_pending:

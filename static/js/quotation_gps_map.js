@@ -260,6 +260,13 @@
             if (!img.complete || !img.naturalWidth) return;
             var r = img.getBoundingClientRect();
             if (r.width <= 0 || r.height <= 0) return;
+            
+            var isCrossOrigin = false;
+            try {
+                isCrossOrigin = new URL(img.src).origin !== window.location.origin;
+            } catch(e) {}
+            if (isCrossOrigin && img.crossOrigin !== 'anonymous') return;
+
             try {
                 ctx.drawImage(
                     img,
@@ -276,6 +283,31 @@
             if (!img.complete || !img.naturalWidth) return;
             var r = img.getBoundingClientRect();
             if (r.width <= 0 || r.height <= 0) return;
+            
+            var isCrossOrigin = false;
+            try {
+                isCrossOrigin = new URL(img.src).origin !== window.location.origin;
+            } catch(e) {}
+            
+            if (isCrossOrigin && img.crossOrigin !== 'anonymous') {
+                if (img.src.indexOf('shadow') !== -1) return;
+                var cx = (r.left - rect.left + r.width / 2) * scale;
+                var cy = (r.top - rect.top + r.height) * scale;
+                ctx.beginPath();
+                ctx.arc(cx, cy - 15 * scale, 10 * scale, 0, 2 * Math.PI);
+                ctx.fillStyle = '#dc3545';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2 * scale;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(cx - 10 * scale, cy - 15 * scale);
+                ctx.lineTo(cx, cy);
+                ctx.lineTo(cx + 10 * scale, cy - 15 * scale);
+                ctx.fill();
+                return;
+            }
+
             try {
                 ctx.drawImage(
                     img,
@@ -288,6 +320,13 @@
         });
 
         drawCoordsBanner(ctx, w, h, buildCaptureLabel(coords, map), scale);
+        
+        try {
+            canvas.toDataURL(); // Check if canvas got tainted
+        } catch(e) {
+            throw new Error('Canvas was tainted');
+        }
+        
         return { canvas: canvas, tilesDrawn: tilesDrawn };
     }
 
@@ -315,7 +354,7 @@
 
         return h2c(mapWrap, {
             useCORS: true,
-            allowTaint: true,
+            allowTaint: false,
             logging: false,
             scale: Math.min(2, window.devicePixelRatio || 1.5),
             backgroundColor: '#e9ecef',
@@ -354,16 +393,12 @@
                 }
 
                 function onSuccess(canvas, usedTiles) {
-                    try {
-                        downloadCaptureCanvas(canvas, coords);
-                        var msg = 'Satellite image saved with coordinates ' + formatCoords(coords.lat, coords.lng) + '.';
-                        if (!usedTiles) {
-                            msg += ' (Coordinates banner included; zoom in if map tiles were still loading.)';
-                        }
-                        showGpsToast(msg, 'success');
-                    } catch (e) {
-                        showGpsToast('Could not save the image. Wait for tiles to finish loading, then try again.', 'warning');
+                    downloadCaptureCanvas(canvas, coords);
+                    var msg = 'Satellite image saved with coordinates ' + formatCoords(coords.lat, coords.lng) + '.';
+                    if (!usedTiles) {
+                        msg += ' (Coordinates banner included; zoom in if map tiles were still loading.)';
                     }
+                    showGpsToast(msg, 'success');
                     done();
                 }
 

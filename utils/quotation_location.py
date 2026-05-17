@@ -26,9 +26,4 @@ def format_quotation_project_location(quotation):
         or getattr(quotation, "location", None)
         or ""
     ).strip()
-    lat = getattr(quotation, "project_latitude", None)
-    lng = getattr(quotation, "project_longitude", None)
-    coord = format_coord_pair(lat, lng)
-    if coord:
-        return f"{text} {coord}".strip() if text else coord
     return text
