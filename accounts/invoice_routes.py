@@ -54,41 +54,63 @@ def list_invoices():
 def generate_invoice(contract_id):
     contract = Contract.query.get_or_404(contract_id)
     
+    # Check if an invoice already exists for this contract
+    existing_invoice = Invoice.query.filter_by(contract_id=contract_id).first()
+    
     if request.method == 'POST':
         try:
-            # Generate invoice number using full precise timestamp and contract ID for guaranteed uniqueness
-            invoice_number = f"INV{datetime.now().strftime('%Y%m%d%H%M%S')}{contract.contract_id:04d}"
+            # Read project_name from form
+            project_name = request.form.get('project_name', '').strip()
+            if not project_name:
+                project_name = contract.quotation.client.project_type
             
-            # Create invoice
-            invoice = Invoice(
-                contract_id=contract_id,
-                invoice_number=invoice_number,
-                invoice_date=date.today(),
-                due_date=date.today() + timedelta(days=14),
-                amount=contract.quotation.total_amount,
-                payment_terms=request.form.get('payment_terms', 'Payment within 14 days'),
-                status='Unpaid',
-                department=contract.department
-            )
-            
-            db.session.add(invoice)
-            
-            # Update contract status
-            contract.status = 'Invoiced'
-            
-            db.session.commit()
+            if existing_invoice:
+                # Update existing invoice instead of creating a duplicate
+                existing_invoice.project_name = project_name
+                existing_invoice.payment_terms = request.form.get('payment_terms', 'Payment within 14 days')
+                existing_invoice.invoice_date = datetime.strptime(request.form.get('invoice_date', date.today().isoformat()), '%Y-%m-%d').date() if request.form.get('invoice_date') else date.today()
+                existing_invoice.due_date = datetime.strptime(request.form.get('due_date', (date.today() + timedelta(days=14)).isoformat()), '%Y-%m-%d').date() if request.form.get('due_date') else date.today() + timedelta(days=14)
+                existing_invoice.updated_at = datetime.utcnow()
+                
+                db.session.commit()
+                
+                flash(f'Invoice {existing_invoice.invoice_number} updated successfully!', 'success')
+            else:
+                # Generate invoice number using full precise timestamp and contract ID for guaranteed uniqueness
+                invoice_number = f"INV{datetime.now().strftime('%Y%m%d%H%M%S')}{contract.contract_id:04d}"
+                
+                # Create invoice
+                invoice = Invoice(
+                    contract_id=contract_id,
+                    invoice_number=invoice_number,
+                    invoice_date=datetime.strptime(request.form.get('invoice_date', date.today().isoformat()), '%Y-%m-%d').date() if request.form.get('invoice_date') else date.today(),
+                    due_date=datetime.strptime(request.form.get('due_date', (date.today() + timedelta(days=14)).isoformat()), '%Y-%m-%d').date() if request.form.get('due_date') else date.today() + timedelta(days=14),
+                    amount=contract.quotation.total_amount,
+                    payment_terms=request.form.get('payment_terms', 'Payment within 14 days'),
+                    project_name=project_name,
+                    status='Unpaid',
+                    department=contract.department
+                )
+                
+                db.session.add(invoice)
+                
+                # Update contract status
+                contract.status = 'Invoiced'
+                
+                db.session.commit()
+                
+                flash(f'Invoice {invoice_number} generated successfully!', 'success')
             
             # Recalculate credit score after generating invoice
             update_client_credit_score(contract.quotation.client_id)
             
-            flash(f'Invoice {invoice_number} generated successfully!', 'success')
             return redirect(url_for('finance.list_invoices'))
             
         except Exception as e:
             flash(f'Error generating invoice: {str(e)}', 'error')
             return redirect(url_for('finance.generate_invoice', contract_id=contract_id))
     
-    return render_template('finance/invoices/generate.html', contract=contract)
+    return render_template('accounts/invoices/generate.html', contract=contract, invoice=existing_invoice)
 
 @finance_bp.route('/invoice/pdf/<int:invoice_id>')
 @login_required
@@ -175,14 +197,29 @@ def download_invoice_pdf(invoice_id):
     
     # Project Description
     story.append(Paragraph("PROJECT DETAILS", ParagraphStyle('ProjDetails', parent=styles['Heading3'], fontSize=10, leading=10, spaceAfter=2)))
-    story.append(Paragraph(f"Project: {client.project_type}", ParagraphStyle('ProjText', parent=styles['Normal'], fontSize=9, leading=10)))
+    # Use invoice.project_name if set, falling back to client.project_type
+    display_project_name = invoice.project_name if invoice.project_name else client.project_type
+    story.append(Paragraph(f"Project: {display_project_name}", ParagraphStyle('ProjText', parent=styles['Normal'], fontSize=9, leading=10)))
     story.append(Paragraph(f"Location: {format_quotation_project_location(quotation)}", ParagraphStyle('LocText', parent=styles['Normal'], fontSize=9, leading=10)))
     story.append(Spacer(1, 2))
     
     # Invoice Items
     story.append(Paragraph("INVOICE ITEMS", ParagraphStyle('InvItems', parent=styles['Heading3'], fontSize=10, leading=10, spaceAfter=2)))
+    
+    th_desc = ParagraphStyle('THDesc', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=font_size, leading=font_size+2, textColor=colors.whitesmoke, alignment=0)
+    th_other = ParagraphStyle('THOther', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=font_size, leading=font_size+2, textColor=colors.whitesmoke, alignment=1)
+    
+    tb_desc = ParagraphStyle('TBDesc', parent=styles['Normal'], fontName='Helvetica', fontSize=font_size, leading=font_size+2)
+    tb_other = ParagraphStyle('TBOther', parent=styles['Normal'], fontName='Helvetica', fontSize=font_size, leading=font_size+2, alignment=1)
+    tb_total = ParagraphStyle('TBTotal', parent=styles['Normal'], fontName='Helvetica', fontSize=font_size, leading=font_size+2, alignment=2)
+
     items_data = [
-        ['Description', 'Quantity', 'Unit Price', 'Total']
+        [
+            Paragraph('Description', th_desc),
+            Paragraph('Quantity', th_other),
+            Paragraph('Unit Price', th_other),
+            Paragraph('Total', th_other)
+        ]
     ]
     
     for item in quotation.quotation_items:
@@ -190,24 +227,20 @@ def download_invoice_pdf(invoice_id):
         if item.unit:
             qty_str += f" {item.unit}"
         items_data.append([
-            item.project_type, 
-            qty_str, 
-            f"{item.unit_rate:,.2f}", 
-            f"{item.total:,.2f}"
+            Paragraph(item.project_type, tb_desc), 
+            Paragraph(qty_str, tb_other), 
+            Paragraph(f"{item.unit_rate:,.2f}", tb_total), 
+            Paragraph(f"{item.total:,.2f}", tb_total)
         ])
     
     items_table = Table(items_data, colWidths=[3*inch, 1*inch, 1*inch, 1*inch], repeatRows=1)
     items_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('ALIGN', (3, 1), (3, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), font_size),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), col_padding),
         ('BOTTOMPADDING', (0, 0), (-1, -1), col_padding),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
     ]))
     
     story.append(items_table)
@@ -265,7 +298,7 @@ def download_invoice_pdf(invoice_id):
     story.append(bank_table)
     story.append(Spacer(1, 5))
     
-    story = add_signature_stamp_qr(story, inv_number, qr_path, layout_mode=layout_mode)
+    story = add_signature_stamp_qr(story, inv_number, qr_path, layout_mode=layout_mode, signer_name="Ulanda Duwe", signer_title="Managing Director")
     story = add_hash_to_story(story, doc_hash)
     story = add_pdf_footer(story, layout_mode=layout_mode)
     build_pdf_with_numbering(doc, story)
@@ -337,7 +370,7 @@ def create_delivery_note(invoice_id):
             flash(f'Error creating delivery note: {str(e)}', 'error')
             return redirect(url_for('finance.create_delivery_note', invoice_id=invoice_id))
     
-    return render_template('finance/delivery/create.html', invoice=invoice)
+    return render_template('accounts/delivery/create.html', invoice=invoice)
 
 @finance_bp.route('/delivery-note/pdf/<int:delivery_id>')
 @login_required
@@ -424,8 +457,18 @@ def download_delivery_note_pdf(delivery_id):
     
     # Equipment Delivered
     story.append(Paragraph("EQUIPMENT DELIVERED:", ParagraphStyle('EquipDelivered', parent=styles['Heading3'], fontSize=10, leading=10, spaceAfter=2)))
+    
+    th_desc = ParagraphStyle('THDescDN', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=font_size, leading=font_size+2, textColor=colors.whitesmoke, alignment=0)
+    th_qty = ParagraphStyle('THQtyDN', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=font_size, leading=font_size+2, textColor=colors.whitesmoke, alignment=1)
+    
+    tb_desc = ParagraphStyle('TBDescDN', parent=styles['Normal'], fontName='Helvetica', fontSize=font_size, leading=font_size+2)
+    tb_qty = ParagraphStyle('TBQtyDN', parent=styles['Normal'], fontName='Helvetica', fontSize=font_size, leading=font_size+2, alignment=1)
+
     equipment_data = [
-        ['Item Description', 'Quantity']
+        [
+            Paragraph('Item Description', th_desc),
+            Paragraph('Quantity', th_qty)
+        ]
     ]
     
     for item in quotation.quotation_items:
@@ -433,20 +476,18 @@ def download_delivery_note_pdf(delivery_id):
         if item.unit:
             qty_str += f" {item.unit}"
         equipment_data.append([
-            item.project_type,
-            qty_str
+            Paragraph(item.project_type, tb_desc),
+            Paragraph(qty_str, tb_qty)
         ])
         
     equipment_table = Table(equipment_data, colWidths=[4*inch, 1*inch], repeatRows=1)
     equipment_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), font_size),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), col_padding),
         ('BOTTOMPADDING', (0, 0), (-1, -1), col_padding),
         ('BACKGROUND', (0, 1), (-1, 1), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
     ]))
     
     story.append(equipment_table)
@@ -473,7 +514,7 @@ def download_delivery_note_pdf(delivery_id):
     story.append(signature_table)
     story.append(Spacer(1, 2))
     
-    story = add_signature_stamp_qr(story, dn_number, qr_path, layout_mode=layout_mode)
+    story = add_signature_stamp_qr(story, dn_number, qr_path, layout_mode=layout_mode, signer_name="Ulanda Duwe", signer_title="Managing Director")
     story = add_hash_to_story(story, doc_hash)
     story = add_pdf_footer(story, layout_mode=layout_mode)
     build_pdf_with_numbering(doc, story)
@@ -497,7 +538,7 @@ def create_invoice(quotation_id):
     items = quotation.quotation_items
     
     return render_template(
-        "finance/invoices/create_invoice.html",
+        "accounts/invoices/create_invoice.html",
         quotation=quotation,
         items=items
     )
@@ -510,7 +551,7 @@ def preview_delivery_note(quotation_id):
     items = quotation.quotation_items
     
     return render_template(
-        "finance/delivery/delivery_note.html",
+        "accounts/delivery/delivery_note.html",
         quotation=quotation,
         items=items
     )
@@ -560,6 +601,7 @@ def generate_invoice_from_quotation():
                 due_date=date.today() + timedelta(days=14),
                 amount=quotation.total_amount,
                 payment_terms='Payment within 14 days',
+                project_name=quotation.client.project_type,
                 status='Unpaid',
                 is_approved=False, # Explicitly False until next step
                 department=quotation.department

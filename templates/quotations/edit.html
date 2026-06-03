@@ -154,7 +154,15 @@
                     <textarea class="form-control" id="description" name="description" rows="2" required>{{ quotation.description or 'We have pleasure in quoting our prices for borehole development as follows;' }}</textarea>
                 </div>
             </div>
-            
+
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="footnote" class="form-label">Optional Footnote</label>
+                    <textarea class="form-control" id="footnote" name="footnote" rows="3" placeholder="Payment instructions, delivery notes, warranty information, additional terms and conditions, company remarks, etc.">{{ quotation.footnote or '' }}</textarea>
+                    <small class="text-muted">This footnote will appear at the bottom of the quotation PDF.</small>
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label for="project_location" class="form-label">Project Location *</label>
                 <input type="text" class="form-control" id="project_location" name="project_location" value="{{ quotation.project_location }}" required>
@@ -234,6 +242,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedProjectTypesSpan = document.getElementById('selectedProjectTypes');
     const projectDetailsSection = document.getElementById('projectDetailsSection');
     const projectDetailsContainer = document.getElementById('projectDetailsContainer');
+
+    // Event delegation for remove project type buttons
+    projectDetailsContainer.addEventListener('click', function(e) {
+        const removeBtn = e.target.closest('.remove-project-type-btn');
+        if (removeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const projectTypeToRemove = removeBtn.getAttribute('data-project-type');
+            
+            // Uncheck the corresponding checkbox
+            projectTypeCheckboxes.forEach(function(cb) {
+                if (cb.value === projectTypeToRemove) {
+                    cb.checked = false;
+                }
+            });
+            
+            // Remove from selectedOrder
+            selectedOrder = selectedOrder.filter(function(type) {
+                return type !== projectTypeToRemove;
+            });
+            
+            // Redraw and recalculate
+            updateSelectedProjectTypes();
+        }
+    });
     
     function updateSelectedProjectTypes() {
         const selectedTypes = selectedOrder;
@@ -274,8 +307,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const rateValue = existingItem ? existingItem.unitRate : '';
             
             projectCard.innerHTML = `
-                <div class="card-header bg-info text-white">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">${projectType}</h6>
+                    <button type="button" class="btn btn-sm btn-danger remove-project-type-btn" data-project-type="${projectType.replace(/"/g, '&quot;')}" title="Remove this project type">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                     <input type="hidden" name="project_type" value="${projectType}">
                 </div>
                 <div class="card-body">

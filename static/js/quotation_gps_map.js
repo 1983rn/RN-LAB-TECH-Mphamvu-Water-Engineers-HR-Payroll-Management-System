@@ -213,6 +213,92 @@
         ctx.setHdMode = setHdMode;
     }
 
+    function bindSearch(ctx) {
+        var map = ctx.map;
+        var searchInput = ctx.searchInputId ? document.getElementById(ctx.searchInputId) : null;
+        var searchBtn = ctx.searchButtonId ? document.getElementById(ctx.searchButtonId) : null;
+        var searchResults = ctx.searchResultsId ? document.getElementById(ctx.searchResultsId) : null;
+        if (!searchInput || !searchBtn || !searchResults) return;
+
+        function performSearch() {
+            var q = searchInput.value.trim();
+            if (!q) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            // Provide visual feedback
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&limit=5';
+            fetch(url)
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    searchResults.innerHTML = '';
+                    if (data && data.length > 0) {
+                        data.forEach(function(item) {
+                            var btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'list-group-item list-group-item-action text-start small py-2';
+                            btn.textContent = item.display_name;
+                            btn.addEventListener('click', function() {
+                                var lat = parseFloat(item.lat);
+                                var lon = parseFloat(item.lon);
+                                searchResults.style.display = 'none';
+                                searchInput.value = item.display_name;
+                                
+                                if (ctx.setMarkerAt) {
+                                    ctx.setMarkerAt(lat, lon, true);
+                                }
+                                
+                                if (item.boundingbox) {
+                                    var bounds = [
+                                        [parseFloat(item.boundingbox[0]), parseFloat(item.boundingbox[2])],
+                                        [parseFloat(item.boundingbox[1]), parseFloat(item.boundingbox[3])]
+                                    ];
+                                    map.flyToBounds(bounds, { maxZoom: DETAIL_ZOOM, duration: 1.5 });
+                                } else {
+                                    map.flyTo([lat, lon], DETAIL_ZOOM, { duration: 1.5 });
+                                }
+                            });
+                            searchResults.appendChild(btn);
+                        });
+                        searchResults.style.display = 'block';
+                    } else {
+                        var div = document.createElement('div');
+                        div.className = 'list-group-item text-muted small py-2';
+                        div.textContent = 'No results found.';
+                        searchResults.appendChild(div);
+                        searchResults.style.display = 'block';
+                    }
+                })
+                .catch(function(err) {
+                    console.error('OSM Search Error:', err);
+                    showGpsToast('Search failed. Please try again later.', 'danger');
+                })
+                .finally(function() {
+                    searchBtn.disabled = false;
+                    searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
+                });
+        }
+
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchBtn.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+
     function getHtml2CanvasLib() {
         if (typeof global.html2canvas === 'function') {
             return global.html2canvas;
@@ -586,15 +672,19 @@
                 }
             }
 
-            function setMarkerAt(lat, lng) {
+            function setMarkerAt(lat, lng, noZoom) {
                 lat = parseCoord(lat);
                 lng = parseCoord(lng);
                 if (lat === null || lng === null) return;
                 var latLng = L.latLng(lat, lng);
                 setMarker(latLng, true);
                 updateInputs(lat, lng);
-                map.setView(latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
-                resizeMap(map, latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
+                if (!noZoom) {
+                    map.setView(latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
+                    resizeMap(map, latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
+                } else {
+                    map.invalidateSize();
+                }
             }
 
             function getCurrentCoords() {
@@ -660,9 +750,14 @@
                 hdButtonId: opts.hdButtonId,
                 captureButtonId: opts.captureButtonId,
                 captureLabelId: opts.captureLabelId,
-                getCoords: getCurrentCoords
+                searchInputId: opts.searchInputId,
+                searchButtonId: opts.searchButtonId,
+                searchResultsId: opts.searchResultsId,
+                getCoords: getCurrentCoords,
+                setMarkerAt: setMarkerAt
             };
             bindMapUi(uiCtx);
+            bindSearch(uiCtx);
 
             global.__quotationGpsPicker = {
                 map: map,
@@ -717,7 +812,7 @@
             mapEl.dataset.gpsMapReady = '1';
             mapEl._gpsViewMap = map;
 
-            function showAt(targetLat, targetLng) {
+            function showAt(targetLat, targetLng, noZoom) {
                 targetLat = parseCoord(targetLat);
                 targetLng = parseCoord(targetLng);
                 if (targetLat === null || targetLng === null) return;
@@ -727,8 +822,12 @@
                 } else {
                     marker.setLatLng(latLng);
                 }
-                map.setView(latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
-                resizeMap(map, latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
+                if (!noZoom) {
+                    map.setView(latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
+                    resizeMap(map, latLng, Math.min(DETAIL_ZOOM, map.getMaxZoom()));
+                } else {
+                    map.invalidateSize();
+                }
             }
 
             bindMapUi({

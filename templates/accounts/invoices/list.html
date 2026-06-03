@@ -73,6 +73,9 @@
                                     <i class="fas fa-download"></i>
                                 </a>
                                 {% if not invoice.is_approved %}
+                                <a href="{{ url_for('finance.generate_invoice', contract_id=invoice.contract_id) }}" class="btn btn-outline-info" title="Edit Invoice">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                                 <button class="btn btn-outline-danger" onclick="openInvoiceApprovalModal('{{ invoice.invoice_id }}')" title="Approve Invoice">
                                     <i class="fas fa-check-circle"></i> Approve
                                 </button>
@@ -112,7 +115,7 @@
                 <h5 class="modal-title">Record Payment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="/transactions/add">
+            <form method="POST" action="{{ url_for('transactions.add_transaction') }}">
                 <div class="modal-body">
                     <input type="hidden" name="invoice_id" id="modalInvoiceId">
                     <input type="hidden" name="client_id" id="modalClientId">
@@ -226,7 +229,7 @@
             return;
         }
 
-        fetch('/finance/invoice/approve', {
+        fetch('{{ url_for("finance.approve_invoice") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

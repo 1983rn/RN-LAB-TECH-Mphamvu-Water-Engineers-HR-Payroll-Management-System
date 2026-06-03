@@ -183,7 +183,7 @@
             return;
         }
         
-        fetch('/finance/invoice-generate', {
+        fetch('{{ url_for("finance.generate_invoice_from_quotation") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -207,7 +207,7 @@
                 badge.innerText = 'Delivered';
                 
                 // Set download links
-                document.getElementById('dl-invoice-' + quotationId).href = '/finance/invoice/pdf/' + data.invoice_id;
+                document.getElementById('dl-invoice-' + quotationId).href = '{{ url_for("finance.download_invoice_pdf", invoice_id=0) }}'.replace('0', data.invoice_id);
                 
                 // Show actions row
                 document.getElementById('actions-row-' + quotationId).style.display = 'table-row';

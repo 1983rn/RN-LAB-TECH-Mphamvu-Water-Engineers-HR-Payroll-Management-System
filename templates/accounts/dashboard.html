@@ -172,10 +172,13 @@
                 <div class="text-end">
                     <p class="mb-0 text-white-50 small">System Time: {{ datetime.now().strftime('%Y-%m-%d %H:%M') }}</p>
                     <div class="mt-2">
-                        <a href="{{ url_for('accounts.cashbook') }}" class="btn btn-outline-light btn-sm px-3 me-2">
+                        <a href="{{ url_for('accounts.cashbook') }}" class="btn btn-outline-light btn-sm px-3 me-2 mb-2">
                             <i class="fas fa-book-open me-2"></i>Global Cashbook
                         </a>
-                        <a href="{{ url_for('accounts.salaries') }}" class="btn btn-warning btn-sm px-3 fw-bold">
+                        <a href="{{ url_for('accounts.general_receipt') }}" class="btn btn-outline-info btn-sm px-3 me-2 mb-2">
+                            <i class="fas fa-receipt me-2"></i>General Receipt
+                        </a>
+                        <a href="{{ url_for('accounts.salaries') }}" class="btn btn-warning btn-sm px-3 mb-2 fw-bold">
                             <i class="fas fa-hand-holding-usd me-2"></i>Process Salaries
                         </a>
                     </div>

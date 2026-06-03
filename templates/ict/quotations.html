@@ -45,11 +45,12 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="#" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a>
+                                <a href="{{ url_for('quotations.view_quotation', quotation_id=quo.quotation_id) }}" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a>
+                                <a href="{{ url_for('quotations.download_quotation_pdf', quotation_id=quo.quotation_id) }}" class="btn btn-sm btn-success text-white"><i class="fas fa-download"></i></a>
                                 {% if not quo.invoice_generated and quo.status == 'Approved' %}
                                 <form action="{{ url_for('ict.create_invoice') }}" method="POST" class="d-inline">
                                     <input type="hidden" name="quotation_id" value="{{ quo.quotation_id }}">
-                                    <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-file-invoice"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-file-invoice"></i></button>
                                 </form>
                                 {% endif %}
                             </td>

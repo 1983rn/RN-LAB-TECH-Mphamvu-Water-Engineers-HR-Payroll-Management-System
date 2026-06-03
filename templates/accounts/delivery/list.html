@@ -134,7 +134,7 @@
 function generateDeliveryNote(invoiceId) {
     if(!confirm('Generate Delivery Note for this invoice?')) return;
     
-    fetch('/finance/delivery-generate', {
+    fetch('{{ url_for("finance.generate_delivery_note_from_invoice") }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ invoice_id: invoiceId })

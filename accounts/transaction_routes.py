@@ -125,7 +125,7 @@ def add_transaction():
     i_query = Invoice.query.filter(Invoice.status.in_(['Unpaid', 'Partially Paid']))
     invoices = apply_dept_filter(i_query, Invoice).all()
     
-    return render_template('finance/transactions/add.html',
+    return render_template('accounts/transactions/add.html',
                          clients=clients,
                          invoices=invoices)
 
@@ -160,7 +160,7 @@ def edit_transaction(transaction_id):
     
     c_query = Client.query
     clients = apply_dept_filter(c_query, Client).all()
-    return render_template('finance/transactions/edit.html',
+    return render_template('accounts/transactions/edit.html',
                          transaction=transaction,
                          clients=clients)
 
@@ -230,7 +230,7 @@ def transaction_dashboard():
     # Get recent transactions
     recent_transactions = q.order_by(Transaction.created_at.desc()).limit(10).all()
     
-    return render_template('finance/transactions/dashboard.html',
+    return render_template('accounts/transactions/dashboard.html',
                          total_transactions=total_transactions,
                          total_amount=total_amount,
                          monthly_transactions=monthly_transactions,

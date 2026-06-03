@@ -792,3 +792,81 @@ def export_cashbook_pdf():
     response.headers['Content-Disposition'] = 'inline; filename=CashBook_Ledger_Mphamvu.pdf'
     return response
 
+@accounts_bp.route('/receipt', methods=['GET'])
+@login_required
+@accounts_required
+def general_receipt():
+    from models import GeneralReceipt
+    
+    # Auto-incrementing receipt number logic
+    last_receipt = GeneralReceipt.query.order_by(GeneralReceipt.id.desc()).first()
+    next_num = 1
+    if last_receipt and last_receipt.receipt_number.isdigit():
+        next_num = int(last_receipt.receipt_number) + 1
+    next_receipt_number = f"{next_num:04d}"
+    
+    receipts_history = GeneralReceipt.query.order_by(GeneralReceipt.created_at.desc()).limit(50).all()
+    
+    return render_template('accounts/receipt.html', 
+                           next_receipt_number=next_receipt_number, 
+                           receipts_history=receipts_history)
+
+@accounts_bp.route('/receipt/pdf', methods=['POST'])
+@login_required
+@accounts_required
+def generate_general_receipt():
+    from models import GeneralReceipt
+    from utils.pdf_utils import generate_general_receipt_pdf
+    
+    company = request.form.get('company')
+    tin = request.form.get('tin')
+    receipt_number = request.form.get('receipt_number')
+    date_str = request.form.get('date')
+    received_from = request.form.get('received_from')
+    sum_of_words = request.form.get('sum_of_words')
+    payment_for = request.form.get('payment_for')
+    amount_str = request.form.get('amount', '0').replace(',', '')
+    payment_method = request.form.get('payment_method')
+    
+    try:
+        amount = float(amount_str)
+        receipt_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Save to database
+        receipt = GeneralReceipt(
+            receipt_number=receipt_number,
+            company=company,
+            tin=tin,
+            receipt_date=receipt_date,
+            received_from=received_from,
+            sum_of_words=sum_of_words,
+            payment_for=payment_for,
+            amount=amount,
+            payment_method=payment_method
+        )
+        db.session.add(receipt)
+        db.session.commit()
+        
+        # Generate PDF
+        receipt_data = {
+            'company': company,
+            'tin': tin,
+            'receipt_number': receipt_number,
+            'date': receipt_date.strftime('%d/%m/%Y'),
+            'received_from': received_from,
+            'sum_of_words': sum_of_words,
+            'payment_for': payment_for,
+            'amount': amount,
+            'payment_method': payment_method
+        }
+        
+        buffer = generate_general_receipt_pdf(receipt_data)
+        response = make_response(buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename=Receipt_{company.replace(" ", "_")}_{receipt_number}.pdf'
+        return response
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error generating receipt: {str(e)}', 'error')
+        return redirect(url_for('accounts.general_receipt'))

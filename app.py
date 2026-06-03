@@ -59,14 +59,30 @@ db.init_app(app)
 with app.app_context():
     try:
         init_db()
-        
-        # Start Email RFQ fetching background daemon (if not in a worker that shouldn't)
-        # On Render, background tasks might be better in a separate worker, but for simplicity:
+
+        # Remove any persistent hardcoded/sample RFQ records.
+        # This prevents demo/test RFQs from showing up in listings and generated PDFs.
         try:
-            from utils.rfq_parser import start_background_task
-            start_background_task()
+            from utils.cleanup_rfq_samples import cleanup_hardcoded_rfq_records
+            counts = cleanup_hardcoded_rfq_records()
+            app.logger.info(f"RFQ sample cleanup: {counts}")
         except Exception as e:
-            app.logger.error(f"Failed to start background task: {e}")
+            app.logger.error(f"Failed RFQ sample cleanup: {e}")
+
+        # Start Email RFQ fetching background daemon only when explicitly enabled.
+        # Default is disabled to avoid unintended automatic RFQ generation in the background.
+        enable_email_rfq_fetcher = os.environ.get('ENABLE_EMAIL_RFQ_FETCHER', '').strip().lower() in (
+            '1',
+            'true',
+            'yes',
+            'on',
+        )
+        if enable_email_rfq_fetcher:
+            try:
+                from utils.rfq_parser import start_background_task
+                start_background_task()
+            except Exception as e:
+                app.logger.error(f"Failed to start background task: {e}")
         
         # ─── UNIVERSAL ADMIN INITIALIZATION (Local & Render) ───
         admin_username = 'Mphamvuwaterengineers'

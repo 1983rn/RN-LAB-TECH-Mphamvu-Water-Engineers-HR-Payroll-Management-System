@@ -4,6 +4,17 @@
     <div id="quotation-gps-map" class="quotation-gps-map-canvas"></div>
     <div id="quotation-gps-capture-label" class="quotation-gps-capture-label d-none" aria-hidden="true"></div>
 </div>
+<div class="row mb-2">
+    <div class="col-md-6 mb-2 mb-md-0">
+        <div class="input-group input-group-sm">
+            <input type="text" id="quotation-gps-search-input" class="form-control" placeholder="Search location (e.g. Lilongwe)..." title="Powered by live OpenStreetMap data">
+            <button class="btn btn-outline-secondary" type="button" id="quotation-gps-search-btn">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+        <div id="quotation-gps-search-results" class="list-group position-absolute w-100 shadow" style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;"></div>
+    </div>
+</div>
 <p class="mb-2"><strong>Selected coordinates:</strong> <span id="quotation-gps-coord-readout" class="text-primary">{% if gps_initial_lat is defined and gps_initial_lat is not none and gps_initial_lng is defined and gps_initial_lng is not none %}{{ "%.6f"|format(gps_initial_lat) }}, {{ "%.6f"|format(gps_initial_lng) }}{% else %}—{% endif %}</span></p>
 <input type="hidden" name="project_latitude" id="project_latitude" value="{% if gps_initial_lat is defined and gps_initial_lat is not none %}{{ gps_initial_lat }}{% endif %}">
 <input type="hidden" name="project_longitude" id="project_longitude" value="{% if gps_initial_lng is defined and gps_initial_lng is not none %}{{ gps_initial_lng }}{% endif %}">
@@ -33,6 +44,9 @@ document.addEventListener('DOMContentLoaded', function () {
         applyButtonId: 'quotation-gps-apply',
         hdButtonId: 'quotation-gps-hd',
         captureButtonId: 'quotation-gps-capture',
+        searchInputId: 'quotation-gps-search-input',
+        searchButtonId: 'quotation-gps-search-btn',
+        searchResultsId: 'quotation-gps-search-results',
         initialLat: {% if gps_initial_lat is defined and gps_initial_lat is not none %}{{ gps_initial_lat }}{% else %}null{% endif %},
         initialLng: {% if gps_initial_lng is defined and gps_initial_lng is not none %}{{ gps_initial_lng }}{% else %}null{% endif %}
     });

@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}General Receipt Generator - MWE{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Accounts Theme */
+    .accounts-dashboard-wrapper {
+        position: relative;
+        min-height: calc(100vh - 100px);
+        background: url('{{ url_for('static', filename='images/accounts dashboard.png') }}') center/cover no-repeat;
+        border-radius: 20px;
+        padding: 25px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        color: #FFFFFF;
+    }
+
+    /* Glassmorphism Overlay */
+    .accounts-dashboard-wrapper::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 5, 20, 0.45);
+        backdrop-filter: blur(2px);
+    }
+
+    .content-layer {
+        position: relative;
+        z-index: 5;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .text-gold { color: #FFD700 !important; }
+    .premium-text {
+        text-shadow: 2px 2px 8px rgba(0,0,0,1), 0 0 15px rgba(255,215,0,0.3);
+    }
+
+    .accounts-title h1 {
+        font-size: 2.2rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        margin: 0;
+    }
+
+    .accounts-title h2 {
+        font-size: 1rem;
+        letter-spacing: 6px;
+        color: rgba(255, 215, 0, 0.82);
+        margin-top: 5px;
+    }
+
+    .glass-card {
+        background: rgba(0, 0, 0, 0.65);
+        border: 1.5px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    /* Form styling */
+    .form-label {
+        color: rgba(255, 215, 0, 0.9);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #fff;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #FFD700;
+        color: #fff;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Live Preview Styling */
+    .receipt-preview {
+        background: #fff;
+        color: #000;
+        padding: 30px;
+        border-radius: 8px;
+        font-family: Arial, sans-serif;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.8);
+        position: relative;
+    }
+    
+    .receipt-title {
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    .preview-logo {
+        width: 120px;
+        height: auto;
+    }
+
+    .preview-company {
+        text-align: center;
+        flex-grow: 1;
+    }
+
+    .preview-company h3 {
+        margin: 0;
+        color: #555;
+        font-weight: bold;
+        font-size: 20px;
+    }
+
+    .preview-company .tagline {
+        font-style: italic;
+        color: #0099cc;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
+    .preview-company .specs {
+        font-size: 11px;
+        margin-top: 5px;
+        font-weight: bold;
+        font-style: italic;
+    }
+
+    .preview-contact {
+        text-align: right;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .preview-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .tin-box {
+        border: 2px solid #000;
+        padding: 5px 15px;
+        font-weight: bold;
+    }
+
+    .dotted-line-field {
+        margin-bottom: 15px;
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .dotted-line-field label {
+        font-weight: bold;
+        font-style: italic;
+        margin-right: 10px;
+        white-space: nowrap;
+    }
+
+    .dotted-line-field span {
+        flex-grow: 1;
+        border-bottom: 1px dotted #000;
+        min-height: 20px;
+        padding-bottom: 2px;
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: bold;
+    }
+
+    .amount-box {
+        border: 2px solid #000;
+        padding: 10px 20px;
+        font-weight: bold;
+        font-size: 16px;
+        display: inline-block;
+        margin-top: 10px;
+    }
+
+    /* History Table */
+    .table-premium {
+        width: 100%;
+        color: #FFFFFF;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+    .table-premium th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: rgba(255, 215, 0, 0.9);
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255,215,0,0.3);
+    }
+
+    .table-premium td {
+        padding: 10px 5px;
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="accounts-dashboard-wrapper fade-in">
+    <div class="content-layer">
+        
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div class="accounts-title premium-text">
+                <h1>MPHAMVU WATER ENGINEERS</h1>
+                <h2>GENERAL RECEIPT GENERATOR</h2>
+            </div>
+            <div class="d-flex align-items-start">
+                <div class="text-end">
+                    <p class="mb-0 text-white-50 small">System Time: {{ datetime.now().strftime('%Y-%m-%d %H:%M') }}</p>
+                    <div class="mt-2">
+                        <a href="{{ url_for('accounts.dashboard') }}" class="btn btn-outline-light btn-sm px-3 me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Form Area -->
+            <div class="col-lg-5">
+                <div class="glass-card">
+                    <h5 class="text-gold mb-3"><i class="fas fa-edit me-2"></i>Receipt Details</h5>
+                    
+                    <form action="{{ url_for('accounts.generate_general_receipt') }}" method="POST" target="_blank" id="receiptForm">
+                        <div class="mb-3">
+                            <label class="form-label">Company</label>
+                            <select class="form-select" name="company" id="companySelect" required>
+                                <option value="Mphamvu Water Engineers">Borehole Drilling</option>
+                                <option value="Mphamvu Construction">Construction</option>
+                                <option value="Mphamvu Farm">Farm</option>
+                                <option value="Mphamvu Lodge">Lodge</option>
+                                <option value="Mphamvu ICT">ICT</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">TIN Number</label>
+                                <input type="text" class="form-control" name="tin" id="tinInput" value="31872543" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Receipt Number</label>
+                                <input type="text" class="form-control" name="receipt_number" id="receiptNoInput" value="{{ next_receipt_number }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" name="date" id="dateInput" value="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Received From</label>
+                            <input type="text" class="form-control" name="received_from" id="receivedFromInput" placeholder="Client Name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">The sum of (Words)</label>
+                            <input type="text" class="form-control" name="sum_of_words" id="sumWordsInput" placeholder="e.g. One Million Kwacha" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Being paid for</label>
+                            <input type="text" class="form-control" name="payment_for" id="paymentForInput" placeholder="Description of payment" required>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Amount (MWK)</label>
+                                <input type="number" step="0.01" class="form-control" name="amount" id="amountInput" placeholder="0.00" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Cash / Check No.</label>
+                                <input type="text" class="form-control" name="payment_method" id="methodInput" value="Cash">
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-warning btn-lg fw-bold" onclick="setTimeout(function(){window.location.reload();}, 2000);">
+                                <i class="fas fa-file-pdf me-2"></i>Generate Receipt PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Preview Area -->
+            <div class="col-lg-7">
+                <div class="glass-card h-100">
+                    <h5 class="text-gold mb-3"><i class="fas fa-eye me-2"></i>Live Preview</h5>
+                    
+                    <div class="receipt-preview">
+                        <div class="receipt-title">CASH RECEIPT</div>
+                        
+                        <div class="preview-header">
+                            <img src="{{ url_for('static', filename='images/receipt_logo.png') }}" alt="Logo" class="preview-logo" id="previewLogo">
+                            <div class="preview-company">
+                                <h3 id="previewCompanyName">MPHAMVU WATER ENGINEERS</h3>
+                                <div class="tagline" id="previewTagline">"Always Water"</div>
+                                <div class="specs" id="previewSpecs">Specialists in: Borehole drilling, Designing, supplying and installation of pumping systems, water reticulation and irrigation services</div>
+                            </div>
+                            <div class="preview-contact">
+                                <b>P.O BOX 561<br>Lilongwe</b><br><br>
+                                Call: <b>+265 998 039 554<br>+265 999 678 417</b><br><br>
+                                <span style="color: blue;">mphamvuwaterengineers@gmail.com</span>
+                            </div>
+                        </div>
+
+                        <div class="preview-meta">
+                            <div class="tin-box">TIN: <span id="previewTin">31872543</span></div>
+                            <div><b>RECEIPT No. <span style="color: red;" id="previewReceiptNo">{{ next_receipt_number }}</span></b></div>
+                            <div><b>Date:</b> <u id="previewDate">{{ datetime.now().strftime('%d/%m/%Y') }}</u></div>
+                        </div>
+
+                        <div class="dotted-line-field">
+                            <label>Received From:</label>
+                            <span id="previewReceivedFrom"></span>
+                        </div>
+
+                        <div class="dotted-line-field">
+                            <label>The sum of:</label>
+                            <span id="previewSumWords"></span>
+                        </div>
+
+                        <div class="dotted-line-field">
+                            <label>Being paid for:</label>
+                            <span id="previewPaymentFor"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-end mt-4">
+                            <div class="amount-box">
+                                MWK <span id="previewAmount">0.00</span>
+                            </div>
+                            <div class="text-end">
+                                <div><b><i>With thanks</i></b></div>
+                                <img src="{{ url_for('static', filename='images/signature.png') }}" alt="Signature" style="height: 30px; margin: 10px 0;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <div><b><i>Cash / Check No.:</i></b> <u id="previewMethod">Cash</u></div>
+                            <div>for <span id="previewForCompany">Mphamvu Water Engineers</span></div>
+                        </div>
+
+                        <div class="text-center mt-4" style="font-size: 10px; font-style: italic;">
+                            ******This is an electronically produced receipt******
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Area -->
+        <div class="glass-card mt-2">
+            <h5 class="text-gold mb-3"><i class="fas fa-history me-2"></i>Recent Receipts Generated</h5>
+            <div class="table-responsive">
+                <table class="table table-premium">
+                    <thead>
+                        <tr>
+                            <th>Receipt No.</th>
+                            <th>Date</th>
+                            <th>Company</th>
+                            <th>Received From</th>
+                            <th>Payment For</th>
+                            <th>Amount (MWK)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for receipt in receipts_history %}
+                        <tr>
+                            <td class="fw-bold text-gold">#{{ receipt.receipt_number }}</td>
+                            <td>{{ receipt.receipt_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ receipt.company }}</td>
+                            <td>{{ receipt.received_from }}</td>
+                            <td>{{ receipt.payment_for }}</td>
+                            <td class="fw-bold">{{ "{:,.2f}".format(receipt.amount) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-white-50 py-4">No receipts generated yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const companySelect = document.getElementById('companySelect');
+        const inputs = {
+            tin: document.getElementById('tinInput'),
+            receiptNo: document.getElementById('receiptNoInput'),
+            date: document.getElementById('dateInput'),
+            receivedFrom: document.getElementById('receivedFromInput'),
+            sumWords: document.getElementById('sumWordsInput'),
+            paymentFor: document.getElementById('paymentForInput'),
+            amount: document.getElementById('amountInput'),
+            method: document.getElementById('methodInput')
+        };
+
+        const previews = {
+            companyName: document.getElementById('previewCompanyName'),
+            tagline: document.getElementById('previewTagline'),
+            specs: document.getElementById('previewSpecs'),
+            tin: document.getElementById('previewTin'),
+            receiptNo: document.getElementById('previewReceiptNo'),
+            date: document.getElementById('previewDate'),
+            receivedFrom: document.getElementById('previewReceivedFrom'),
+            sumWords: document.getElementById('previewSumWords'),
+            paymentFor: document.getElementById('previewPaymentFor'),
+            amount: document.getElementById('previewAmount'),
+            method: document.getElementById('previewMethod'),
+            forCompany: document.getElementById('previewForCompany')
+        };
+
+        const companyDetails = {
+            'Mphamvu Water Engineers': {
+                tagline: '"Always Water"',
+                specs: 'Specialists in: Borehole drilling, Designing, supplying and installation of pumping systems, water reticulation and irrigation services',
+                color: '#0099cc'
+            },
+            'Mphamvu Construction': {
+                tagline: '"Building the Future"',
+                specs: 'Specialists in: Building & Civil Construction',
+                color: '#ff6600'
+            },
+            'Mphamvu Farm': {
+                tagline: '"Fresh & Natural"',
+                specs: 'Specialists in: Agricultural Production & Livestock',
+                color: '#33cc33'
+            },
+            'Mphamvu Lodge': {
+                tagline: '"Your Home Away from Home"',
+                specs: 'Specialists in: Hospitality & Accommodation',
+                color: '#993333'
+            },
+            'Mphamvu ICT': {
+                tagline: '"Tech Solutions Delivered"',
+                specs: 'Specialists in: IT Solutions & Software Development',
+                color: '#3333cc'
+            }
+        };
+
+        function updatePreview() {
+            // Company
+            const comp = companySelect.value;
+            previews.companyName.textContent = comp.toUpperCase();
+            previews.forCompany.textContent = comp;
+            
+            const details = companyDetails[comp];
+            previews.tagline.textContent = details.tagline;
+            previews.tagline.style.color = details.color;
+            previews.specs.textContent = details.specs;
+
+            // Direct mapping
+            previews.tin.textContent = inputs.tin.value || '...';
+            previews.receiptNo.textContent = inputs.receiptNo.value || '...';
+            
+            // Format Date
+            if (inputs.date.value) {
+                const d = new Date(inputs.date.value);
+                previews.date.textContent = d.toLocaleDateString('en-GB');
+            } else {
+                previews.date.textContent = '...';
+            }
+
+            previews.receivedFrom.textContent = inputs.receivedFrom.value || '';
+            previews.sumWords.textContent = inputs.sumWords.value || '';
+            previews.paymentFor.textContent = inputs.paymentFor.value || '';
+            previews.method.textContent = inputs.method.value || 'Cash';
+
+            // Format Amount
+            const amt = parseFloat(inputs.amount.value);
+            if (!isNaN(amt)) {
+                previews.amount.textContent = amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            } else {
+                previews.amount.textContent = '0.00';
+            }
+        }
+
+        // Attach event listeners
+        companySelect.addEventListener('change', updatePreview);
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', updatePreview);
+        });
+
+        // Initialize
+        updatePreview();
+    });
+</script>
+{% endblock %}

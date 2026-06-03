@@ -3,7 +3,7 @@ import email
 import re
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Thread
 import time
 
@@ -57,6 +57,54 @@ def process_rfq_text(text, source):
             unit_rate = float(rate_str.replace(',', '')) if rate_str else None
             total = calculate_total(qty_str, rate_str)
             
+            def _norm(s):
+                return (s or '').strip().lower()
+
+            def _flt(v):
+                if v is None:
+                    return None
+                try:
+                    return round(float(v), 6)
+                except Exception:
+                    return None
+
+            # Dedupe: avoid inserting the same RFQ multiple times due to webhook retries
+            # or background re-processing.
+            recent_cutoff = datetime.utcnow() - timedelta(minutes=15)
+            existing_recent = (
+                RFQRequest.query.filter(
+                    RFQRequest.source == source,
+                    RFQRequest.created_at >= recent_cutoff,
+                )
+                .all()
+            )
+
+            target = {
+                "client": _norm(client),
+                "location": _norm(location),
+                "item": _norm(item),
+                "description": _norm(description),
+                "unit": _norm(unit),
+                "qty": _flt(qty),
+                "unit_rate": _flt(unit_rate),
+            }
+
+            for r in existing_recent:
+                candidate = {
+                    "client": _norm(r.client),
+                    "location": _norm(r.location),
+                    "item": _norm(r.item),
+                    "description": _norm(r.description),
+                    "unit": _norm(r.unit),
+                    "qty": _flt(r.qty),
+                    "unit_rate": _flt(r.unit_rate),
+                }
+                if candidate == target:
+                    logger.info(
+                        f"Skipping duplicate RFQ parse for source={source}, client={client}"
+                    )
+                    return False
+
             rfq = RFQRequest(
                 client=client,
                 location=location,
@@ -69,7 +117,7 @@ def process_rfq_text(text, source):
                 source=source,
                 status='pending'
             )
-            
+
             db.session.add(rfq)
             db.session.commit()
             logger.info(f"Successfully processed RFQ from {source} for client: {client}")
@@ -129,7 +177,14 @@ def fetch_emails():
                         body = payload.decode(errors='ignore')
 
                 if body:
-                    process_rfq_text(body, source="email")
+                    processed = process_rfq_text(body, source="email")
+                    # Mark as seen only if we successfully created an RFQ request.
+                    # This prevents re-processing the same unread email on every loop.
+                    if processed:
+                        try:
+                            mail.store(num, '+FLAGS', '\\Seen')
+                        except Exception as e:
+                            logger.debug(f"Could not mark email as seen: {e}")
                     
         except Exception as e:
             logger.error(f"IMAP Fetch Error: {str(e)}")

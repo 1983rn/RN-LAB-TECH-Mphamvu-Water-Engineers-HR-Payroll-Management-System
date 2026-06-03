@@ -46,8 +46,11 @@
                 <h6>Project Details</h6>
                 <table class="table table-sm">
                     <tr>
-                        <td><strong>Project Type:</strong></td>
-                        <td>{{ contract.quotation.client.project_type }}</td>
+                        <td><strong>Project:</strong></td>
+                        <td>
+                            <textarea class="form-control" id="project_name_display" name="project_name_display" rows="2" required placeholder="Enter project description">{{ invoice.project_name if invoice and invoice.project_name else contract.quotation.client.project_type }}</textarea>
+                            <small class="text-muted">You can edit the project description for this invoice</small>
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Location:</strong></td>
@@ -61,23 +64,24 @@
             </div>
         </div>
         
-        <form method="POST">
+        <form method="POST" id="invoiceForm">
+            <input type="hidden" name="project_name" id="project_name_hidden" value="{{ invoice.project_name if invoice and invoice.project_name else contract.quotation.client.project_type }}">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="invoice_number" class="form-label">Invoice Number</label>
-                    <input type="text" class="form-control" id="invoice_number" name="invoice_number" value="INV{{ contract.quotation.reference_number }}" readonly>
+                    <input type="text" class="form-control" id="invoice_number" name="invoice_number" value="{{ invoice.invoice_number if invoice else 'INV' + contract.quotation.reference_number }}" readonly>
                     <small class="text-muted">Invoice number is generated automatically</small>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="invoice_date" class="form-label">Invoice Date *</label>
-                    <input type="date" class="form-control" id="invoice_date" name="invoice_date" required>
+                    <input type="date" class="form-control" id="invoice_date" name="invoice_date" value="{{ invoice.invoice_date.strftime('%Y-%m-%d') if invoice else '' }}" required>
                 </div>
             </div>
             
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="due_date" class="form-label">Due Date *</label>
-                    <input type="date" class="form-control" id="due_date" name="due_date" required>
+                    <input type="date" class="form-control" id="due_date" name="due_date" value="{{ invoice.due_date.strftime('%Y-%m-%d') if invoice else '' }}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="amount" class="form-label">Invoice Amount (MWK)</label>
@@ -88,7 +92,7 @@
             
             <div class="mb-3">
                 <label for="payment_terms" class="form-label">Payment Terms</label>
-                <textarea class="form-control" id="payment_terms" name="payment_terms" rows="3">Payment within 14 days</textarea>
+                <textarea class="form-control" id="payment_terms" name="payment_terms" rows="3">{{ invoice.payment_terms if invoice else 'Payment within 14 days' }}</textarea>
             </div>
             
             <div class="d-flex justify-content-between">
@@ -96,7 +100,7 @@
                     <i class="fas fa-times me-2"></i>Cancel
                 </a>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save me-2"></i>Generate Invoice
+                    <i class="fas fa-save me-2"></i>{{ 'Update Invoice' if invoice else 'Generate Invoice' }}
                 </button>
             </div>
         </form>
@@ -105,13 +109,29 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Set default dates
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('invoice_date').value = today;
+    // Set default dates only if not already pre-filled
+    const invoiceDateInput = document.getElementById('invoice_date');
+    const dueDateInput = document.getElementById('due_date');
     
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14);
-    document.getElementById('due_date').value = dueDate.toISOString().split('T')[0];
+    if (!invoiceDateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        invoiceDateInput.value = today;
+    }
+    
+    if (!dueDateInput.value) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 14);
+        dueDateInput.value = dueDate.toISOString().split('T')[0];
+    }
+
+    // Sync project name textarea to hidden input
+    const projectTextarea = document.getElementById('project_name_display');
+    const projectHiddenInput = document.getElementById('project_name_hidden');
+    if (projectTextarea && projectHiddenInput) {
+        projectTextarea.addEventListener('input', function() {
+            projectHiddenInput.value = projectTextarea.value;
+        });
+    }
 });
 </script>
 {% endblock %}

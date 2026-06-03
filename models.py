@@ -115,6 +115,7 @@ class Quotation(db.Model):
     total_amount = db.Column(db.Float, nullable=False)
     validity_days = db.Column(db.Integer, default=30)
     description = db.Column(db.Text, default='We have pleasure in quoting our prices for borehole development as follows;')
+    footnote = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default='Pending')
     delivery_confirmed = db.Column(db.Boolean, default=False)
     delivery_approved_by = db.Column(db.String(100))
@@ -193,6 +194,7 @@ class Invoice(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reference_number = db.Column(db.String(50), unique=True, default=lambda: get_reference_number('INV'))
     department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
+    project_name = db.Column(db.String(255), nullable=True)
     
     contract = db.relationship('Contract', backref='invoices')
     quotation = db.relationship('Quotation', backref='invoices_list')
@@ -314,6 +316,59 @@ class RFQRequest(db.Model):
     source = db.Column(db.String(50))  # 'facebook' or 'email'
     status = db.Column(db.String(20), default='pending') # 'pending' or 'processed'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class RFQResponse(db.Model):
+    __tablename__ = 'rfq_responses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    reference_number = db.Column(db.String(50), unique=True, index=True)
+    company = db.Column(db.String(200))
+    contact = db.Column(db.String(200))
+    phone = db.Column(db.String(50))
+    email = db.Column(db.String(100))
+    reg_no = db.Column(db.String(100))
+    water_reg_no = db.Column(db.String(100))
+    location = db.Column(db.String(200))
+    work_required = db.Column(db.Text)
+    yield_value = db.Column(db.String(50))  # Min yield in liters/sec
+    warranty_borehole = db.Column(db.String(50))  # Warranty in years
+    warranty_pump = db.Column(db.String(50))  # Warranty in years
+    days_to_complete = db.Column(db.String(50))
+    deposit = db.Column(db.String(50))
+    balance_condition = db.Column(db.String(200))
+    validity_days = db.Column(db.String(50))
+    table_data = db.Column(db.Text)  # JSON string of table data (headers, rows, footer)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    department = db.Column(db.String(100), default='Borehole Drilling', nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='rfq_responses')
+    company_documents = db.relationship(
+        'RFQResponseCompanyDocument',
+        backref='rfq_response',
+        lazy=True,
+        cascade='all, delete-orphan',
+    )
+
+class RFQResponseCompanyDocument(db.Model):
+    """
+    Stores uploaded company-related documents/certificates for a single RFQ response.
+    We persist them so the UI can preview/download and the generated RFQ PDF can reference/append them.
+    """
+    __tablename__ = 'rfq_response_company_documents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    rfq_response_id = db.Column(
+        db.Integer,
+        db.ForeignKey('rfq_responses.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    filename = db.Column(db.String(255), nullable=False)  # Original client filename
+    storage_path = db.Column(db.String(1000), nullable=False)  # Absolute path on disk
+    mime_type = db.Column(db.String(100))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ==========================================
 # ENTERPRISE MODULES
@@ -727,3 +782,18 @@ class ICTTraining(db.Model):
     
     client = db.relationship('Client', backref='ict_trainings')
     trainer = db.relationship('Employee', backref='ict_trainings_conducted')
+
+class GeneralReceipt(db.Model):
+    __tablename__ = 'general_receipts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    receipt_number = db.Column(db.String(50), unique=True, nullable=False)
+    company = db.Column(db.String(100), nullable=False)
+    tin = db.Column(db.String(50))
+    receipt_date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    received_from = db.Column(db.String(200), nullable=False)
+    sum_of_words = db.Column(db.String(255), nullable=False)
+    payment_for = db.Column(db.Text, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(100)) # Cash / Check No.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
